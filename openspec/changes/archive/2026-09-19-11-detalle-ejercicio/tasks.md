@@ -1,8 +1,8 @@
 ## 1. Android
 
-- [ ] 1.1 Hacer clickeable la tarjeta de ejercicio en `CatalogScreen.kt` (overload `onClick` de `Card`), guardando el ejercicio seleccionado en estado local; verificar que compila en CI (`android.yml`)
-- [ ] 1.2 Implementar `ExerciseDetailDialog` con nombre, marca `PROPIO` si `isCustom`, tipo (`kindLabel`), grupo principal, grupo secundario solo si existe y equipamiento; verificar que compila en CI
-- [ ] 1.3 Confirmar que el botón "Eliminar" de la tarjeta sigue abriendo el diálogo de borrado y no el detalle (revisión manual en APK de CI)
+- [x] 1.1 Hacer clickeable la tarjeta de ejercicio en `CatalogScreen.kt` (overload `onClick` de `Card`), guardando el ejercicio seleccionado en estado local; verificar que compila en CI (`android.yml`)
+- [x] 1.2 Implementar `ExerciseDetailDialog` con nombre, marca `PROPIO` si `isCustom`, tipo (`kindLabel`), grupo principal, grupo secundario solo si existe y equipamiento; verificar que compila en CI
+- [x] 1.3 Confirmar que el botón "Eliminar" de la tarjeta sigue abriendo el diálogo de borrado y no el detalle (revisión manual en APK de CI)
 
 ## 2. Web
 
@@ -13,4 +13,4 @@
 ## 3. Verificación
 
 - [x] 3.1 Ejecutar `npm run lint`, `npm run typecheck` y `npm run test` en `web/` sin errores
-- [ ] 3.2 Dejar CI en verde: `web.yml` (tests, build y deploy) y `android.yml` (tests y APK debug) tras el push a `main`
+- [x] 3.2 Dejar CI en verde: `web.yml` (tests, build y deploy) y `android.yml` (tests y APK debug) tras el push a `main`
