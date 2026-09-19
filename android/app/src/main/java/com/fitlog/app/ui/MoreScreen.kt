@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.fitlog.app.ui.components.FitLogCard
+import com.fitlog.app.ui.components.FitLogIcons
 import com.fitlog.app.ui.components.IconBadge
 import com.fitlog.app.ui.components.NavigationRow
 import com.fitlog.app.ui.components.SectionHeader

@@ -53,7 +53,7 @@ object Home {
         bodyPoints: List<BodyInput>,
         nowMs: Long,
     ): Summary {
-        val effective = sessions.filter { !it.startedAtMs.isAfter(nowMs) }
+        val effective = sessions.filter { it.startedAtMs <= nowMs }
         val currentFrom = nowMs - WEEK_MS
         val previousFrom = nowMs - 2 * WEEK_MS
 
@@ -63,7 +63,7 @@ object Home {
         )
 
         val latestBody = bodyPoints
-            .filter { !it.measuredAtMs.isAfter(nowMs) }
+            .filter { it.measuredAtMs <= nowMs }
             .maxByOrNull { it.measuredAtMs }
 
         return Summary(
