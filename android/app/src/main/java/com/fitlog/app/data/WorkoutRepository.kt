@@ -12,6 +12,7 @@ enum class WorkoutErrorCode {
     SESSION_NOT_ACTIVE,
     SESSION_ALREADY_ACTIVE,
     SET_NOT_FOUND,
+    ROUTINE_NOT_FOUND,
 }
 
 class WorkoutException(
@@ -37,6 +38,8 @@ data class WorkoutSession(
     val startedAt: Long,
     val finishedAt: Long?,
     val notes: String?,
+    val routineId: String?,
+    val routineName: String?,
     val summary: SessionSummary,
 )
 
@@ -64,16 +67,20 @@ data class UpdateSetInput(
 
 class WorkoutRepository(
     private val dao: WorkoutDao,
+    private val routinesDao: RoutinesDao,
     private val idGenerator: () -> String = { Ulid.generate() },
     private val now: () -> Long = System::currentTimeMillis,
 ) {
 
     suspend fun activeSession(): WorkoutSession? {
         val session = dao.findActiveSession() ?: return null
-        return session.toDomain(dao.listSetsForSession(session.id))
+        return session.toDomain(
+            sets = dao.listSetsForSession(session.id),
+            routineName = routineNameOf(session.routineId),
+        )
     }
 
-    suspend fun startSession(): WorkoutSession {
+    suspend fun startSession(routineId: String? = null): WorkoutSession {
         if (dao.findActiveSession() != null) {
             throw WorkoutException(
                 WorkoutErrorCode.SESSION_ALREADY_ACTIVE,
@@ -81,10 +88,20 @@ class WorkoutRepository(
             )
         }
 
+        val routineName = if (routineId == null) {
+            null
+        } else {
+            routinesDao.findRoutineById(routineId)?.name
+                ?: throw WorkoutException(
+                    WorkoutErrorCode.ROUTINE_NOT_FOUND,
+                    "La rutina no existe",
+                )
+        }
+
         val timestamp = now()
         val session = SessionEntity(
             id = idGenerator(),
-            routineId = null,
+            routineId = routineId,
             startedAt = timestamp,
             finishedAt = null,
             notes = null,
@@ -93,7 +110,7 @@ class WorkoutRepository(
             deletedAt = null,
         )
         dao.insertSession(session)
-        return session.toDomain(emptyList())
+        return session.toDomain(emptyList(), routineName)
     }
 
     suspend fun finishSession(sessionId: String) {
@@ -173,14 +190,22 @@ class WorkoutRepository(
         if (sessions.isEmpty()) return emptyList()
 
         val setsBySession = dao.listAllSets().groupBy { it.sessionId }
-        return sessions.map { session -> session.toDomain(setsBySession[session.id].orEmpty()) }
+        return sessions.map { session ->
+            session.toDomain(
+                sets = setsBySession[session.id].orEmpty(),
+                routineName = routineNameOf(session.routineId),
+            )
+        }
     }
 
     suspend fun sessionDetail(sessionId: String): SessionDetail {
         val session = dao.findSessionById(sessionId)
             ?: throw WorkoutException(WorkoutErrorCode.SESSION_NOT_FOUND, "La sesión no existe")
         val sets = dao.listSetsForSession(sessionId)
-        return SessionDetail(session = session.toDomain(sets), sets = sets.map { it.toDomain() })
+        return SessionDetail(
+            session = session.toDomain(sets, routineNameOf(session.routineId)),
+            sets = sets.map { it.toDomain() },
+        )
     }
 
     private fun validate(weightKg: Double?, reps: Int?, rir: Int?) {
@@ -204,11 +229,19 @@ class WorkoutRepository(
         }
     }
 
-    private fun SessionEntity.toDomain(sets: List<WorkoutSetRow>) = WorkoutSession(
+    private suspend fun routineNameOf(routineId: String?): String? =
+        routineId?.let { routinesDao.findRoutineById(it)?.name }
+
+    private fun SessionEntity.toDomain(
+        sets: List<WorkoutSetRow>,
+        routineName: String? = null,
+    ) = WorkoutSession(
         id = id,
         startedAt = startedAt,
         finishedAt = finishedAt,
         notes = notes,
+        routineId = routineId,
+        routineName = routineName,
         summary = WorkoutSummary.summarize(
             sets.map { set ->
                 SessionSetInput(

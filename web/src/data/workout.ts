@@ -1,7 +1,7 @@
-import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import type { FitLogDb } from '@/db/client';
-import { exercise, session, setEntry } from '@/db/schema';
+import { exercise, routine, session, setEntry } from '@/db/schema';
 import { generateUlid } from '@/domain/ulid';
 import { summarizeSession, type SessionSummary } from '@/domain/workout';
 
@@ -11,7 +11,8 @@ export type WorkoutErrorCode =
   | 'session_not_found'
   | 'session_not_active'
   | 'session_already_active'
-  | 'set_not_found';
+  | 'set_not_found'
+  | 'routine_not_found';
 
 export class WorkoutError extends Error {
   readonly code: WorkoutErrorCode;
@@ -41,6 +42,8 @@ export interface WorkoutSession {
   readonly startedAt: number;
   readonly finishedAt: number | null;
   readonly notes: string | null;
+  readonly routineId: string | null;
+  readonly routineName: string | null;
   readonly summary: SessionSummary;
 }
 
@@ -114,15 +117,39 @@ async function loadSets(db: FitLogDb, sessionId: string): Promise<SetRow[]> {
     .orderBy(asc(exercise.name), asc(setEntry.setIndex));
 }
 
+async function routineNamesByIds(
+  db: FitLogDb,
+  ids: readonly string[]
+): Promise<Map<string, string>> {
+  const unique = [...new Set(ids)];
+  if (unique.length === 0) {
+    return new Map();
+  }
+  const rows = await db
+    .select({ id: routine.id, name: routine.name })
+    .from(routine)
+    .where(and(inArray(routine.id, unique), isNull(routine.deletedAt)));
+  return new Map(rows.map((row) => [row.id, row.name]));
+}
+
 function toSession(
-  row: { id: string; startedAt: number; finishedAt: number | null; notes: string | null },
-  sets: readonly SetRow[]
+  row: {
+    id: string;
+    startedAt: number;
+    finishedAt: number | null;
+    notes: string | null;
+    routineId: string | null;
+  },
+  sets: readonly SetRow[],
+  routineName: string | null = null
 ): WorkoutSession {
   return {
     id: row.id,
     startedAt: row.startedAt,
     finishedAt: row.finishedAt,
     notes: row.notes,
+    routineId: row.routineId,
+    routineName,
     summary: summarizeSession(
       sets.map((set) => ({
         exerciseId: set.exerciseId,
@@ -145,13 +172,31 @@ export async function getActiveSession(db: FitLogDb): Promise<WorkoutSession | n
   if (!active) {
     return null;
   }
-  return toSession(active, await loadSets(db, active.id));
+  const names = await routineNamesByIds(db, active.routineId ? [active.routineId] : []);
+  return toSession(
+    active,
+    await loadSets(db, active.id),
+    active.routineId ? names.get(active.routineId) ?? null : null
+  );
 }
 
-export async function startSession(db: FitLogDb, now: () => number = Date.now): Promise<WorkoutSession> {
+export async function startSession(
+  db: FitLogDb,
+  routineId: string | null = null,
+  now: () => number = Date.now
+): Promise<WorkoutSession> {
   const active = await getActiveSession(db);
   if (active) {
     throw new WorkoutError('session_already_active', 'Ya hay una sesión de entrenamiento en curso');
+  }
+
+  let routineName: string | null = null;
+  if (routineId !== null) {
+    const names = await routineNamesByIds(db, [routineId]);
+    routineName = names.get(routineId) ?? null;
+    if (routineName === null) {
+      throw new WorkoutError('routine_not_found', 'La rutina no existe');
+    }
   }
 
   const timestamp = now();
@@ -160,17 +205,17 @@ export async function startSession(db: FitLogDb, now: () => number = Date.now): 
     startedAt: timestamp,
     finishedAt: null,
     notes: null,
+    routineId,
   };
 
   await db.insert(session).values({
     ...created,
-    routineId: null,
     createdAt: timestamp,
     updatedAt: timestamp,
     deletedAt: null,
   });
 
-  return toSession(created, []);
+  return toSession(created, [], routineName);
 }
 
 export async function finishSession(
@@ -374,7 +419,18 @@ export async function listSessions(db: FitLogDb): Promise<WorkoutSession[]> {
     }
   }
 
-  return sessionRows.map((row) => toSession(row, bySession.get(row.id) ?? []));
+  const names = await routineNamesByIds(
+    db,
+    sessionRows.map((row) => row.routineId).filter((id): id is string => id !== null)
+  );
+
+  return sessionRows.map((row) =>
+    toSession(
+      row,
+      bySession.get(row.id) ?? [],
+      row.routineId ? names.get(row.routineId) ?? null : null
+    )
+  );
 }
 
 export async function getSessionDetail(db: FitLogDb, sessionId: string): Promise<SessionDetail> {
@@ -388,9 +444,14 @@ export async function getSessionDetail(db: FitLogDb, sessionId: string): Promise
     throw new WorkoutError('session_not_found', 'La sesión no existe');
   }
 
+  const names = await routineNamesByIds(db, found.routineId ? [found.routineId] : []);
   const sets = await loadSets(db, sessionId);
   return {
-    session: toSession(found, sets),
+    session: toSession(
+      found,
+      sets,
+      found.routineId ? names.get(found.routineId) ?? null : null
+    ),
     sets: sets.map(toWorkoutSet),
   };
 }

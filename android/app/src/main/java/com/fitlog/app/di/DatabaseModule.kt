@@ -7,6 +7,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.fitlog.app.data.CatalogDao
 import com.fitlog.app.data.CatalogRepository
 import com.fitlog.app.data.FitLogDatabase
+import com.fitlog.app.data.RoutinesDao
+import com.fitlog.app.data.RoutinesRepository
 import com.fitlog.app.data.WorkoutDao
 import com.fitlog.app.data.WorkoutRepository
 import dagger.Module
@@ -48,6 +50,14 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideWorkoutRepository(workoutDao: WorkoutDao): WorkoutRepository = WorkoutRepository(dao = workoutDao)
+
+    @Provides
+    @Singleton
+    fun provideRoutinesDao(database: FitLogDatabase): RoutinesDao = database.routinesDao()
+
+    @Provides
+    @Singleton
+    fun provideRoutinesRepository(routinesDao: RoutinesDao): RoutinesRepository = RoutinesRepository(dao = routinesDao)
 
     @Provides
     @Singleton

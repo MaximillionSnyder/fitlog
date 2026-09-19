@@ -131,7 +131,8 @@ export default function WorkoutView({
           <h2 className="text-xl font-semibold text-white">Entrenar</h2>
           <p className="text-xs text-slate-400">
             {workout.active
-              ? `Sesión en curso desde ${formatDateTime(workout.active.startedAt)}`
+              ? `Sesión en curso desde ${formatDateTime(workout.active.startedAt)}` +
+                (workout.active.routineName ? ` · Rutina: ${workout.active.routineName}` : '')
               : 'Sin sesión activa'}
           </p>
         </div>
@@ -369,6 +370,9 @@ export default function WorkoutView({
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold text-slate-200">
                 Detalle · {formatDateTime(workout.detail.session.startedAt)}
+                {workout.detail.session.routineName
+                  ? ` · Rutina: ${workout.detail.session.routineName}`
+                  : ''}
               </h4>
               <button
                 type="button"

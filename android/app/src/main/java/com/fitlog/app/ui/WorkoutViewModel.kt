@@ -69,10 +69,10 @@ class WorkoutViewModel @Inject constructor(
     private suspend fun activeSetsOf(sessionId: String?): List<WorkoutSet> =
         if (sessionId == null) emptyList() else repository.sessionDetail(sessionId).sets
 
-    fun startSession() {
+    fun startSession(routineId: String? = null) {
         viewModelScope.launch {
             try {
-                repository.startSession()
+                repository.startSession(routineId)
                 _state.update { it.copy(formError = null) }
                 load()
             } catch (error: WorkoutException) {

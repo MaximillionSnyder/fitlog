@@ -28,8 +28,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.fitlog.app.ui.CatalogScreen
+import com.fitlog.app.ui.RoutinesScreen
 import com.fitlog.app.ui.WorkoutScreen
 import com.fitlog.app.ui.DbStatusUi
 import com.fitlog.app.ui.DbStatusViewModel
@@ -50,6 +53,7 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 onOpenCatalog = { navController.navigate(CATALOG_ROUTE) },
                                 onOpenWorkout = { navController.navigate(WORKOUT_ROUTE) },
+                                onOpenRoutines = { navController.navigate(ROUTINES_ROUTE) },
                                 modifier = Modifier.padding(padding),
                             )
                         }
@@ -62,10 +66,31 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
-                    composable(WORKOUT_ROUTE) {
+                    composable(
+                        route = WORKOUT_PATTERN,
+                        arguments = listOf(
+                            navArgument(ROUTINE_ARG) {
+                                type = NavType.StringType
+                                nullable = true
+                                defaultValue = null
+                            }
+                        ),
+                    ) { backStackEntry ->
                         Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
                             WorkoutScreen(
                                 onBack = { navController.popBackStack() },
+                                initialRoutineId = backStackEntry.arguments?.getString(ROUTINE_ARG),
+                                modifier = Modifier.padding(padding),
+                            )
+                        }
+                    }
+                    composable(ROUTINES_ROUTE) {
+                        Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
+                            RoutinesScreen(
+                                onBack = { navController.popBackStack() },
+                                onTrainRoutine = { routineId ->
+                                    navController.navigate("workout?$ROUTINE_ARG=$routineId")
+                                },
                                 modifier = Modifier.padding(padding),
                             )
                         }
@@ -79,6 +104,9 @@ class MainActivity : ComponentActivity() {
         const val HOME_ROUTE = "home"
         const val CATALOG_ROUTE = "catalog"
         const val WORKOUT_ROUTE = "workout"
+        const val WORKOUT_PATTERN = "workout?$ROUTINE_ARG={$ROUTINE_ARG}"
+        const val ROUTINES_ROUTE = "routines"
+        const val ROUTINE_ARG = "routineId"
     }
 }
 
@@ -86,6 +114,7 @@ class MainActivity : ComponentActivity() {
 private fun HomeScreen(
     onOpenCatalog: () -> Unit,
     onOpenWorkout: () -> Unit,
+    onOpenRoutines: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DbStatusViewModel = hiltViewModel(),
 ) {
@@ -125,6 +154,10 @@ private fun HomeScreen(
 
         Button(onClick = onOpenWorkout, modifier = Modifier.fillMaxWidth()) {
             Text("Entrenar")
+        }
+
+        OutlinedButton(onClick = onOpenRoutines, modifier = Modifier.fillMaxWidth()) {
+            Text("Rutinas")
         }
 
         OutlinedButton(onClick = onOpenCatalog, modifier = Modifier.fillMaxWidth()) {

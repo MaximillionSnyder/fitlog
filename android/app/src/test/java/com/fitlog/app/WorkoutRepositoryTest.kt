@@ -48,7 +48,11 @@ class WorkoutRepositoryTest {
         )
         catalog.ensureSeeded()
 
-        repository = WorkoutRepository(dao = database.workoutDao(), now = { 1_700_000_000_000 })
+        repository = WorkoutRepository(
+            dao = database.workoutDao(),
+            routinesDao = database.routinesDao(),
+            now = { 1_700_000_000_000 },
+        )
         val exercises = catalog.loadCatalog().exercises
         exerciseA = exercises.first { it.slug == "press-banca-barra" }.id
         exerciseB = exercises.first { it.slug == "remo-barra" }.id

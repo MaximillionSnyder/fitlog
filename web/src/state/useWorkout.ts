@@ -24,7 +24,7 @@ export interface WorkoutState {
   readonly detail: SessionDetail | null;
   readonly loading: boolean;
   readonly error: string | null;
-  start(): Promise<void>;
+  start(routineId?: string | null): Promise<void>;
   finish(): Promise<void>;
   add(input: Omit<AddSetInput, 'sessionId'>): Promise<void>;
   update(setId: string, input: UpdateSetInput): Promise<void>;
@@ -93,10 +93,10 @@ export function useWorkout(db: FitLogDb | undefined): WorkoutState {
   }, []);
 
   const start = useCallback(
-    () =>
+    (routineId: string | null = null) =>
       guarded(async () => {
         if (!db) return;
-        await startSession(db);
+        await startSession(db, routineId);
         await refresh();
       }),
     [db, guarded, refresh]

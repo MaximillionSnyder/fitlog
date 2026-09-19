@@ -48,7 +48,7 @@ async function expectWorkoutError(promise: Promise<unknown>, code: string): Prom
 describe('sesiones', () => {
   it('inicia y finaliza una sesion', async () => {
     const db = createDatabase();
-    const session = await startSession(db, () => 1000);
+    const session = await startSession(db, null, () => 1000);
 
     expect(session.startedAt).toBe(1000);
     expect(session.finishedAt).toBeNull();
@@ -66,13 +66,13 @@ describe('sesiones', () => {
 
   it('rechaza una segunda sesion activa', async () => {
     const db = createDatabase();
-    await startSession(db, () => 1000);
-    await expectWorkoutError(startSession(db, () => 2000), 'session_already_active');
+    await startSession(db, null, () => 1000);
+    await expectWorkoutError(startSession(db, null, () => 2000), 'session_already_active');
   });
 
   it('rechaza finalizar una sesion inexistente o ya finalizada', async () => {
     const db = createDatabase();
-    const session = await startSession(db, () => 1000);
+    const session = await startSession(db, null, () => 1000);
     await finishSession(db, session.id, () => 2000);
 
     await expectWorkoutError(finishSession(db, session.id, () => 3000), 'session_not_active');
@@ -86,7 +86,7 @@ describe('sesiones', () => {
 describe('series', () => {
   it('registra series con indice automatico por ejercicio', async () => {
     const db = createDatabase();
-    const session = await startSession(db, () => 1000);
+    const session = await startSession(db, null, () => 1000);
 
     const first = await addSet(
       db,
@@ -135,7 +135,7 @@ describe('series', () => {
 
   it('valida peso, repeticiones y ejercicio', async () => {
     const db = createDatabase();
-    const session = await startSession(db, () => 1000);
+    const session = await startSession(db, null, () => 1000);
 
     await expectWorkoutError(
       addSet(db, {
@@ -179,7 +179,7 @@ describe('series', () => {
 
   it('rechaza series en una sesion finalizada', async () => {
     const db = createDatabase();
-    const session = await startSession(db, () => 1000);
+    const session = await startSession(db, null, () => 1000);
     await finishSession(db, session.id, () => 2000);
 
     await expectWorkoutError(
@@ -198,7 +198,7 @@ describe('series', () => {
 
   it('edita y elimina series con borrado logico', async () => {
     const db = createDatabase();
-    const session = await startSession(db, () => 1000);
+    const session = await startSession(db, null, () => 1000);
     const set = await addSet(
       db,
       {
@@ -227,7 +227,7 @@ describe('series', () => {
 
   it('el borrado de una serie no cambia los indices de las demas', async () => {
     const db = createDatabase();
-    const session = await startSession(db, () => 1000);
+    const session = await startSession(db, null, () => 1000);
 
     const created = [];
     for (const reps of [10, 8, 6]) {
@@ -258,7 +258,7 @@ describe('series', () => {
 describe('historial', () => {
   it('lista sesiones con resumen y detalle agrupado por ejercicio', async () => {
     const db = createDatabase();
-    const older = await startSession(db, () => 1000);
+    const older = await startSession(db, null, () => 1000);
     await addSet(db, {
       sessionId: older.id,
       exerciseId: exerciseA.id,
@@ -270,7 +270,7 @@ describe('historial', () => {
     });
     await finishSession(db, older.id, () => 1000 + 45 * 60_000);
 
-    const newer = await startSession(db, () => 5000);
+    const newer = await startSession(db, null, () => 5000);
     await addSet(db, {
       sessionId: newer.id,
       exerciseId: exerciseB.id,
@@ -306,7 +306,7 @@ describe('historial', () => {
 
   it('devuelve un detalle vacio para una sesion sin series', async () => {
     const db = createDatabase();
-    const session = await startSession(db, () => 1000);
+    const session = await startSession(db, null, () => 1000);
     await finishSession(db, session.id, () => 2000);
 
     const detail = await getSessionDetail(db, session.id);

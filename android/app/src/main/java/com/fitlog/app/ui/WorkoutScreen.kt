@@ -44,10 +44,17 @@ import com.fitlog.app.domain.WorkoutSummary
 @Composable
 fun WorkoutScreen(
     onBack: () -> Unit,
+    initialRoutineId: String? = null,
     modifier: Modifier = Modifier,
     viewModel: WorkoutViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var routineHandled by remember { mutableStateOf(false) }
+
+    if (initialRoutineId != null && !routineHandled && !state.loading && state.active == null) {
+        routineHandled = true
+        viewModel.startSession(initialRoutineId)
+    }
     var showExercisePicker by remember { mutableStateOf(false) }
     var selectedExercise by remember { mutableStateOf<CatalogExercise?>(null) }
     var editingSet by remember { mutableStateOf<WorkoutSet?>(null) }
@@ -75,7 +82,10 @@ fun WorkoutScreen(
             Column {
                 Text(text = "Entrenar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text(
-                    text = state.active?.let { "Sesión en curso" } ?: "Sin sesión activa",
+                    text = state.active?.let { active ->
+                        "Sesión en curso" +
+                            (active.routineName?.let { " · Rutina: $it" } ?: "")
+                    } ?: "Sin sesión activa",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -84,7 +94,7 @@ fun WorkoutScreen(
                 if (state.active != null) {
                     OutlinedButton(onClick = viewModel::finishSession) { Text("Finalizar") }
                 } else {
-                    Button(onClick = viewModel::startSession) { Text("Iniciar") }
+                    Button(onClick = { viewModel.startSession() }) { Text("Iniciar") }
                 }
             }
         }

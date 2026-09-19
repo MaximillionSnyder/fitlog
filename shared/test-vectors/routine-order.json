@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "description": "Casos de prueba compartidos del reordenamiento de ejercicios de una rutina. Se ejecutan en Android (JUnit) y Web (Vitest).",
+  "rules": {
+    "move": "mueve el elemento de from_index a to_index; los indices son base 0 sobre la lista actual",
+    "positions": "las posiciones resultantes son 1..N en el orden final, sin huecos ni repetidos",
+    "invalid": "indices fuera de rango devuelven error y la lista no cambia"
+  },
+  "move_cases": [
+    {
+      "name": "mover el tercero al frente",
+      "ids": ["ex-a", "ex-b", "ex-c", "ex-d"],
+      "from_index": 2,
+      "to_index": 0,
+      "expected": ["ex-c", "ex-a", "ex-b", "ex-d"]
+    },
+    {
+      "name": "mover el primero al final",
+      "ids": ["ex-a", "ex-b", "ex-c"],
+      "from_index": 0,
+      "to_index": 2,
+      "expected": ["ex-b", "ex-c", "ex-a"]
+    },
+    {
+      "name": "mover al medio",
+      "ids": ["ex-a", "ex-b", "ex-c", "ex-d"],
+      "from_index": 0,
+      "to_index": 2,
+      "expected": ["ex-b", "ex-c", "ex-a", "ex-d"]
+    },
+    {
+      "name": "mover al mismo indice no cambia nada",
+      "ids": ["ex-a", "ex-b", "ex-c"],
+      "from_index": 1,
+      "to_index": 1,
+      "expected": ["ex-a", "ex-b", "ex-c"]
+    },
+    {
+      "name": "lista de un solo elemento",
+      "ids": ["ex-a"],
+      "from_index": 0,
+      "to_index": 0,
+      "expected": ["ex-a"]
+    }
+  ],
+  "invalid_cases": [
+    { "ids": ["ex-a", "ex-b"], "from_index": 2, "to_index": 0 },
+    { "ids": ["ex-a", "ex-b"], "from_index": 0, "to_index": 2 },
+    { "ids": ["ex-a", "ex-b"], "from_index": -1, "to_index": 0 },
+    { "ids": [], "from_index": 0, "to_index": 0 }
+  ],
+  "position_cases": [
+    {
+      "name": "posiciones densas desde uno",
+      "ids": ["ex-c", "ex-a", "ex-b"],
+      "expected": [
+        { "id": "ex-c", "position": 1 },
+        { "id": "ex-a", "position": 2 },
+        { "id": "ex-b", "position": 3 }
+      ]
+    },
+    {
+      "name": "lista vacia",
+      "ids": [],
+      "expected": []
+    }
+  ]
+}
