@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 
-import { EXERCISE_KINDS, filterExercises, type CatalogFilters, type ExerciseKind } from '@/domain/catalog';
+import { EXERCISE_KINDS, filterExercises, type CatalogExercise, type CatalogFilters, type ExerciseKind } from '@/domain/catalog';
 import type { CatalogState } from '@/state/useCatalog';
 
 const kindLabels: Record<ExerciseKind, string> = {
@@ -50,6 +50,7 @@ export default function CatalogView({ catalog }: { catalog: CatalogState }) {
   const [kind, setKind] = useState<ExerciseKind>('strength');
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   const { snapshot, loading, error, create, remove } = catalog;
 
@@ -67,6 +68,11 @@ export default function CatalogView({ catalog }: { catalog: CatalogState }) {
     () => new Map(snapshot.groups.map((group) => [group.id, group.name])),
     [snapshot.groups]
   );
+
+  const detailExercise =
+    detailId === null
+      ? null
+      : (snapshot.exercises.find((exercise) => exercise.id === detailId) ?? null);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -220,38 +226,105 @@ export default function CatalogView({ catalog }: { catalog: CatalogState }) {
         {visible.map((exercise) => (
           <li
             key={exercise.id}
-            className="flex items-center justify-between gap-3 rounded-xl border border-slate-700/60 bg-slate-900/40 px-4 py-3"
+            className="rounded-xl border border-slate-700/60 bg-slate-900/40"
           >
-            <div>
-              <p className="text-sm font-medium text-slate-100">
-                {exercise.name}
-                {exercise.isCustom && (
-                  <span className="ml-2 rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
-                    Propio
-                  </span>
-                )}
-              </p>
-              <p className="text-xs text-slate-400">
-                {groupNameById.get(exercise.muscleGroupId) ?? 'Sin grupo'} · {exercise.equipment} ·{' '}
-                {kindLabels[exercise.kind]}
-              </p>
-            </div>
-            {exercise.isCustom && (
+            <div className="flex items-center justify-between gap-3 px-4 py-3">
               <button
                 type="button"
-                onClick={() => {
-                  if (window.confirm(`¿Eliminar "${exercise.name}"?`)) {
-                    void remove(exercise.id);
-                  }
-                }}
-                className="rounded-lg border border-rose-500/40 px-2 py-1 text-xs text-rose-300 hover:bg-rose-500/10"
+                onClick={() =>
+                  setDetailId((current) => (current === exercise.id ? null : exercise.id))
+                }
+                className="flex-1 text-left"
               >
-                Eliminar
+                <p className="text-sm font-medium text-slate-100">
+                  {exercise.name}
+                  {exercise.isCustom && (
+                    <span className="ml-2 rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+                      Propio
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs text-slate-400">
+                  {groupNameById.get(exercise.muscleGroupId) ?? 'Sin grupo'} · {exercise.equipment} ·{' '}
+                  {kindLabels[exercise.kind]}
+                </p>
               </button>
+              {exercise.isCustom && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm(`¿Eliminar "${exercise.name}"?`)) {
+                      void remove(exercise.id);
+                    }
+                  }}
+                  className="rounded-lg border border-rose-500/40 px-2 py-1 text-xs text-rose-300 hover:bg-rose-500/10"
+                >
+                  Eliminar
+                </button>
+              )}
+            </div>
+            {detailExercise?.id === exercise.id && (
+              <ExerciseDetail
+                exercise={exercise}
+                groupNameById={groupNameById}
+                onClose={() => setDetailId(null)}
+              />
             )}
           </li>
         ))}
       </ul>
     </section>
+  );
+}
+
+function ExerciseDetail({
+  exercise,
+  groupNameById,
+  onClose,
+}: {
+  exercise: CatalogExercise;
+  groupNameById: Map<string, string>;
+  onClose: () => void;
+}) {
+  const secondaryGroupName =
+    exercise.secondaryMuscleGroupId === null
+      ? null
+      : (groupNameById.get(exercise.secondaryMuscleGroupId) ?? null);
+
+  return (
+    <div className="border-t border-slate-700/60 px-4 py-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-slate-200">Detalle</h3>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-xs text-slate-400 hover:text-slate-200"
+        >
+          Cerrar
+        </button>
+      </div>
+      <dl className="mt-2 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+        <div>
+          <dt className="text-xs text-slate-500">Tipo</dt>
+          <dd className="text-slate-100">{kindLabels[exercise.kind]}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-slate-500">Equipamiento</dt>
+          <dd className="text-slate-100">{exercise.equipment}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-slate-500">Grupo muscular</dt>
+          <dd className="text-slate-100">
+            {groupNameById.get(exercise.muscleGroupId) ?? 'Sin grupo'}
+          </dd>
+        </div>
+        {secondaryGroupName !== null && (
+          <div>
+            <dt className="text-xs text-slate-500">Grupo secundario</dt>
+            <dd className="text-slate-100">{secondaryGroupName}</dd>
+          </div>
+        )}
+      </dl>
+    </div>
   );
 }

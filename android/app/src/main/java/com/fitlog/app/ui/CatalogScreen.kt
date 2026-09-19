@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.fitlog.app.domain.CatalogExercise
 import com.fitlog.app.domain.ExerciseKind
 import com.fitlog.app.domain.MuscleGroup
 
@@ -45,6 +46,7 @@ fun CatalogScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showForm by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<String?>(null) }
+    var detailExercise by remember { mutableStateOf<CatalogExercise?>(null) }
 
     Column(
         modifier = modifier
@@ -138,7 +140,10 @@ fun CatalogScreen(
         }
 
         state.visible.forEach { exercise ->
-            Card(modifier = Modifier.fillMaxWidth()) {
+            Card(
+                onClick = { detailExercise = exercise },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -203,6 +208,70 @@ fun CatalogScreen(
                 TextButton(onClick = { pendingDelete = null }) { Text("Cancelar") }
             },
         )
+    }
+
+    detailExercise?.let { exercise ->
+        ExerciseDetailDialog(
+            exercise = exercise,
+            groups = state.groups,
+            onDismiss = { detailExercise = null },
+        )
+    }
+}
+
+@Composable
+private fun ExerciseDetailDialog(
+    exercise: CatalogExercise,
+    groups: List<MuscleGroup>,
+    onDismiss: () -> Unit,
+) {
+    val groupName = groups.firstOrNull { it.id == exercise.muscleGroupId }?.name ?: "Sin grupo"
+    val secondaryGroupName = exercise.secondaryMuscleGroupId?.let { id ->
+        groups.firstOrNull { it.id == id }?.name
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(text = exercise.name)
+                if (exercise.isCustom) {
+                    Text(
+                        text = "PROPIO",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                }
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                DetailField(label = "Tipo", value = kindLabel(exercise.kind))
+                DetailField(label = "Grupo muscular", value = groupName)
+                secondaryGroupName?.let { name ->
+                    DetailField(label = "Grupo secundario", value = name)
+                }
+                DetailField(label = "Equipamiento", value = exercise.equipment)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Cerrar") }
+        },
+    )
+}
+
+@Composable
+private fun DetailField(label: String, value: String) {
+    Column {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
