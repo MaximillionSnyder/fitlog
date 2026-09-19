@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
+import androidx.graphics.shapes.star
 import androidx.graphics.shapes.toPath
 
 val IdleSessionPolygon: RoundedPolygon = RoundedPolygon(

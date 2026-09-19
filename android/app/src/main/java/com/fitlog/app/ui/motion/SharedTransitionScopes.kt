@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalSharedTransitionApi::class)
+
 package com.fitlog.app.ui.motion
 
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -22,7 +24,6 @@ fun NavEntryScopes(
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun Modifier.sharedNavBounds(key: String): Modifier {
     val sharedScope = LocalSharedTransitionScope.current ?: return this
@@ -33,7 +34,6 @@ fun Modifier.sharedNavBounds(key: String): Modifier {
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun Modifier.sharedNavElement(key: String): Modifier {
     val sharedScope = LocalSharedTransitionScope.current ?: return this
