@@ -12,11 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -38,7 +34,14 @@ import com.fitlog.app.data.RoutineExerciseInput
 import com.fitlog.app.data.RoutinesRepository
 import com.fitlog.app.domain.CatalogExercise
 import com.fitlog.app.domain.CatalogText
+import com.fitlog.app.ui.components.FitLogCard
+import com.fitlog.app.ui.components.FitLogIcons
+import com.fitlog.app.ui.components.Format
+import com.fitlog.app.ui.components.PrimaryAction
+import com.fitlog.app.ui.components.SecondaryAction
+import com.fitlog.app.ui.components.SectionHeader
 import com.fitlog.app.ui.motion.EmptyState
+import com.fitlog.app.ui.motion.LoadingState
 import com.fitlog.app.ui.motion.ErrorState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -58,15 +61,15 @@ fun RoutinesScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(Spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
         Text(text = "Plantillas para arrancar a entrenar", style = MaterialTheme.typography.bodySmall)
 
         state.error?.let { message -> ErrorState(message = message, onRetry = { viewModel.load() }) }
 
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        FitLogCard {
+                SectionHeader(title = "Nueva rutina")
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -82,61 +85,82 @@ fun RoutinesScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 state.formError?.let { message ->
-                    Text(text = message, color = MaterialTheme.colorScheme.error)
+                    Text(
+                        text = message,
+                        color = MaterialTheme.fitLogColors.danger,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 }
-                Button(
+                PrimaryAction(
+                    label = "Crear rutina",
+                    icon = FitLogIcons.Plus,
                     onClick = {
                         viewModel.createRoutine(name, description.ifBlank { null })
                         name = ""
                         description = ""
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text("Crear rutina") }
-            }
+                )
         }
 
         if (state.loading) {
-            Text(text = "Cargando rutinas…", style = MaterialTheme.typography.bodySmall)
+            LoadingState(message = "Cargando rutinas…")
         }
 
         if (!state.loading && state.routines.isEmpty()) {
-            EmptyState(message = "Todavía no tenés rutinas.")
+            EmptyState(
+                title = "Todavía no tenés rutinas",
+                message = "Armá tu primera plantilla con el formulario de arriba.",
+            )
+        }
+
+        if (state.routines.isNotEmpty()) {
+            SectionHeader(
+                title = "Tus rutinas",
+                trailing = Format.integer(state.routines.size) + " en total",
+            )
         }
 
         state.routines.forEach { routine ->
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(text = routine.name, fontWeight = FontWeight.SemiBold)
-                    Text(
-                        text = (routine.description ?: "Sin descripción") +
-                            " · ${routine.exercises.size} ejercicios",
-                        style = MaterialTheme.typography.bodySmall,
+            FitLogCard {
+                Text(text = routine.name, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = (routine.description ?: "Sin descripción") +
+                        " · ${Format.integer(routine.exercises.size)} ejercicios",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    PrimaryAction(
+                        label = "Entrenar",
+                        icon = FitLogIcons.Play,
+                        onClick = { onTrainRoutine(routine.id) },
+                        modifier = Modifier.weight(1f),
                     )
+                    SecondaryAction(label = "Editar", onClick = { editing = routine })
+                    SecondaryAction(
+                        label = if (expandedId == routine.id) "Ocultar" else "Ejercicios",
+                        onClick = {
+                            expandedId = if (expandedId == routine.id) null else routine.id
+                        },
+                    )
+                    SecondaryAction(
+                        label = "Eliminar",
+                        onClick = { viewModel.deleteRoutine(routine.id) },
+                    )
+                }
 
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { onTrainRoutine(routine.id) }) { Text("Entrenar") }
-                        OutlinedButton(onClick = { editing = routine }) { Text("Editar") }
-                        OutlinedButton(
-                            onClick = {
-                                expandedId = if (expandedId == routine.id) null else routine.id
-                            }
-                        ) { Text(if (expandedId == routine.id) "Ocultar" else "Ejercicios") }
-                        OutlinedButton(onClick = { viewModel.deleteRoutine(routine.id) }) {
-                            Text(text = "Eliminar", color = MaterialTheme.colorScheme.error)
-                        }
-                    }
-
-                    if (expandedId == routine.id) {
-                        RoutineExercisesEditor(
-                            routine = routine,
-                            exercises = state.exercises,
-                            formError = state.formError,
-                            onAdd = { input -> viewModel.addExercise(routine.id, input) },
-                            onRemove = viewModel::removeExercise,
-                            onMoveUp = { id -> viewModel.moveExercise(id, RoutinesRepository.MoveDirection.UP) },
-                            onMoveDown = { id -> viewModel.moveExercise(id, RoutinesRepository.MoveDirection.DOWN) },
-                        )
-                    }
+                if (expandedId == routine.id) {
+                    SectionHeader(title = "Ejercicios de la rutina")
+                    RoutineExercisesEditor(
+                        routine = routine,
+                        exercises = state.exercises,
+                        formError = state.formError,
+                        onAdd = { input -> viewModel.addExercise(routine.id, input) },
+                        onRemove = viewModel::removeExercise,
+                        onMoveUp = { id -> viewModel.moveExercise(id, RoutinesRepository.MoveDirection.UP) },
+                        onMoveDown = { id -> viewModel.moveExercise(id, RoutinesRepository.MoveDirection.DOWN) },
+                    )
                 }
             }
         }
@@ -174,7 +198,7 @@ private fun RoutineExercisesEditor(
 
     val selectedName = exercises.firstOrNull { it.id == selectedExerciseId }?.name ?: "Elegir ejercicio"
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         if (routine.exercises.isEmpty()) {
             Text(
                 text = "La rutina todavía no tiene ejercicios.",
@@ -197,20 +221,22 @@ private fun RoutineExercisesEditor(
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     TextButton(onClick = { onMoveUp(item.id) }) { Text("↑") }
                     TextButton(onClick = { onMoveDown(item.id) }) { Text("↓") }
                     TextButton(onClick = { onRemove(item.id) }) {
-                        Text(text = "✕", color = MaterialTheme.colorScheme.error)
+                        Text(text = "✕", color = MaterialTheme.fitLogColors.danger)
                     }
                 }
             }
         }
 
-        OutlinedButton(onClick = { showPicker = true }, modifier = Modifier.fillMaxWidth()) {
-            Text(selectedName)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        SecondaryAction(
+            label = selectedName,
+            icon = FitLogIcons.Dumbbell,
+            onClick = { showPicker = true },
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             OutlinedTextField(
                 value = targetSets,
                 onValueChange = { targetSets = it },
@@ -245,26 +271,34 @@ private fun RoutineExercisesEditor(
             )
         }
 
-        formError?.let { message -> Text(text = message, color = MaterialTheme.colorScheme.error) }
+        formError?.let { message ->
+            Text(
+                text = message,
+                color = MaterialTheme.fitLogColors.danger,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
 
-        Button(
+        PrimaryAction(
+            label = "Agregar ejercicio",
+            icon = FitLogIcons.Plus,
             onClick = {
-                if (selectedExerciseId.isEmpty()) return@Button
-                onAdd(
-                    RoutineExerciseInput(
-                        exerciseId = selectedExerciseId,
-                        targetSets = targetSets.trim().toIntOrNull(),
-                        targetReps = targetReps.trim().toIntOrNull(),
-                        targetWeightKg = targetWeight.trim().replace(',', '.').toDoubleOrNull(),
-                        restSeconds = restSeconds.trim().toIntOrNull(),
-                        notes = null,
+                if (selectedExerciseId.isNotEmpty()) {
+                    onAdd(
+                        RoutineExerciseInput(
+                            exerciseId = selectedExerciseId,
+                            targetSets = targetSets.trim().toIntOrNull(),
+                            targetReps = targetReps.trim().toIntOrNull(),
+                            targetWeightKg = targetWeight.trim().replace(',', '.').toDoubleOrNull(),
+                            restSeconds = restSeconds.trim().toIntOrNull(),
+                            notes = null,
+                        )
                     )
-                )
-                targetWeight = ""
-                restSeconds = ""
+                    targetWeight = ""
+                    restSeconds = ""
+                }
             },
-            modifier = Modifier.fillMaxWidth(),
-        ) { Text("Agregar ejercicio") }
+        )
     }
 
     if (showPicker) {
@@ -296,7 +330,7 @@ private fun RoutineExercisePickerDialog(
         onDismissRequest = onDismiss,
         title = { Text("Elegir ejercicio") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
@@ -337,7 +371,7 @@ private fun EditRoutineDialog(
         onDismissRequest = onDismiss,
         title = { Text("Editar rutina") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
