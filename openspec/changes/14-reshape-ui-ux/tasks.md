@@ -47,4 +47,6 @@
 - [x] 6.4 Documentar el sistema de diseño en `docs/diseno.md` y enlazarlo desde el README
 - [x] 6.6 Migrar las ocho pantallas restantes de Android al sistema de diseño (tarjetas, encabezados, tiles, acciones y estados)
 - [x] 6.7 Unificar los errores de carga con `ErrorState` y reintento, y los estados de carga con `LoadingState`
+- [x] 6.8 Repetir la última serie con un toque y mostrar el descanso desde la última serie (Android + web)
+- [x] 6.9 Pasar el detalle del entrenamiento de diálogo a pantalla propia (Android + web)
 - [ ] 6.5 Revisar el resultado en el APK y en la web con el usuario y ajustar lo que pida
