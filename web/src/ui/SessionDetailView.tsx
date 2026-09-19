@@ -1,10 +1,13 @@
 import type { WorkoutState } from '@/state/useWorkout';
 import {
+  formatDecimal,
+  formatDuration,
   formatDurationLong,
   formatInteger,
   formatKg,
   formatVolumeKg,
 } from '@/domain/format';
+import { buildSessionPace } from '@/domain/workout';
 import { IconCalendar, IconDumbbell, IconStop } from '@/ui/icons';
 import {
   Card,
@@ -34,6 +37,9 @@ export function SessionDetailView({ workout }: { workout: WorkoutState }) {
   }
 
   const session = detail.session;
+  const pace = buildSessionPace(
+    detail.sets.map((set) => ({ createdAtMs: set.createdAtMs, isWarmup: set.isWarmup }))
+  );
   const byExercise = new Map<string, typeof detail.sets>();
   for (const set of detail.sets) {
     const current = byExercise.get(set.exerciseName) ?? [];
@@ -70,6 +76,30 @@ export function SessionDetailView({ workout }: { workout: WorkoutState }) {
           icon={<IconDumbbell className="size-4" />}
         />
       </div>
+
+      {pace.workingSets > 0 ? (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+          <StatTile
+            label="Duración real"
+            value={formatDuration(pace.spanMs)}
+            hint="de la primera a la última serie"
+          />
+          {pace.setsPerHour === null ? null : (
+            <StatTile
+              label="Ritmo"
+              value={formatDecimal(pace.setsPerHour, 1)}
+              unit="series/h"
+            />
+          )}
+          {pace.averageRestMs === null ? null : (
+            <StatTile
+              label="Descanso promedio"
+              value={formatDuration(pace.averageRestMs)}
+              hint="entre series efectivas"
+            />
+          )}
+        </div>
+      ) : null}
 
       {session.notes ? (
         <Card className="!p-4">

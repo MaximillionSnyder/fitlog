@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fitlog.app.data.WorkoutSet
+import com.fitlog.app.domain.PaceSetInput
 import com.fitlog.app.domain.WorkoutSummary
 import com.fitlog.app.ui.components.FitLogCard
 import com.fitlog.app.ui.components.Format
@@ -65,6 +66,9 @@ fun SessionDetailScreen(
 
         if (detail != null) {
             val session = detail.session
+            val pace = WorkoutSummary.pace(
+                detail.sets.map { PaceSetInput(createdAtMs = it.createdAtMs, isWarmup = it.isWarmup) }
+            )
             item {
                 Text(
                     text = formatSessionTimestamp(session.startedAt),
@@ -93,6 +97,37 @@ fun SessionDetailScreen(
                     unit = "kg",
                     accent = MaterialTheme.fitLogColors.data,
                 )
+            }
+
+            if (pace.workingSets > 0) {
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                        StatTile(
+                            label = "Duración real",
+                            value = Format.duration(pace.spanMs),
+                            deltaLabel = "de la primera a la última serie",
+                            modifier = Modifier.weight(1f),
+                        )
+                        pace.setsPerHour?.let { rate ->
+                            StatTile(
+                                label = "Ritmo",
+                                value = Format.decimal(rate, 1),
+                                unit = "series/h",
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+            }
+
+            pace.averageRestMs?.let { rest ->
+                item {
+                    StatTile(
+                        label = "Descanso promedio",
+                        value = Format.duration(rest),
+                        deltaLabel = "entre series efectivas",
+                    )
+                }
             }
 
             if (session.routineName != null) {
