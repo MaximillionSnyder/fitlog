@@ -1,0 +1,592 @@
+{
+  "version": 1,
+  "description": "Casos de prueba compartidos del motor de consejos. Se ejecutan en Android (JUnit) y Web (Vitest) y comparan consejos, orden y mensajes exactos.",
+  "rules": {
+    "effective_set": "is_warmup = 0 y dentro del rango [from_ms, to_ms]; las eliminadas las filtra la consulta",
+    "progress": ">= 3 sesiones del ejercicio con 1RM y la ultima supera a la primera; valor = variacion porcentual redondeada a 1 decimal",
+    "stagnation": ">= 4 sesiones del ejercicio con 1RM y |variacion| <= 0.5 %; valor = cantidad de sesiones",
+    "imbalance": ">= 2 grupos con volumen y el mayor con participacion >= 50 %; valor = participacion",
+    "consistency": "sesiones del periodo / (period_days / 7); >= 3 por semana es logro; < 1.5 es advertencia con la cantidad de sesiones",
+    "incomplete_data": ">= 5 series efectivas y >= 30 % sin peso o sin repeticiones; valor = porcentaje",
+    "order": "severidad (warning, info, success), luego kind alfabetico, luego subject alfabetico (nulo como cadena vacia)",
+    "numbers": "redondeo a 1 decimal y sin decimales cuando el valor es entero"
+  },
+  "cases": [
+    {
+      "name": "sin datos en el periodo",
+      "sets": [],
+      "groups": {},
+      "range": {
+        "from_ms": 1697408000000,
+        "to_ms": 1700000000000
+      },
+      "period_days": 30,
+      "expected": []
+    },
+    {
+      "name": "progreso con frecuencia baja",
+      "sets": [
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s1",
+          "started_at_ms": 1698272000000,
+          "weight_kg": 100,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s2",
+          "started_at_ms": 1699136000000,
+          "weight_kg": 102.5,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s3",
+          "started_at_ms": 1699827200000,
+          "weight_kg": 105,
+          "reps": 8,
+          "is_warmup": 0
+        }
+      ],
+      "groups": {
+        "ex-a": "pecho"
+      },
+      "range": {
+        "from_ms": 1697408000000,
+        "to_ms": 1700000000000
+      },
+      "period_days": 30,
+      "expected": [
+        {
+          "kind": "consistency",
+          "severity": "warning",
+          "subject": null,
+          "value": 3,
+          "message": "Poca frecuencia: 3 sesiones en el periodo"
+        },
+        {
+          "kind": "progress",
+          "severity": "success",
+          "subject": "ex-a",
+          "value": 5,
+          "message": "Tu 1RM estimado subió 5% en 3 sesiones"
+        }
+      ]
+    },
+    {
+      "name": "estancamiento",
+      "sets": [
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s1",
+          "started_at_ms": 1697840000000,
+          "weight_kg": 100,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s2",
+          "started_at_ms": 1698444800000,
+          "weight_kg": 100,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s3",
+          "started_at_ms": 1699136000000,
+          "weight_kg": 100,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s4",
+          "started_at_ms": 1699740800000,
+          "weight_kg": 100,
+          "reps": 8,
+          "is_warmup": 0
+        }
+      ],
+      "groups": {
+        "ex-a": "pecho"
+      },
+      "range": {
+        "from_ms": 1697408000000,
+        "to_ms": 1700000000000
+      },
+      "period_days": 30,
+      "expected": [
+        {
+          "kind": "consistency",
+          "severity": "warning",
+          "subject": null,
+          "value": 4,
+          "message": "Poca frecuencia: 4 sesiones en el periodo"
+        },
+        {
+          "kind": "stagnation",
+          "severity": "warning",
+          "subject": "ex-a",
+          "value": 4,
+          "message": "Sin progreso de 1RM en las últimas 4 sesiones"
+        }
+      ]
+    },
+    {
+      "name": "desbalance muscular",
+      "sets": [
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s1",
+          "started_at_ms": 1699568000000,
+          "weight_kg": 100,
+          "reps": 10,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-b",
+          "session_id": "s1",
+          "started_at_ms": 1699568000000,
+          "weight_kg": 30,
+          "reps": 10,
+          "is_warmup": 0
+        }
+      ],
+      "groups": {
+        "ex-a": "pecho",
+        "ex-b": "espalda"
+      },
+      "range": {
+        "from_ms": 1697408000000,
+        "to_ms": 1700000000000
+      },
+      "period_days": 30,
+      "expected": [
+        {
+          "kind": "consistency",
+          "severity": "warning",
+          "subject": null,
+          "value": 1,
+          "message": "Poca frecuencia: 1 sesión en el periodo"
+        },
+        {
+          "kind": "imbalance",
+          "severity": "warning",
+          "subject": "pecho",
+          "value": 76.9,
+          "message": "Un grupo concentra 76.9% del volumen del periodo"
+        }
+      ]
+    },
+    {
+      "name": "frecuencia alta con progreso",
+      "sets": [
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s1",
+          "started_at_ms": 1697580800000,
+          "weight_kg": 100,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s2",
+          "started_at_ms": 1697753600000,
+          "weight_kg": 101,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s3",
+          "started_at_ms": 1697926400000,
+          "weight_kg": 102,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s4",
+          "started_at_ms": 1698099200000,
+          "weight_kg": 103,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s5",
+          "started_at_ms": 1698272000000,
+          "weight_kg": 104,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s6",
+          "started_at_ms": 1698444800000,
+          "weight_kg": 105,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s7",
+          "started_at_ms": 1698617600000,
+          "weight_kg": 106,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s8",
+          "started_at_ms": 1698790400000,
+          "weight_kg": 107,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s9",
+          "started_at_ms": 1698963200000,
+          "weight_kg": 108,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s10",
+          "started_at_ms": 1699136000000,
+          "weight_kg": 109,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s11",
+          "started_at_ms": 1699308800000,
+          "weight_kg": 110,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s12",
+          "started_at_ms": 1699481600000,
+          "weight_kg": 111,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s13",
+          "started_at_ms": 1699654400000,
+          "weight_kg": 112,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s14",
+          "started_at_ms": 1699827200000,
+          "weight_kg": 113,
+          "reps": 8,
+          "is_warmup": 0
+        }
+      ],
+      "groups": {
+        "ex-a": "pecho"
+      },
+      "range": {
+        "from_ms": 1697408000000,
+        "to_ms": 1700000000000
+      },
+      "period_days": 30,
+      "expected": [
+        {
+          "kind": "consistency",
+          "severity": "success",
+          "subject": null,
+          "value": 3.3,
+          "message": "Buena frecuencia: 3.3 sesiones por semana"
+        },
+        {
+          "kind": "progress",
+          "severity": "success",
+          "subject": "ex-a",
+          "value": 12.9,
+          "message": "Tu 1RM estimado subió 12.9% en 14 sesiones"
+        }
+      ]
+    },
+    {
+      "name": "datos incompletos",
+      "sets": [
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s1",
+          "started_at_ms": 1699568000000,
+          "weight_kg": null,
+          "reps": 10,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s1",
+          "started_at_ms": 1699568000000,
+          "weight_kg": 80,
+          "reps": null,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s1",
+          "started_at_ms": 1699568000000,
+          "weight_kg": 80,
+          "reps": 10,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s1",
+          "started_at_ms": 1699568000000,
+          "weight_kg": 80,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s1",
+          "started_at_ms": 1699568000000,
+          "weight_kg": 80,
+          "reps": 6,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s1",
+          "started_at_ms": 1699568000000,
+          "weight_kg": 80,
+          "reps": 5,
+          "is_warmup": 0
+        }
+      ],
+      "groups": {
+        "ex-a": "pecho"
+      },
+      "range": {
+        "from_ms": 1697408000000,
+        "to_ms": 1700000000000
+      },
+      "period_days": 30,
+      "expected": [
+        {
+          "kind": "consistency",
+          "severity": "warning",
+          "subject": null,
+          "value": 1,
+          "message": "Poca frecuencia: 1 sesión en el periodo"
+        },
+        {
+          "kind": "incomplete_data",
+          "severity": "info",
+          "subject": null,
+          "value": 33.3,
+          "message": "33.3% de las series no tienen peso y repeticiones"
+        }
+      ]
+    },
+    {
+      "name": "orden por severidad con logro e informacion",
+      "sets": [
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s1",
+          "started_at_ms": 1698272000000,
+          "weight_kg": 100,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s2",
+          "started_at_ms": 1699136000000,
+          "weight_kg": 102.5,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s3",
+          "started_at_ms": 1699827200000,
+          "weight_kg": 105,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-b",
+          "session_id": "s1",
+          "started_at_ms": 1699827200000,
+          "weight_kg": null,
+          "reps": 12,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-b",
+          "session_id": "s1",
+          "started_at_ms": 1699827200000,
+          "weight_kg": null,
+          "reps": 10,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-b",
+          "session_id": "s1",
+          "started_at_ms": 1699827200000,
+          "weight_kg": null,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-c",
+          "session_id": "s1",
+          "started_at_ms": 1699827200000,
+          "weight_kg": null,
+          "reps": 5,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-c",
+          "session_id": "s1",
+          "started_at_ms": 1699827200000,
+          "weight_kg": null,
+          "reps": 5,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-c",
+          "session_id": "s1",
+          "started_at_ms": 1699827200000,
+          "weight_kg": null,
+          "reps": 5,
+          "is_warmup": 0
+        }
+      ],
+      "groups": {
+        "ex-a": "pecho",
+        "ex-b": "espalda",
+        "ex-c": "core"
+      },
+      "range": {
+        "from_ms": 1697408000000,
+        "to_ms": 1700000000000
+      },
+      "period_days": 30,
+      "expected": [
+        {
+          "kind": "consistency",
+          "severity": "warning",
+          "subject": null,
+          "value": 3,
+          "message": "Poca frecuencia: 3 sesiones en el periodo"
+        },
+        {
+          "kind": "incomplete_data",
+          "severity": "info",
+          "subject": null,
+          "value": 66.7,
+          "message": "66.7% de las series no tienen peso y repeticiones"
+        },
+        {
+          "kind": "progress",
+          "severity": "success",
+          "subject": "ex-a",
+          "value": 5,
+          "message": "Tu 1RM estimado subió 5% en 3 sesiones"
+        }
+      ]
+    },
+    {
+      "name": "calentamientos no cuentan",
+      "sets": [
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s1",
+          "started_at_ms": 1698272000000,
+          "weight_kg": 200,
+          "reps": 1,
+          "is_warmup": 1
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s1",
+          "started_at_ms": 1698272000000,
+          "weight_kg": 100,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s2",
+          "started_at_ms": 1699136000000,
+          "weight_kg": 200,
+          "reps": 1,
+          "is_warmup": 1
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s2",
+          "started_at_ms": 1699136000000,
+          "weight_kg": 105,
+          "reps": 8,
+          "is_warmup": 0
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s3",
+          "started_at_ms": 1699827200000,
+          "weight_kg": 200,
+          "reps": 1,
+          "is_warmup": 1
+        },
+        {
+          "exercise_id": "ex-a",
+          "session_id": "s3",
+          "started_at_ms": 1699827200000,
+          "weight_kg": 110,
+          "reps": 8,
+          "is_warmup": 0
+        }
+      ],
+      "groups": {
+        "ex-a": "pecho"
+      },
+      "range": {
+        "from_ms": 1697408000000,
+        "to_ms": 1700000000000
+      },
+      "period_days": 30,
+      "expected": [
+        {
+          "kind": "consistency",
+          "severity": "warning",
+          "subject": null,
+          "value": 3,
+          "message": "Poca frecuencia: 3 sesiones en el periodo"
+        },
+        {
+          "kind": "progress",
+          "severity": "success",
+          "subject": "ex-a",
+          "value": 9.9,
+          "message": "Tu 1RM estimado subió 9.9% en 3 sesiones"
+        }
+      ]
+    }
+  ]
+}

@@ -4,11 +4,13 @@ import { useDatabase } from '@/db/bootstrap';
 import { useDbStatusStore } from '@/state/dbStatus';
 import { useCatalog } from '@/state/useCatalog';
 import { useComparisons } from '@/state/useComparisons';
+import { useTips } from '@/state/useTips';
 import { useProgress } from '@/state/useProgress';
 import { useRoutines } from '@/state/useRoutines';
 import { useWorkout } from '@/state/useWorkout';
 import CatalogView from '@/ui/CatalogView';
 import ComparisonsView from '@/ui/ComparisonsView';
+import TipsView from '@/ui/TipsView';
 import ProgressView from '@/ui/ProgressView';
 import RoutinesView from '@/ui/RoutinesView';
 import WorkoutView from '@/ui/WorkoutView';
@@ -20,7 +22,14 @@ const stateLabels: Record<string, string> = {
   error: 'Error al iniciar la base de datos',
 };
 
-type View = 'inicio' | 'catalogo' | 'entrenar' | 'rutinas' | 'progreso' | 'comparativas';
+type View =
+  | 'inicio'
+  | 'catalogo'
+  | 'entrenar'
+  | 'rutinas'
+  | 'progreso'
+  | 'comparativas'
+  | 'tips';
 
 export default function App() {
   const db = useDatabase();
@@ -30,6 +39,7 @@ export default function App() {
   const routines = useRoutines(db);
   const progress = useProgress(db);
   const comparisons = useComparisons(db);
+  const tips = useTips(db);
   const [view, setView] = useState<View>('inicio');
 
   return (
@@ -47,6 +57,7 @@ export default function App() {
               ['rutinas', 'Rutinas'],
               ['progreso', 'Progreso'],
               ['comparativas', 'Comparativas'],
+              ['tips', 'Tips'],
               ['catalogo', 'Catálogo'],
             ] as const
           ).map(([target, label]) => (
@@ -104,6 +115,7 @@ export default function App() {
       {view === 'catalogo' && <CatalogView catalog={catalog} />}
       {view === 'entrenar' && <WorkoutView workout={workout} catalog={catalog} />}
       {view === 'progreso' && <ProgressView progress={progress} catalog={catalog} />}
+      {view === 'tips' && <TipsView tips={tips} catalog={catalog} />}
       {view === 'comparativas' && (
         <ComparisonsView comparisons={comparisons} catalog={catalog} />
       )}
