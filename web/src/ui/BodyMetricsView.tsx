@@ -18,12 +18,19 @@ import {
 } from '@/domain/body';
 import type { RangePreset } from '@/domain/progress';
 import type { BodyMetricsState } from '@/state/useBodyMetrics';
+import { IconPlus, IconScale } from '@/ui/icons';
+import {
+  Button,
+  Card,
+  Chip,
+  EmptyState,
+  LoadingState,
+  SectionHeader,
+  StatTile,
+} from '@/ui/primitives';
 
 const inputClass =
-  'w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-500 focus:outline-none';
-
-const buttonClass =
-  'rounded-lg bg-sky-500 px-3 py-2 text-sm font-medium text-slate-950 hover:bg-sky-400 disabled:opacity-50';
+  'w-full rounded-field border border-line bg-surface-low px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none';
 
 const presetLabels: Record<RangePreset, string> = {
   '30d': '30 días',
@@ -50,6 +57,7 @@ function msToDate(value: number): string {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
+/** Medidas corporales: alta, edición, borrado y evolución de la medida elegida. */
 export default function BodyMetricsView({ body }: { body: BodyMetricsState }) {
   const [value, setValue] = useState('');
   const [measuredAt, setMeasuredAt] = useState(todayInputValue());
@@ -61,6 +69,7 @@ export default function BodyMetricsView({ body }: { body: BodyMetricsState }) {
 
   const unit = unitForKind(body.kind);
   const stats = body.stats;
+  const kindLabel = metricKindLabel(body.kind);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -95,245 +104,216 @@ export default function BodyMetricsView({ body }: { body: BodyMetricsState }) {
   }
 
   return (
-    <section className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-xl font-semibold text-white">Medidas</h2>
-        <p className="text-xs text-slate-400">Peso corporal y medidas, con su evolución.</p>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col gap-4">
+      <div className="fl-scroll-x flex gap-2 overflow-x-auto pb-1">
         {METRIC_KINDS.map((kind) => (
-          <button
+          <Chip
             key={kind}
-            type="button"
+            label={metricKindLabel(kind as MetricKind)}
+            active={body.kind === kind}
             onClick={() => body.selectKind(kind as MetricKind)}
-            className={`rounded-full border px-3 py-1 text-xs ${
-              body.kind === kind
-                ? 'border-sky-400 bg-sky-400/20 text-sky-200'
-                : 'border-slate-700 bg-slate-900/60 text-slate-300 hover:border-slate-500'
-            }`}
-          >
-            {metricKindLabel(kind as MetricKind)}
-          </button>
+          />
         ))}
       </div>
 
-      <form
-        onSubmit={submit}
-        className="flex flex-col gap-3 rounded-2xl border border-slate-700/60 bg-slate-900/60 p-4"
-      >
-        <div className="grid grid-cols-2 gap-3">
+      <Card>
+        <SectionHeader title={`Registrar ${kindLabel.toLowerCase()}`} />
+        <form onSubmit={submit} className="mt-3 flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              className={inputClass}
+              inputMode="decimal"
+              aria-label={`Valor en ${unit}`}
+              placeholder={`Valor (${unit})`}
+              value={value}
+              onChange={(event) => setValue(event.target.value)}
+            />
+            <input
+              className={inputClass}
+              type="date"
+              aria-label="Fecha"
+              value={measuredAt}
+              onChange={(event) => setMeasuredAt(event.target.value)}
+            />
+          </div>
           <input
             className={inputClass}
-            inputMode="decimal"
-            placeholder={`Valor (${unit})`}
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
+            aria-label="Notas"
+            placeholder="Notas (opcional)"
+            value={notes}
+            onChange={(event) => setNotes(event.target.value)}
           />
-          <input
-            className={inputClass}
-            type="date"
-            value={measuredAt}
-            onChange={(event) => setMeasuredAt(event.target.value)}
-          />
-        </div>
-        <input
-          className={inputClass}
-          placeholder="Notas (opcional)"
-          value={notes}
-          onChange={(event) => setNotes(event.target.value)}
-        />
-        {(formError ?? body.error) && (
-          <p className="text-sm text-rose-400">{formError ?? body.error}</p>
-        )}
-        <button type="submit" className={`${buttonClass} self-start`}>
-          Registrar {metricKindLabel(body.kind).toLowerCase()}
-        </button>
-      </form>
+          {(formError ?? body.error) ? (
+            <p className="bg-danger-soft text-danger rounded-field px-3 py-2 text-sm">
+              {formError ?? body.error}
+            </p>
+          ) : null}
+          <Button type="submit" icon={<IconPlus className="size-4" />} className="self-start">
+            Registrar {kindLabel.toLowerCase()}
+          </Button>
+        </form>
+      </Card>
 
       <div className="flex flex-wrap gap-2">
         {(Object.keys(presetLabels) as RangePreset[]).map((preset) => (
-          <button
+          <Chip
             key={preset}
-            type="button"
+            label={presetLabels[preset]}
+            active={body.preset === preset}
             onClick={() => body.selectPreset(preset)}
-            className={`rounded-full border px-3 py-1 text-xs ${
-              body.preset === preset
-                ? 'border-slate-400 bg-slate-700/60 text-white'
-                : 'border-slate-700 bg-slate-900/60 text-slate-300 hover:border-slate-500'
-            }`}
-          >
-            {presetLabels[preset]}
-          </button>
+          />
         ))}
       </div>
 
-      {body.loading && <p className="text-sm text-slate-400">Cargando medidas…</p>}
+      {body.loading ? <LoadingState message="Cargando medidas…" /> : null}
 
-      <div className="grid grid-cols-4 gap-3 rounded-2xl border border-slate-700/60 bg-slate-900/60 p-4 text-center">
-        <div>
-          <p className="text-xs text-slate-500">Última</p>
-          <p className="font-mono text-sm">
-            {stats.latest === null ? '—' : formatMetricValue(stats.latest, unit)}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs text-slate-500">Mín</p>
-          <p className="font-mono text-sm">
-            {stats.min === null ? '—' : formatMetricValue(stats.min, unit)}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs text-slate-500">Máx</p>
-          <p className="font-mono text-sm">
-            {stats.max === null ? '—' : formatMetricValue(stats.max, unit)}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs text-slate-500">Variación</p>
-          <p
-            className={`font-mono text-sm ${
-              stats.deltaAbs === null
-                ? 'text-slate-400'
-                : stats.deltaAbs < 0
-                  ? 'text-emerald-300'
-                  : stats.deltaAbs > 0
-                    ? 'text-rose-300'
-                    : 'text-slate-200'
-            }`}
-          >
-            {stats.deltaAbs === null
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile
+          label="Última"
+          value={stats.latest === null ? '—' : formatMetricValue(stats.latest, unit)}
+          icon={<IconScale className="size-4" />}
+          tone="data"
+        />
+        <StatTile
+          label="Mínima"
+          value={stats.min === null ? '—' : formatMetricValue(stats.min, unit)}
+        />
+        <StatTile
+          label="Máxima"
+          value={stats.max === null ? '—' : formatMetricValue(stats.max, unit)}
+        />
+        <StatTile
+          label="Variación"
+          value={
+            stats.deltaAbs === null
               ? '—'
-              : `${stats.deltaAbs > 0 ? '+' : ''}${stats.deltaAbs} ${unit}`}
-          </p>
-        </div>
+              : `${stats.deltaAbs > 0 ? '+' : ''}${stats.deltaAbs} ${unit}`
+          }
+          hint={stats.count === 0 ? 'Sin mediciones' : `${stats.count} mediciones`}
+        />
       </div>
 
-      {!body.loading && body.series.length === 0 && (
-        <p className="rounded-2xl border border-dashed border-slate-700 p-6 text-center text-sm text-slate-400">
-          No hay medidas de {metricKindLabel(body.kind).toLowerCase()} en el periodo elegido.
-        </p>
-      )}
+      {!body.loading && body.series.length === 0 ? (
+        <EmptyState
+          title="Sin medidas en el periodo"
+          message={`No hay medidas de ${kindLabel.toLowerCase()} en el periodo elegido. Registrá una arriba o ampliá el rango.`}
+        />
+      ) : null}
 
-      {body.series.length > 0 && (
-        <div className="rounded-2xl border border-slate-700/60 bg-slate-900/60 p-4">
+      {body.series.length > 0 ? (
+        <Card className="!p-4">
           <div className="flex items-baseline justify-between">
-            <p className="text-xs text-slate-400">
-              {metricKindLabel(body.kind)} · {body.series.length} mediciones
+            <p className="text-muted text-xs">
+              {kindLabel} · {body.series.length} mediciones
             </p>
-            <p className="font-mono text-lg text-sky-300">
+            <p className="text-data fl-num text-lg font-semibold">
               {stats.latest === null ? '—' : formatMetricValue(stats.latest, unit)}
             </p>
           </div>
-          <div className="mt-3 h-56 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="mt-3">
+            <ResponsiveContainer width="100%" height={224}>
               <LineChart
                 data={body.series.map((point) => ({
-                  label: msToDate(point.measuredAtMs).slice(0, 5),
+                  label: msToDate(point.measuredAtMs).slice(5),
                   value: point.value,
                 }))}
                 margin={{ top: 8, right: 8, bottom: 0, left: -12 }}
               >
-                <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
-                <XAxis dataKey="label" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} width={56} domain={['auto', 'auto']} />
+                <CartesianGrid stroke="var(--fl-line)" strokeDasharray="3 3" />
+                <XAxis dataKey="label" tick={{ fill: 'var(--fl-muted)', fontSize: 11 }} />
+                <YAxis
+                  tick={{ fill: 'var(--fl-muted)', fontSize: 11 }}
+                  width={56}
+                  domain={['auto', 'auto']}
+                />
                 <Tooltip
                   contentStyle={{
-                    background: '#0f172a',
-                    border: '1px solid #334155',
-                    borderRadius: 8,
+                    background: 'var(--fl-surface)',
+                    border: '1px solid var(--fl-line-strong)',
+                    borderRadius: 12,
                     fontSize: 12,
+                    color: 'var(--fl-ink)',
                   }}
-                  labelStyle={{ color: '#e2e8f0' }}
+                  labelStyle={{ color: 'var(--fl-muted)' }}
                   formatter={(chartValue) => [
                     formatMetricValue(Number(chartValue ?? 0), unit),
-                    metricKindLabel(body.kind),
+                    kindLabel,
                   ]}
                 />
                 <Line
                   type="monotone"
                   dataKey="value"
-                  stroke="#38bdf8"
+                  stroke="var(--fl-data)"
                   strokeWidth={2}
-                  dot={{ r: 3, fill: '#38bdf8' }}
+                  dot={{ r: 3, fill: 'var(--fl-data)' }}
                   activeDot={{ r: 5 }}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
-        </div>
-      )}
+        </Card>
+      ) : null}
 
-      {body.series.length > 0 && (
-        <ul className="flex flex-col gap-1 text-xs text-slate-400">
-          {[...body.series].reverse().map((point) => (
-            <li
-              key={point.id}
-              className="flex items-center justify-between gap-2 rounded-lg bg-slate-900/40 px-3 py-2"
-            >
-              {editingId === point.id ? (
-                <>
-                  <input
-                    className={inputClass}
-                    inputMode="decimal"
-                    value={editValue}
-                    onChange={(event) => setEditValue(event.target.value)}
-                  />
-                  <input
-                    className={inputClass}
-                    type="date"
-                    value={editDate}
-                    onChange={(event) => setEditDate(event.target.value)}
-                  />
-                  <span className="flex gap-2">
-                    <button
-                      type="button"
-                      className="text-xs text-emerald-300"
-                      onClick={() => void saveEdit(point.id)}
-                    >
-                      Guardar
-                    </button>
-                    <button
-                      type="button"
-                      className="text-xs text-slate-400"
-                      onClick={() => setEditingId(null)}
-                    >
-                      Cancelar
-                    </button>
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="font-mono">{msToDate(point.measuredAtMs)}</span>
-                  <span className="flex items-center gap-3">
-                    <span className="font-mono text-slate-200">
-                      {formatMetricValue(point.value, point.unit)}
+      {body.series.length > 0 ? (
+        <>
+          <SectionHeader title="Mediciones" trailing={`${body.series.length}`} />
+          <ul className="flex flex-col gap-2">
+            {[...body.series].reverse().map((point) => (
+              <li
+                key={point.id}
+                className="rounded-tile border-line bg-surface flex flex-wrap items-center justify-between gap-2 border px-4 py-2.5 text-xs"
+              >
+                {editingId === point.id ? (
+                  <>
+                    <input
+                      className={inputClass}
+                      inputMode="decimal"
+                      aria-label="Valor"
+                      value={editValue}
+                      onChange={(event) => setEditValue(event.target.value)}
+                    />
+                    <input
+                      className={inputClass}
+                      type="date"
+                      aria-label="Fecha"
+                      value={editDate}
+                      onChange={(event) => setEditDate(event.target.value)}
+                    />
+                    <span className="flex gap-2">
+                      <Button onClick={() => void saveEdit(point.id)}>Guardar</Button>
+                      <Button variant="secondary" onClick={() => setEditingId(null)}>
+                        Cancelar
+                      </Button>
                     </span>
-                    <button
-                      type="button"
-                      className="text-xs text-sky-300 hover:text-sky-200"
-                      onClick={() => {
-                        setEditingId(point.id);
-                        setEditValue(String(point.value));
-                        setEditDate(msToDate(point.measuredAtMs));
-                      }}
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      className="text-xs text-rose-300 hover:text-rose-200"
-                      onClick={() => void body.remove(point.id)}
-                    >
-                      Eliminar
-                    </button>
-                  </span>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-muted fl-num">{msToDate(point.measuredAtMs)}</span>
+                    <span className="flex items-center gap-3">
+                      <span className="text-ink fl-num">
+                        {formatMetricValue(point.value, point.unit)}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setEditingId(point.id);
+                          setEditValue(String(point.value));
+                          setEditDate(msToDate(point.measuredAtMs));
+                        }}
+                      >
+                        Editar
+                      </Button>
+                      <Button variant="danger" onClick={() => void body.remove(point.id)}>
+                        Eliminar
+                      </Button>
+                    </span>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+    </div>
   );
 }

@@ -1,45 +1,38 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useDatabase } from '@/db/bootstrap';
-import { useDbStatusStore } from '@/state/dbStatus';
 import { useBackup } from '@/state/useBackup';
 import { useBodyMetrics } from '@/state/useBodyMetrics';
 import { useCatalog } from '@/state/useCatalog';
 import { useComparisons } from '@/state/useComparisons';
-import { useTips } from '@/state/useTips';
 import { useProgress } from '@/state/useProgress';
 import { useRoutines } from '@/state/useRoutines';
+import { useTips } from '@/state/useTips';
 import { useWorkout } from '@/state/useWorkout';
-import BackupView from '@/ui/BackupView';
+import { AppShell } from '@/ui/AppShell';
+import { HomeView } from '@/ui/HomeView';
+import { MoreView } from '@/ui/MoreView';
+import { SettingsView } from '@/ui/SettingsView';
 import BodyMetricsView from '@/ui/BodyMetricsView';
+import BackupView from '@/ui/BackupView';
 import CatalogView from '@/ui/CatalogView';
 import ComparisonsView from '@/ui/ComparisonsView';
-import TipsView from '@/ui/TipsView';
 import ProgressView from '@/ui/ProgressView';
 import RoutinesView from '@/ui/RoutinesView';
+import TipsView from '@/ui/TipsView';
 import WorkoutView from '@/ui/WorkoutView';
+import type { View } from '@/ui/destinations';
+import { isTopLevel } from '@/ui/destinations';
+import { useTheme } from '@/ui/theme';
 
-const stateLabels: Record<string, string> = {
-  iniciando: 'Iniciando…',
-  listo: 'Base de datos lista',
-  'sin-opfs': 'Este navegador no soporta OPFS',
-  error: 'Error al iniciar la base de datos',
-};
-
-type View =
-  | 'inicio'
-  | 'catalogo'
-  | 'entrenar'
-  | 'rutinas'
-  | 'progreso'
-  | 'comparativas'
-  | 'tips'
-  | 'medidas'
-  | 'respaldo';
-
+/**
+ * Raiz de la app web: un solo estado de navegacion, los hooks de datos y el shell.
+ *
+ * El shell provee el encabezado y la navegacion (rail en escritorio, barra inferior en movil); las
+ * vistas ya no dibujan su propio encabezado.
+ */
 export default function App() {
   const db = useDatabase();
-  const status = useDbStatusStore((state) => state.status);
   const catalog = useCatalog(db);
   const workout = useWorkout(db);
   const routines = useRoutines(db);
@@ -48,92 +41,63 @@ export default function App() {
   const tips = useTips(db);
   const body = useBodyMetrics(db);
   const backup = useBackup(db);
+  const { choice, isDark, setChoice, toggle } = useTheme();
+
   const [view, setView] = useState<View>('inicio');
+  const [history, setHistory] = useState<readonly View[]>([]);
+
+  const navigate = useCallback(
+    (next: View) => {
+      if (next === view) return;
+      if (isTopLevel(next)) {
+        // Cambiar de pestana reinicia el recorrido: la barra inferior no es una pila.
+        setHistory([]);
+      } else {
+        setHistory((current) => [...current, view]);
+      }
+      setView(next);
+      window.scrollTo({ top: 0 });
+    },
+    [view]
+  );
+
+  const goBack = useCallback(() => {
+    setHistory((current) => {
+      if (current.length === 0) {
+        setView('inicio');
+        return current;
+      }
+      setView(current[current.length - 1] ?? 'inicio');
+      return current.slice(0, -1);
+    });
+  }, []);
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-6 p-6">
-      <header className="flex items-end justify-between gap-4 pt-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">FitLog</h1>
-          <p className="text-sm text-slate-400">Registro de entrenamiento local-first</p>
-        </div>
-        <nav className="flex gap-2 text-sm">
-          {(
-            [
-              ['inicio', 'Inicio'],
-              ['entrenar', 'Entrenar'],
-              ['rutinas', 'Rutinas'],
-              ['progreso', 'Progreso'],
-              ['comparativas', 'Comparativas'],
-              ['tips', 'Tips'],
-              ['medidas', 'Medidas'],
-              ['respaldo', 'Respaldo'],
-              ['catalogo', 'Catálogo'],
-            ] as const
-          ).map(([target, label]) => (
-            <button
-              key={target}
-              type="button"
-              onClick={() => setView(target)}
-              className={`rounded-lg px-3 py-1.5 ${
-                view === target ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-      </header>
-
+    <AppShell
+      view={view}
+      onNavigate={navigate}
+      onBack={goBack}
+      canGoBack={history.length > 0}
+      isDark={isDark}
+      onToggleTheme={toggle}
+    >
       {view === 'inicio' && (
-        <section className="rounded-2xl border border-slate-700/60 bg-slate-900/60 p-5">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-500">Estado</h2>
-          <p className="mt-2 text-lg font-medium">{stateLabels[status.state] ?? status.state}</p>
-
-          {status.state === 'listo' && (
-            <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <dt className="text-slate-500">Esquema</dt>
-                <dd className="font-mono">v{status.schemaVersion}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-500">Persistencia</dt>
-                <dd className="font-mono">{status.persistence}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-500">SQLite</dt>
-                <dd className="font-mono">{status.sqliteVersion}</dd>
-              </div>
-              <div>
-                <dt className="text-slate-500">Ejercicios</dt>
-                <dd className="font-mono">{catalog.snapshot.exercises.length}</dd>
-              </div>
-            </dl>
-          )}
-
-          {status.state === 'sin-opfs' && (
-            <p className="mt-3 text-sm text-amber-300">
-              FitLog necesita OPFS (Origin Private File System) para guardar tus datos. Probá con una
-              versión reciente de Chrome, Edge, Firefox o Safari.
-            </p>
-          )}
-
-          {status.state === 'error' && <p className="mt-3 text-sm text-rose-400">{status.error}</p>}
-        </section>
+        <HomeView workout={workout} body={body} catalog={catalog} onNavigate={navigate} />
       )}
-
-      {view === 'catalogo' && <CatalogView catalog={catalog} />}
       {view === 'entrenar' && <WorkoutView workout={workout} catalog={catalog} />}
       {view === 'progreso' && <ProgressView progress={progress} catalog={catalog} />}
-      {view === 'tips' && <TipsView tips={tips} catalog={catalog} />}
-      {view === 'medidas' && <BodyMetricsView body={body} />}
-      {view === 'respaldo' && <BackupView backup={backup} />}
-      {view === 'comparativas' && (
-        <ComparisonsView comparisons={comparisons} catalog={catalog} />
-      )}
       {view === 'rutinas' && (
         <RoutinesView routines={routines} catalog={catalog} workout={workout} />
       )}
-    </main>
+      {view === 'mas' && <MoreView onNavigate={navigate} />}
+      {view === 'catalogo' && <CatalogView catalog={catalog} />}
+      {view === 'comparativas' && (
+        <ComparisonsView comparisons={comparisons} catalog={catalog} />
+      )}
+      {view === 'tips' && <TipsView tips={tips} catalog={catalog} />}
+      {view === 'medidas' && <BodyMetricsView body={body} />}
+      {view === 'respaldo' && <BackupView backup={backup} />}
+      {view === 'ajustes' && <SettingsView choice={choice} onChoice={setChoice} />}
+    </AppShell>
   );
 }

@@ -1,14 +1,46 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
-import { formatDuration } from '@/domain/workout';
+import {
+  formatDuration,
+  formatDurationLong,
+  formatKg,
+  formatRelativeDay,
+  formatVolumeKg,
+} from '@/domain/format';
 import type { CatalogState } from '@/state/useCatalog';
 import type { WorkoutState } from '@/state/useWorkout';
+import {
+  IconCalendar,
+  IconChart,
+  IconDumbbell,
+  IconGrid,
+  IconPlay,
+  IconPlus,
+  IconStop,
+} from '@/ui/icons';
+import {
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  SectionHeader,
+  StatTile,
+} from '@/ui/primitives';
+
+/**
+ * Pantalla de entrenamiento: sesion activa con sus totales, alta y edicion de series e historial.
+ *
+ * El encabezado lo pone el shell, asi que la vista solo separa bloques con SectionHeader y arma
+ * todo con las primitivas del sistema de diseno. El historial es una lista de tarjetas con el
+ * resumen de cada sesion y el detalle se abre debajo.
+ */
 
 const inputClass =
-  'w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-500 focus:outline-none';
+  'w-full rounded-field border border-line bg-surface-low px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none';
 
-const buttonClass =
-  'rounded-lg bg-sky-500 px-3 py-2 text-sm font-medium text-slate-950 hover:bg-sky-400 disabled:opacity-50';
+// Los botones de las filas (editar, eliminar, ver detalle) van compactos.
+const rowButtonClass = '!px-3 !py-1.5 !text-xs';
 
 interface EditingSet {
   readonly id: string;
@@ -24,10 +56,6 @@ function formatDateTime(timestamp: number): string {
     hour: '2-digit',
     minute: '2-digit',
   });
-}
-
-function formatVolume(volume: number): string {
-  return `${Math.round(volume).toLocaleString('es')} kg`;
 }
 
 function parseNumber(raw: string): number | null {
@@ -50,9 +78,22 @@ export default function WorkoutView({
   const [isWarmup, setIsWarmup] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [editing, setEditing] = useState<EditingSet | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
+  const active = workout.active;
   const exercises = catalog.snapshot.exercises;
   const selectedExerciseId = exerciseId || exercises[0]?.id || '';
+
+  // La duracion de la sesion activa se refresca sola mientras hay una en curso.
+  useEffect(() => {
+    if (!active) return;
+    const first = window.setTimeout(() => setNow(Date.now()), 0);
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(timer);
+    };
+  }, [active]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -121,293 +162,352 @@ export default function WorkoutView({
   }
 
   if (workout.loading) {
-    return <p className="text-sm text-slate-400">Cargando entrenamientos…</p>;
+    return <LoadingState message="Cargando entrenamientos…" />;
   }
 
+  const historyTrailing =
+    workout.history.length === 0
+      ? undefined
+      : workout.history.length === 1
+        ? '1 sesión'
+        : `${workout.history.length} sesiones`;
+
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-semibold text-white">Entrenar</h2>
-          <p className="text-xs text-slate-400">
-            {workout.active
-              ? `Sesión en curso desde ${formatDateTime(workout.active.startedAt)}` +
-                (workout.active.routineName ? ` · Rutina: ${workout.active.routineName}` : '')
-              : 'Sin sesión activa'}
-          </p>
-        </div>
-        {workout.active ? (
-          <button
-            type="button"
-            className="rounded-lg border border-rose-500/40 px-3 py-2 text-sm text-rose-300 hover:bg-rose-500/10"
-            onClick={() => void workout.finish()}
-          >
-            Finalizar
-          </button>
-        ) : (
-          <button type="button" className={buttonClass} onClick={() => void workout.start()}>
-            Iniciar entrenamiento
-          </button>
-        )}
-      </div>
+    <div className="flex flex-col gap-5">
+      <SectionHeader title="Sesión activa" />
 
-      {workout.error && <p className="text-sm text-rose-400">{workout.error}</p>}
-
-      {workout.active && (
-        <>
-          <div className="grid grid-cols-3 gap-3 rounded-2xl border border-slate-700/60 bg-slate-900/60 p-4 text-center">
-            <div>
-              <p className="text-xs text-slate-500">Series efectivas</p>
-              <p className="font-mono text-lg">{workout.active.summary.workingSets}</p>
+      {active ? (
+        <Card tone="accent" className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="bg-surface-high text-accent-text rounded-field grid size-10 shrink-0 place-items-center">
+                <IconDumbbell className="size-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-ink truncate text-sm font-semibold">
+                  {active.routineName ?? 'Entrenamiento libre'}
+                </p>
+                <p className="text-muted text-xs">
+                  Sesión en curso desde{' '}
+                  <span className="fl-num">{formatDateTime(active.startedAt)}</span>
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs text-slate-500">Volumen</p>
-              <p className="font-mono text-lg">
-                {formatVolume(workout.active.summary.totalVolumeKg)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Series totales</p>
-              <p className="font-mono text-lg">{workout.active.summary.totalSets}</p>
-            </div>
+            <Button
+              variant="primary"
+              icon={<IconStop className="size-4" />}
+              onClick={() => void workout.finish()}
+            >
+              Finalizar
+            </Button>
           </div>
 
-          <form
-            onSubmit={submit}
-            className="flex flex-col gap-3 rounded-2xl border border-slate-700/60 bg-slate-900/60 p-4"
-          >
-            <select
-              className={inputClass}
-              value={selectedExerciseId}
-              onChange={(event) => setExerciseId(event.target.value)}
-            >
-              {exercises.map((exercise) => (
-                <option key={exercise.id} value={exercise.id}>
-                  {exercise.name}
-                </option>
-              ))}
-            </select>
-            <div className="grid grid-cols-3 gap-3">
-              <input
-                className={inputClass}
-                inputMode="decimal"
-                placeholder="Peso (kg)"
-                value={weight}
-                onChange={(event) => setWeight(event.target.value)}
-              />
-              <input
-                className={inputClass}
-                inputMode="numeric"
-                placeholder="Reps"
-                value={reps}
-                onChange={(event) => setReps(event.target.value)}
-              />
-              <input
-                className={inputClass}
-                inputMode="numeric"
-                placeholder="RIR"
-                value={rir}
-                onChange={(event) => setRir(event.target.value)}
-              />
-            </div>
-            <input
-              className={inputClass}
-              placeholder="Notas (opcional)"
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatTile
+              label="Duración"
+              value={formatDuration(now - active.startedAt)}
+              icon={<IconCalendar className="size-4" />}
             />
-            <label className="flex items-center gap-2 text-sm text-slate-300">
+            <StatTile
+              label="Series efectivas"
+              value={String(active.summary.workingSets)}
+              icon={<IconDumbbell className="size-4" />}
+            />
+            <StatTile
+              label="Series totales"
+              value={String(active.summary.totalSets)}
+              icon={<IconGrid className="size-4" />}
+            />
+            <StatTile
+              label="Volumen"
+              value={formatVolumeKg(active.summary.totalVolumeKg)}
+              unit="kg"
+              tone="data"
+              icon={<IconChart className="size-4" />}
+            />
+          </div>
+        </Card>
+      ) : (
+        <Card className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="bg-surface-high text-accent-text rounded-field grid size-10 shrink-0 place-items-center">
+              <IconDumbbell className="size-5" />
+            </span>
+            <p className="text-ink text-sm font-semibold">Sin sesión activa</p>
+          </div>
+          <Button
+            variant="primary"
+            icon={<IconPlay className="size-4" />}
+            onClick={() => void workout.start()}
+          >
+            Iniciar entrenamiento
+          </Button>
+        </Card>
+      )}
+
+      {workout.error ? <ErrorState message={workout.error} /> : null}
+
+      {active ? (
+        <>
+          <SectionHeader title="Agregar serie" />
+          <Card>
+            <form onSubmit={submit} className="flex flex-col gap-3">
+              <select
+                className={inputClass}
+                value={selectedExerciseId}
+                onChange={(event) => setExerciseId(event.target.value)}
+              >
+                {exercises.map((exercise) => (
+                  <option key={exercise.id} value={exercise.id}>
+                    {exercise.name}
+                  </option>
+                ))}
+              </select>
+              <div className="grid grid-cols-3 gap-3">
+                <input
+                  className={inputClass}
+                  inputMode="decimal"
+                  placeholder="Peso (kg)"
+                  value={weight}
+                  onChange={(event) => setWeight(event.target.value)}
+                />
+                <input
+                  className={inputClass}
+                  inputMode="numeric"
+                  placeholder="Reps"
+                  value={reps}
+                  onChange={(event) => setReps(event.target.value)}
+                />
+                <input
+                  className={inputClass}
+                  inputMode="numeric"
+                  placeholder="RIR"
+                  value={rir}
+                  onChange={(event) => setRir(event.target.value)}
+                />
+              </div>
               <input
-                type="checkbox"
-                checked={isWarmup}
-                onChange={(event) => setIsWarmup(event.target.checked)}
+                className={inputClass}
+                placeholder="Notas (opcional)"
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
               />
-              Serie de calentamiento
-            </label>
-            {formError && <p className="text-sm text-rose-400">{formError}</p>}
-            <button type="submit" className={`${buttonClass} self-start`}>
-              Registrar serie
-            </button>
-          </form>
+              <label className="text-muted flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="accent-accent size-4"
+                  checked={isWarmup}
+                  onChange={(event) => setIsWarmup(event.target.checked)}
+                />
+                Serie de calentamiento
+              </label>
+              {formError ? <p className="text-danger text-sm">{formError}</p> : null}
+              <Button
+                type="submit"
+                variant="primary"
+                icon={<IconPlus className="size-4" />}
+                className="self-start"
+              >
+                Registrar serie
+              </Button>
+            </form>
+          </Card>
 
           {workout.activeSets.length === 0 ? (
-            <p className="text-xs text-slate-500">Todavía no hay series en esta sesión.</p>
+            <Card className="!p-0">
+              <EmptyState message="Todavía no hay series en esta sesión." />
+            </Card>
           ) : (
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-3">
               {workout.activeSets.map((set) => (
-                <li
-                  key={set.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-700/60 bg-slate-900/40 px-4 py-2 text-sm"
-                >
-                  {editing?.id === set.id ? (
-                    <>
-                      <span className="font-mono text-slate-400">#{set.setIndex}</span>
-                      <input
-                        className={inputClass}
-                        inputMode="decimal"
-                        value={editing.weight}
-                        onChange={(event) =>
-                          setEditing({ ...editing, weight: event.target.value })
-                        }
-                      />
-                      <input
-                        className={inputClass}
-                        inputMode="numeric"
-                        value={editing.reps}
-                        onChange={(event) => setEditing({ ...editing, reps: event.target.value })}
-                      />
-                      <input
-                        className={inputClass}
-                        inputMode="numeric"
-                        value={editing.rir}
-                        onChange={(event) => setEditing({ ...editing, rir: event.target.value })}
-                      />
-                      <span className="flex gap-2">
-                        <button type="button" className="text-xs text-emerald-300" onClick={() => void saveEdit()}>
-                          Guardar
-                        </button>
-                        <button
-                          type="button"
-                          className="text-xs text-slate-400"
-                          onClick={() => setEditing(null)}
-                        >
-                          Cancelar
-                        </button>
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span>
-                        <span className="font-mono text-slate-400">#{set.setIndex}</span>{' '}
-                        {set.exerciseName}
-                        {set.isWarmup && (
-                          <span className="ml-2 rounded-full bg-slate-600/40 px-2 py-0.5 text-[10px] uppercase text-slate-300">
-                            Calentamiento
-                          </span>
-                        )}
-                      </span>
-                      <span className="flex items-center gap-3">
-                        <span className="font-mono">
-                          {set.weightKg ?? '—'} kg × {set.reps ?? '—'}
-                          {set.rir !== null && ` · RIR ${set.rir}`}
-                        </span>
-                        <button
-                          type="button"
-                          className="text-xs text-sky-300 hover:text-sky-200"
-                          onClick={() =>
-                            setEditing({
-                              id: set.id,
-                              weight: set.weightKg?.toString() ?? '',
-                              reps: set.reps?.toString() ?? '',
-                              rir: set.rir?.toString() ?? '',
-                            })
-                          }
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="text-xs text-slate-400 hover:text-slate-200"
-                          onClick={() => void workout.remove(set.id)}
-                        >
-                          Eliminar
-                        </button>
-                      </span>
-                    </>
-                  )}
+                <li key={set.id}>
+                  <Card className="!p-4">
+                    {editing?.id === set.id ? (
+                      <div className="flex flex-col gap-3">
+                        <span className="text-faint fl-num text-sm">#{set.setIndex}</span>
+                        <div className="grid grid-cols-3 gap-3">
+                          <input
+                            className={inputClass}
+                            inputMode="decimal"
+                            aria-label="Peso (kg)"
+                            value={editing.weight}
+                            onChange={(event) =>
+                              setEditing({ ...editing, weight: event.target.value })
+                            }
+                          />
+                          <input
+                            className={inputClass}
+                            inputMode="numeric"
+                            aria-label="Reps"
+                            value={editing.reps}
+                            onChange={(event) =>
+                              setEditing({ ...editing, reps: event.target.value })
+                            }
+                          />
+                          <input
+                            className={inputClass}
+                            inputMode="numeric"
+                            aria-label="RIR"
+                            value={editing.rir}
+                            onChange={(event) => setEditing({ ...editing, rir: event.target.value })}
+                          />
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="primary"
+                            className={rowButtonClass}
+                            onClick={() => void saveEdit()}
+                          >
+                            Guardar
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className={rowButtonClass}
+                            onClick={() => setEditing(null)}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-ink flex flex-wrap items-center gap-2 text-sm font-semibold">
+                            <span className="text-faint fl-num">#{set.setIndex}</span>
+                            <span className="truncate">{set.exerciseName}</span>
+                            {set.isWarmup ? (
+                              <span className="bg-warning-soft text-warning rounded-full px-2 py-0.5 text-[0.625rem] font-semibold tracking-wide uppercase">
+                                Calentamiento
+                              </span>
+                            ) : null}
+                          </p>
+                          <p className="text-muted fl-num mt-1 text-xs">
+                            {formatKg(set.weightKg)} kg × {set.reps ?? '—'}
+                            {set.rir !== null ? ` · RIR ${set.rir}` : ''}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            className={rowButtonClass}
+                            onClick={() =>
+                              setEditing({
+                                id: set.id,
+                                weight: set.weightKg?.toString() ?? '',
+                                reps: set.reps?.toString() ?? '',
+                                rir: set.rir?.toString() ?? '',
+                              })
+                            }
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            variant="danger"
+                            className={rowButtonClass}
+                            onClick={() => void workout.remove(set.id)}
+                          >
+                            Eliminar
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </Card>
                 </li>
               ))}
             </ul>
           )}
         </>
-      )}
+      ) : null}
 
-      <div className="mt-2 flex flex-col gap-3">
-        <h3 className="text-sm font-semibold uppercase tracking-widest text-slate-500">Historial</h3>
+      <SectionHeader title="Historial" trailing={historyTrailing} />
 
-        {workout.history.length === 0 && (
-          <p className="rounded-2xl border border-dashed border-slate-700 p-6 text-center text-sm text-slate-400">
-            Todavía no registraste entrenamientos.
-          </p>
-        )}
-
-        <ul className="flex flex-col gap-2">
+      {workout.history.length === 0 ? (
+        <Card className="!p-0">
+          <EmptyState message="Todavía no registraste entrenamientos." />
+        </Card>
+      ) : (
+        <ul className="flex flex-col gap-3">
           {workout.history.map((session) => (
-            <li
-              key={session.id}
-              className="rounded-xl border border-slate-700/60 bg-slate-900/40 px-4 py-3 text-sm"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="font-medium text-slate-100">
-                    {formatDateTime(session.startedAt)}
-                    {session.finishedAt === null && (
-                      <span className="ml-2 rounded-full bg-emerald-400/20 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-300">
-                        En curso
+            <li key={session.id}>
+              <Card className="!p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-ink flex flex-wrap items-center gap-2 text-sm font-semibold">
+                      <span className="truncate">{session.routineName ?? 'Entrenamiento libre'}</span>
+                      {session.finishedAt === null ? (
+                        <span className="bg-accent-soft text-accent-text rounded-full px-2 py-0.5 text-[0.625rem] font-semibold tracking-wide uppercase">
+                          En curso
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="text-muted mt-1 text-xs">
+                      <span className="fl-num">{formatRelativeDay(session.startedAt, now)}</span>
+                      {' · '}
+                      <span className="fl-num">
+                        {formatDurationLong(session.startedAt, session.finishedAt)}
                       </span>
-                    )}
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    {formatDuration(session.startedAt, session.finishedAt) ?? '—'} ·{' '}
-                    {session.summary.workingSets} series ·{' '}
-                    {formatVolume(session.summary.totalVolumeKg)}
-                  </p>
+                      {' · '}
+                      <span className="fl-num">{session.summary.workingSets}</span> series
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-data fl-num text-sm font-semibold">
+                      {formatVolumeKg(session.summary.totalVolumeKg)} kg
+                    </span>
+                    <Button
+                      variant="secondary"
+                      className={rowButtonClass}
+                      onClick={() => void workout.openDetail(session.id)}
+                    >
+                      Ver detalle
+                    </Button>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  className="text-xs text-sky-300 hover:text-sky-200"
-                  onClick={() => void workout.openDetail(session.id)}
-                >
-                  Ver detalle
-                </button>
-              </div>
+              </Card>
             </li>
           ))}
         </ul>
+      )}
 
-        {workout.detail && (
-          <div className="rounded-2xl border border-slate-700/60 bg-slate-900/60 p-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-semibold text-slate-200">
-                Detalle · {formatDateTime(workout.detail.session.startedAt)}
-                {workout.detail.session.routineName
-                  ? ` · Rutina: ${workout.detail.session.routineName}`
-                  : ''}
-              </h4>
-              <button
-                type="button"
-                className="text-xs text-slate-400 hover:text-slate-200"
-                onClick={workout.closeDetail}
-              >
-                Cerrar
-              </button>
-            </div>
-            {workout.detail.sets.length === 0 ? (
-              <p className="mt-3 text-sm text-slate-400">Esta sesión no tiene series registradas.</p>
-            ) : (
-              <ul className="mt-3 flex flex-col gap-1 text-sm">
-                {workout.detail.sets.map((set) => (
-                  <li key={set.id} className="flex items-center justify-between gap-2">
-                    <span>
-                      <span className="font-mono text-slate-400">#{set.setIndex}</span>{' '}
-                      {set.exerciseName}
-                      {set.isWarmup && (
-                        <span className="ml-2 text-[10px] uppercase text-slate-400">
-                          calentamiento
-                        </span>
-                      )}
-                    </span>
-                    <span className="font-mono text-slate-300">
-                      {set.weightKg ?? '—'} kg × {set.reps ?? '—'}
-                      {set.rir !== null && ` · RIR ${set.rir}`}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
+      {workout.detail ? (
+        <Card className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-ink text-sm font-semibold">
+              Detalle ·{' '}
+              <span className="fl-num">{formatDateTime(workout.detail.session.startedAt)}</span>
+              {workout.detail.session.routineName
+                ? ` · Rutina: ${workout.detail.session.routineName}`
+                : ''}
+            </h3>
+            <Button variant="ghost" className={rowButtonClass} onClick={workout.closeDetail}>
+              Cerrar
+            </Button>
           </div>
-        )}
-      </div>
-    </section>
+          {workout.detail.sets.length === 0 ? (
+            <p className="text-muted text-sm">Esta sesión no tiene series registradas.</p>
+          ) : (
+            <ul className="flex flex-col gap-1 text-sm">
+              {workout.detail.sets.map((set) => (
+                <li key={set.id} className="flex items-center justify-between gap-3">
+                  <span className="min-w-0 truncate">
+                    <span className="text-faint fl-num">#{set.setIndex}</span>{' '}
+                    <span className="text-ink">{set.exerciseName}</span>
+                    {set.isWarmup ? (
+                      <span className="text-warning ml-2 text-[0.625rem] font-semibold uppercase">
+                        calentamiento
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="text-muted fl-num shrink-0">
+                    {formatKg(set.weightKg)} kg × {set.reps ?? '—'}
+                    {set.rir !== null ? ` · RIR ${set.rir}` : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      ) : null}
+    </div>
   );
 }

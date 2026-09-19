@@ -1,16 +1,35 @@
 import { useState, type FormEvent } from 'react';
 
+import { formatInteger, formatKg } from '@/domain/format';
 import type { CatalogState } from '@/state/useCatalog';
 import type { RoutinesState } from '@/state/useRoutines';
 import type { WorkoutState } from '@/state/useWorkout';
+import {
+  IconArrowDown,
+  IconArrowUp,
+  IconChevronRight,
+  IconDumbbell,
+  IconPlay,
+  IconPlus,
+} from '@/ui/icons';
+import {
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  SectionHeader,
+} from '@/ui/primitives';
+
+/**
+ * Rutinas: plantillas reutilizables con sus ejercicios objetivo.
+ *
+ * La pantalla se arma con las primitivas del sistema de diseno (Card, SectionHeader, Button,
+ * EmptyState): el titulo de la pantalla lo pone el shell, aca solo van los encabezados de seccion.
+ */
 
 const inputClass =
-  'w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-500 focus:outline-none';
-
-const buttonClass =
-  'rounded-lg bg-sky-500 px-3 py-2 text-sm font-medium text-slate-950 hover:bg-sky-400 disabled:opacity-50';
-
-const smallButton = 'text-xs text-slate-400 hover:text-slate-200';
+  'rounded-field border border-line bg-surface-low px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-accent focus:outline-none w-full';
 
 function parseNumber(raw: string): number | null {
   if (raw.trim() === '') return null;
@@ -94,232 +113,258 @@ export default function RoutinesView({
   }
 
   if (routines.loading) {
-    return <p className="text-sm text-slate-400">Cargando rutinas…</p>;
+    return <LoadingState message="Cargando rutinas…" />;
   }
 
   return (
-    <section className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-xl font-semibold text-white">Rutinas</h2>
-        <p className="text-xs text-slate-400">
-          Plantillas reutilizables: definí los ejercicios y arrancá a entrenar desde acá.
-        </p>
-      </div>
+    <div className="flex flex-col gap-5">
+      {routines.error ? <ErrorState message={routines.error} /> : null}
+      {formError ? (
+        <p className="rounded-field bg-danger-soft text-danger px-3 py-2 text-sm">{formError}</p>
+      ) : null}
 
-      {routines.error && <p className="text-sm text-rose-400">{routines.error}</p>}
-      {formError && <p className="text-sm text-rose-400">{formError}</p>}
+      <SectionHeader title="Nueva rutina" />
+      <Card>
+        <form onSubmit={submitRoutine} className="flex flex-col gap-3">
+          <input
+            className={inputClass}
+            placeholder="Nombre de la rutina (ej. Día de empuje)"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+          <input
+            className={inputClass}
+            placeholder="Descripción (opcional)"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+          />
+          <Button type="submit" icon={<IconPlus className="size-4" />} className="self-start">
+            Crear rutina
+          </Button>
+        </form>
+      </Card>
 
-      <form
-        onSubmit={submitRoutine}
-        className="flex flex-col gap-3 rounded-2xl border border-slate-700/60 bg-slate-900/60 p-4"
-      >
-        <input
-          className={inputClass}
-          placeholder="Nombre de la rutina (ej. Día de empuje)"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-        />
-        <input
-          className={inputClass}
-          placeholder="Descripción (opcional)"
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-        />
-        <button type="submit" className={`${buttonClass} self-start`}>
-          Crear rutina
-        </button>
-      </form>
+      <SectionHeader
+        title="Tus rutinas"
+        trailing={`${formatInteger(routines.routines.length)} en total`}
+      />
 
-      {routines.routines.length === 0 && (
-        <p className="rounded-2xl border border-dashed border-slate-700 p-6 text-center text-sm text-slate-400">
-          Todavía no tenés rutinas.
-        </p>
-      )}
-
-      <ul className="flex flex-col gap-3">
-        {routines.routines.map((routine) => (
-          <li
-            key={routine.id}
-            className="rounded-2xl border border-slate-700/60 bg-slate-900/40 px-4 py-3 text-sm"
-          >
-            {editingId === routine.id ? (
-              <div className="flex flex-col gap-2">
-                <input
-                  className={inputClass}
-                  value={editName}
-                  onChange={(event) => setEditName(event.target.value)}
-                />
-                <input
-                  className={inputClass}
-                  placeholder="Descripción (opcional)"
-                  value={editDescription}
-                  onChange={(event) => setEditDescription(event.target.value)}
-                />
-                <div className="flex gap-2">
-                  <button type="button" className={buttonClass} onClick={() => void submitEdit(routine.id)}>
-                    Guardar
-                  </button>
-                  <button type="button" className={smallButton} onClick={() => setEditingId(null)}>
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="font-medium text-slate-100">{routine.name}</p>
-                    <p className="text-xs text-slate-400">
-                      {routine.description ?? 'Sin descripción'} · {routine.exercises.length} ejercicios
-                    </p>
+      {routines.routines.length === 0 ? (
+        <Card>
+          <EmptyState
+            title="Todavía no tenés rutinas"
+            message="Armá tu primera plantilla con el formulario de arriba."
+          />
+        </Card>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {routines.routines.map((routine) => (
+            <li key={routine.id}>
+              <Card>
+                {editingId === routine.id ? (
+                  <div className="flex flex-col gap-3">
+                    <input
+                      className={inputClass}
+                      value={editName}
+                      aria-label="Nombre de la rutina"
+                      onChange={(event) => setEditName(event.target.value)}
+                    />
+                    <input
+                      className={inputClass}
+                      placeholder="Descripción (opcional)"
+                      value={editDescription}
+                      onChange={(event) => setEditDescription(event.target.value)}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button onClick={() => void submitEdit(routine.id)}>Guardar</Button>
+                      <Button variant="secondary" onClick={() => setEditingId(null)}>
+                        Cancelar
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="button"
-                      className={buttonClass}
-                      disabled={workout.active !== null}
-                      onClick={() => void workout.start(routine.id)}
-                    >
-                      Entrenar
-                    </button>
-                    <button
-                      type="button"
-                      className={smallButton}
-                      onClick={() => {
-                        setEditingId(routine.id);
-                        setEditName(routine.name);
-                        setEditDescription(routine.description ?? '');
-                      }}
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      className={smallButton}
-                      onClick={() =>
-                        setExpandedId(expandedId === routine.id ? null : routine.id)
-                      }
-                    >
-                      {expandedId === routine.id ? 'Ocultar' : 'Ejercicios'}
-                    </button>
-                    <button
-                      type="button"
-                      className="text-xs text-rose-300 hover:text-rose-200"
-                      onClick={() => {
-                        if (window.confirm(`¿Eliminar la rutina "${routine.name}"?`)) {
-                          void routines.remove(routine.id);
-                        }
-                      }}
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-
-                {expandedId === routine.id && (
-                  <div className="mt-3 flex flex-col gap-3 border-t border-slate-700/60 pt-3">
-                    {routine.exercises.length === 0 ? (
-                      <p className="text-xs text-slate-500">La rutina todavía no tiene ejercicios.</p>
-                    ) : (
-                      <ul className="flex flex-col gap-2">
-                        {routine.exercises.map((item) => (
-                          <li
-                            key={item.id}
-                            className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-950/40 px-3 py-2"
-                          >
-                            <span>
-                              <span className="font-mono text-slate-400">{item.position}.</span>{' '}
-                              {item.exerciseName}
-                            </span>
-                            <span className="flex items-center gap-3 text-xs text-slate-400">
-                              <span className="font-mono">
-                                {item.targetSets ?? '—'} × {item.targetReps ?? '—'}
-                                {item.targetWeightKg !== null && ` · ${item.targetWeightKg} kg`}
-                                {item.restSeconds !== null && ` · ${item.restSeconds}s`}
-                              </span>
-                              <button
-                                type="button"
-                                className={smallButton}
-                                onClick={() => void routines.moveExercise(item.id, 'up')}
-                              >
-                                ↑
-                              </button>
-                              <button
-                                type="button"
-                                className={smallButton}
-                                onClick={() => void routines.moveExercise(item.id, 'down')}
-                              >
-                                ↓
-                              </button>
-                              <button
-                                type="button"
-                                className="text-rose-300 hover:text-rose-200"
-                                onClick={() => void routines.removeExercise(item.id)}
-                              >
-                                ✕
-                              </button>
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-
-                    <form
-                      onSubmit={(event) => void submitExercise(event, routine.id)}
-                      className="flex flex-col gap-2"
-                    >
-                      <select
-                        className={inputClass}
-                        value={exerciseId || exercises[0]?.id || ''}
-                        onChange={(event) => setExerciseId(event.target.value)}
-                      >
-                        {exercises.map((exercise) => (
-                          <option key={exercise.id} value={exercise.id}>
-                            {exercise.name}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="grid grid-cols-4 gap-2">
-                        <input
-                          className={inputClass}
-                          inputMode="numeric"
-                          placeholder="Series"
-                          value={targetSets}
-                          onChange={(event) => setTargetSets(event.target.value)}
-                        />
-                        <input
-                          className={inputClass}
-                          inputMode="numeric"
-                          placeholder="Reps"
-                          value={targetReps}
-                          onChange={(event) => setTargetReps(event.target.value)}
-                        />
-                        <input
-                          className={inputClass}
-                          inputMode="decimal"
-                          placeholder="Peso"
-                          value={targetWeight}
-                          onChange={(event) => setTargetWeight(event.target.value)}
-                        />
-                        <input
-                          className={inputClass}
-                          inputMode="numeric"
-                          placeholder="Descanso"
-                          value={restSeconds}
-                          onChange={(event) => setRestSeconds(event.target.value)}
-                        />
+                ) : (
+                  <>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-ink flex items-center gap-2 text-sm font-semibold">
+                          <IconDumbbell className="text-accent-text size-4 shrink-0" />
+                          <span className="truncate">{routine.name}</span>
+                        </p>
+                        <p className="text-muted mt-1 text-xs">
+                          {routine.description ?? 'Sin descripción'} ·{' '}
+                          {formatInteger(routine.exercises.length)} ejercicios
+                        </p>
                       </div>
-                      <button type="submit" className={`${buttonClass} self-start`}>
-                        Agregar ejercicio
-                      </button>
-                    </form>
-                  </div>
+                      <Button
+                        icon={<IconPlay className="size-4" />}
+                        disabled={workout.active !== null}
+                        onClick={() => void workout.start(routine.id)}
+                      >
+                        Entrenar
+                      </Button>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          setEditingId(routine.id);
+                          setEditName(routine.name);
+                          setEditDescription(routine.description ?? '');
+                        }}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        icon={
+                          <IconChevronRight
+                            className={`size-4 transition-transform ${
+                              expandedId === routine.id ? 'rotate-90' : ''
+                            }`}
+                          />
+                        }
+                        aria-expanded={expandedId === routine.id}
+                        onClick={() =>
+                          setExpandedId(expandedId === routine.id ? null : routine.id)
+                        }
+                      >
+                        {expandedId === routine.id ? 'Ocultar' : 'Ejercicios'}
+                      </Button>
+                      <Button
+                        variant="danger"
+                        onClick={() => {
+                          if (window.confirm(`¿Eliminar la rutina "${routine.name}"?`)) {
+                            void routines.remove(routine.id);
+                          }
+                        }}
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
+
+                    {expandedId === routine.id && (
+                      <div className="border-line mt-4 flex flex-col gap-3 border-t pt-4">
+                        <SectionHeader title="Ejercicios de la rutina" />
+
+                        {routine.exercises.length === 0 ? (
+                          <p className="text-faint text-xs">
+                            La rutina todavía no tiene ejercicios.
+                          </p>
+                        ) : (
+                          <ul className="flex flex-col gap-2">
+                            {routine.exercises.map((item) => (
+                              <li
+                                key={item.id}
+                                className="rounded-tile bg-surface-low flex flex-wrap items-center justify-between gap-3 px-3 py-2"
+                              >
+                                <span className="text-ink min-w-0 text-sm">
+                                  <span className="text-faint fl-num">{item.position}.</span>{' '}
+                                  {item.exerciseName}
+                                </span>
+                                <span className="flex flex-wrap items-center gap-2">
+                                  <span className="text-muted fl-num text-xs">
+                                    {item.targetSets ?? '—'} × {item.targetReps ?? '—'}
+                                    {item.targetWeightKg !== null &&
+                                      ` · ${formatKg(item.targetWeightKg)} kg`}
+                                    {item.restSeconds !== null && ` · ${item.restSeconds}s`}
+                                  </span>
+                                  <Button
+                                    variant="secondary"
+                                    icon={<IconArrowUp className="size-4" />}
+                                    aria-label={`Mover ${item.exerciseName} arriba`}
+                                    title="Mover arriba"
+                                    onClick={() => void routines.moveExercise(item.id, 'up')}
+                                  />
+                                  <Button
+                                    variant="secondary"
+                                    icon={<IconArrowDown className="size-4" />}
+                                    aria-label={`Mover ${item.exerciseName} abajo`}
+                                    title="Mover abajo"
+                                    onClick={() => void routines.moveExercise(item.id, 'down')}
+                                  />
+                                  <Button
+                                    variant="danger"
+                                    aria-label={`Quitar ${item.exerciseName}`}
+                                    title="Quitar ejercicio"
+                                    onClick={() => void routines.removeExercise(item.id)}
+                                  >
+                                    ✕
+                                  </Button>
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+
+                        <form
+                          onSubmit={(event) => void submitExercise(event, routine.id)}
+                          className="flex flex-col gap-2"
+                        >
+                          <select
+                            className={inputClass}
+                            aria-label="Ejercicio"
+                            value={exerciseId || exercises[0]?.id || ''}
+                            onChange={(event) => setExerciseId(event.target.value)}
+                          >
+                            {exercises.map((exercise) => (
+                              <option key={exercise.id} value={exercise.id}>
+                                {exercise.name}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                            <input
+                              className={`${inputClass} fl-num`}
+                              inputMode="numeric"
+                              placeholder="Series"
+                              aria-label="Series"
+                              value={targetSets}
+                              onChange={(event) => setTargetSets(event.target.value)}
+                            />
+                            <input
+                              className={`${inputClass} fl-num`}
+                              inputMode="numeric"
+                              placeholder="Reps"
+                              aria-label="Reps"
+                              value={targetReps}
+                              onChange={(event) => setTargetReps(event.target.value)}
+                            />
+                            <input
+                              className={`${inputClass} fl-num`}
+                              inputMode="decimal"
+                              placeholder="Peso"
+                              aria-label="Peso"
+                              value={targetWeight}
+                              onChange={(event) => setTargetWeight(event.target.value)}
+                            />
+                            <input
+                              className={`${inputClass} fl-num`}
+                              inputMode="numeric"
+                              placeholder="Descanso"
+                              aria-label="Descanso"
+                              value={restSeconds}
+                              onChange={(event) => setRestSeconds(event.target.value)}
+                            />
+                          </div>
+                          <Button
+                            type="submit"
+                            variant="secondary"
+                            icon={<IconPlus className="size-4" />}
+                            className="self-start"
+                          >
+                            Agregar ejercicio
+                          </Button>
+                        </form>
+                      </div>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-    </section>
+              </Card>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

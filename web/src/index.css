@@ -1,13 +1,176 @@
 @import 'tailwindcss';
 
+/*
+ * Sistema de diseno de FitLog (web).
+ *
+ * Los tokens viven en variables CSS y se exponen a Tailwind con @theme inline, asi las utilidades
+ * (bg-surface, text-accent, border-line, ...) siguen al tema sin necesidad de variantes dark:.
+ * El tema se elige con la clase .light / .dark en <html>, y por defecto sigue al sistema.
+ */
+@theme inline {
+  --color-bg: var(--fl-bg);
+  --color-surface: var(--fl-surface);
+  --color-surface-low: var(--fl-surface-low);
+  --color-surface-high: var(--fl-surface-high);
+  --color-line: var(--fl-line);
+  --color-line-strong: var(--fl-line-strong);
+  --color-ink: var(--fl-ink);
+  --color-muted: var(--fl-muted);
+  --color-faint: var(--fl-faint);
+  --color-accent: var(--fl-accent);
+  --color-accent-soft: var(--fl-accent-soft);
+  --color-accent-ink: var(--fl-accent-ink);
+  --color-accent-text: var(--fl-accent-text);
+  --color-data: var(--fl-data);
+  --color-data-soft: var(--fl-data-soft);
+  --color-success: var(--fl-success);
+  --color-success-soft: var(--fl-success-soft);
+  --color-warning: var(--fl-warning);
+  --color-warning-soft: var(--fl-warning-soft);
+  --color-danger: var(--fl-danger);
+  --color-danger-soft: var(--fl-danger-soft);
+
+  --radius-card: 1.5rem;
+  --radius-tile: 1.25rem;
+  --radius-field: 0.875rem;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+
 :root {
+  color-scheme: light;
+  /* Tema oscuro: azul noche con acento lima y datos cian. */
+  --fl-bg: #070b15;
+  --fl-surface: #0e1526;
+  --fl-surface-low: #0b111f;
+  --fl-surface-high: #16203a;
+  --fl-line: #1f2a42;
+  --fl-line-strong: #2a3655;
+  --fl-ink: #e7ecf5;
+  --fl-muted: #9ba8c0;
+  --fl-faint: #6b7893;
+  --fl-accent: #bef264;
+  --fl-accent-soft: #243318;
+  --fl-accent-ink: #14200a;
+  --fl-accent-text: #bef264;
+  --fl-data: #67e8f9;
+  --fl-data-soft: #10303a;
+  --fl-success: #6ee7b7;
+  --fl-success-soft: #0f2e24;
+  --fl-warning: #fcd34d;
+  --fl-warning-soft: #33280e;
+  --fl-danger: #fda4af;
+  --fl-danger-soft: #3a1520;
+  --fl-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.75);
+  --fl-glow: 0 0 0 1px color-mix(in oklab, var(--fl-accent) 22%, transparent);
+}
+
+:root.light {
+  color-scheme: light;
+  /* Tema claro: blanco humedo con capas frias y el mismo acento, oscurecido para contraste. */
+  --fl-bg: #f6f8fc;
+  --fl-surface: #ffffff;
+  --fl-surface-low: #f1f4fa;
+  --fl-surface-high: #e9eef8;
+  --fl-line: #dce3ef;
+  --fl-line-strong: #c6cfdf;
+  --fl-ink: #101828;
+  --fl-muted: #4a5568;
+  --fl-faint: #6b7280;
+  --fl-accent: #4d7c0f;
+  --fl-accent-soft: #eaf7c9;
+  --fl-accent-ink: #f8fee8;
+  --fl-accent-text: #4d7c0f;
+  --fl-data: #0e7490;
+  --fl-data-soft: #dcf3f9;
+  --fl-success: #047857;
+  --fl-success-soft: #dcf5ea;
+  --fl-warning: #92400e;
+  --fl-warning-soft: #fdf0d5;
+  --fl-danger: #be123c;
+  --fl-danger-soft: #fce4e9;
+  --fl-shadow: 0 18px 40px -28px rgb(16 24 40 / 0.35);
+  --fl-glow: 0 0 0 1px color-mix(in oklab, var(--fl-accent) 30%, transparent);
+}
+
+:root.dark {
   color-scheme: dark;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fl-bg: #070b15;
+  --fl-surface: #0e1526;
+  --fl-surface-low: #0b111f;
+  --fl-surface-high: #16203a;
+  --fl-line: #1f2a42;
+  --fl-line-strong: #2a3655;
+  --fl-ink: #e7ecf5;
+  --fl-muted: #9ba8c0;
+  --fl-faint: #6b7893;
+  --fl-accent: #bef264;
+  --fl-accent-soft: #243318;
+  --fl-accent-ink: #14200a;
+  --fl-accent-text: #bef264;
+  --fl-data: #67e8f9;
+  --fl-data-soft: #10303a;
+  --fl-success: #6ee7b7;
+  --fl-success-soft: #0f2e24;
+  --fl-warning: #fcd34d;
+  --fl-warning-soft: #33280e;
+  --fl-danger: #fda4af;
+  --fl-danger-soft: #3a1520;
+  --fl-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.75);
+  --fl-glow: 0 0 0 1px color-mix(in oklab, var(--fl-accent) 22%, transparent);
+}
+
+html,
+body {
+  min-height: 100dvh;
 }
 
 body {
   margin: 0;
-  min-height: 100dvh;
-  background: #0b1220;
-  color: #e5e7eb;
+  background: var(--fl-bg);
+  color: var(--fl-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Fondo de marca: lavado del acento arriba que se disuelve, igual que en Android. */
+.fl-app-bg {
+  background:
+    radial-gradient(
+      120% 60% at 50% -10%,
+      color-mix(in oklab, var(--fl-accent) 12%, transparent),
+      transparent 70%
+    ),
+    var(--fl-bg);
+}
+
+/* Cifras tabulares para los valores numericos. */
+.fl-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.fl-card {
+  background: var(--fl-surface);
+  border: 1px solid var(--fl-line);
+  border-radius: var(--radius-card);
+}
+
+.fl-scroll-x {
+  scrollbar-width: none;
+}
+
+.fl-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

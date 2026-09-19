@@ -1,0 +1,106 @@
+import { deltaPercent } from '@/domain/format';
+import { DAY_MS } from '@/domain/progress';
+
+/**
+ * Agregacion del panel de Inicio.
+ *
+ * Es una funcion pura sobre las sesiones y las medidas que ya existen: no agrega consultas nuevas al
+ * esquema ni columnas derivadas persistidas (el volumen sigue siendo un valor calculado).
+ */
+
+export const HOME_WINDOW_DAYS = 7;
+export const HOME_WEEK_MS = HOME_WINDOW_DAYS * DAY_MS;
+
+export interface HomeSessionInput {
+  readonly id: string;
+  readonly startedAt: number;
+  readonly finishedAt: number | null;
+  readonly workingSets: number;
+  readonly volumeKg: number;
+}
+
+export interface HomeBodyInput {
+  readonly measuredAt: number;
+  readonly value: number;
+}
+
+export interface HomeWindow {
+  readonly sessions: number;
+  readonly volumeKg: number;
+  readonly workingSets: number;
+}
+
+export interface HomeSummary {
+  readonly current: HomeWindow;
+  readonly previous: HomeWindow;
+  readonly totalSessions: number;
+  readonly streakWeeks: number;
+  readonly latestBodyWeightKg: number | null;
+  readonly latestBodyWeightAt: number | null;
+  readonly volumeDeltaPercent: number | null;
+  readonly sessionsDeltaPercent: number | null;
+}
+
+function windowOf(sessions: readonly HomeSessionInput[]): HomeWindow {
+  return {
+    sessions: sessions.length,
+    volumeKg: sessions.reduce((total, session) => total + session.volumeKg, 0),
+    workingSets: sessions.reduce((total, session) => total + session.workingSets, 0),
+  };
+}
+
+/**
+ * Semanas consecutivas con al menos una sesion, contando hacia atras desde la semana en curso. Si la
+ * semana en curso todavia no tiene sesiones, la racha se mide desde la anterior.
+ */
+function streakWeeks(sessions: readonly HomeSessionInput[], now: number): number {
+  if (sessions.length === 0) return 0;
+  const weeks = new Set(
+    sessions
+      .map((session) => Math.floor((now - session.startedAt) / HOME_WEEK_MS))
+      .filter((index) => index >= 0)
+  );
+
+  let streak = 0;
+  let index = weeks.has(0) ? 0 : 1;
+  while (weeks.has(index)) {
+    streak += 1;
+    index += 1;
+  }
+  return streak;
+}
+
+export function buildHomeSummary(
+  sessions: readonly HomeSessionInput[],
+  bodyPoints: readonly HomeBodyInput[],
+  now: number
+): HomeSummary {
+  const effective = sessions.filter((session) => session.startedAt <= now);
+  const currentFrom = now - HOME_WEEK_MS;
+  const previousFrom = now - 2 * HOME_WEEK_MS;
+
+  const current = windowOf(effective.filter((session) => session.startedAt > currentFrom));
+  const previous = windowOf(
+    effective.filter(
+      (session) => session.startedAt > previousFrom && session.startedAt <= currentFrom
+    )
+  );
+
+  const latestBody = bodyPoints
+    .filter((point) => point.measuredAt <= now)
+    .reduce<HomeBodyInput | null>(
+      (latest, point) => (latest === null || point.measuredAt > latest.measuredAt ? point : latest),
+      null
+    );
+
+  return {
+    current,
+    previous,
+    totalSessions: effective.length,
+    streakWeeks: streakWeeks(effective, now),
+    latestBodyWeightKg: latestBody?.value ?? null,
+    latestBodyWeightAt: latestBody?.measuredAt ?? null,
+    volumeDeltaPercent: deltaPercent(current.volumeKg, previous.volumeKg),
+    sessionsDeltaPercent: deltaPercent(current.sessions, previous.sessions),
+  };
+}

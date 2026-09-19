@@ -25,14 +25,16 @@
 
 ## 4. Web (fase posterior)
 
-- [ ] 4.1 Definir los tokens del sistema de diseño en `web/src/index.css` con `@theme` de Tailwind y el modo claro/oscuro; verificar `build` y `lint`
-- [ ] 4.2 Crear las primitivas de la web (`Card`, `StatTile`, `Button`, `SectionHeader`) sobre esos tokens; verificar `build` y `lint`
-- [ ] 4.3 Reemplazar el app shell de `App.tsx` por tab bar inferior en móvil y rail lateral en escritorio; verificar en el navegador
-- [ ] 4.4 Reescribir la vista de Inicio como panel y alinear las vistas restantes a las primitivas; verificar `build`, `lint` y tests
+- [x] 4.1 Definir los tokens del sistema de diseño en `web/src/index.css` con `@theme` de Tailwind y el modo claro/oscuro; verificar `build` y `lint`
+- [x] 4.2 Crear las primitivas de la web (`Card`, `StatTile`, `Button`, `SectionHeader`) sobre esos tokens; verificar `build` y `lint`
+- [x] 4.3 Reemplazar el app shell de `App.tsx` por tab bar inferior en móvil y rail lateral en escritorio; verificar en el navegador
+- [x] 4.4 Reescribir la vista de Inicio como panel y alinear las vistas restantes a las primitivas; verificar `build`, `lint` y tests
 
 ## 5. Verificación y cierre
 
+- [ ] 5.0 Reconectar las transiciones de elementos compartidos al nuevo Inicio (las claves `home-*` quedaron sin usar al retirar los botones planos)
+
 - [ ] 5.1 Dejar `android.yml` en verde (tests y APK) tras el push a `main`
 - [ ] 5.2 Probar en el APK: navegación por las cinco pestañas conservando estado, tema claro/oscuro/dinámico, panel de Inicio con y sin sesión activa, y Ajustes
-- [ ] 5.3 Verificar contraste y legibilidad en tema claro y oscuro, y que la app siga usable con animaciones del sistema en cero
+- [x] 5.3 Verificar contraste y legibilidad en tema claro y oscuro, y que la app siga usable con animaciones del sistema en cero
 - [ ] 5.4 Archivar el cambio y actualizar `openspec/specs` cuando el reshape esté cerrado

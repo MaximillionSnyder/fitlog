@@ -1,0 +1,19 @@
+{
+  "name": "FitLog",
+  "short_name": "FitLog",
+  "description": "Registro de entrenamiento local-first: series, rutinas, progreso y medidas.",
+  "lang": "es",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#070b15",
+  "theme_color": "#070b15",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
