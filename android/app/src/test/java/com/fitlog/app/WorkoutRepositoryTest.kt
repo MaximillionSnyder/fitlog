@@ -64,6 +64,61 @@ class WorkoutRepositoryTest {
     }
 
     @Test
+    fun `expone el descanso objetivo de la rutina de la sesion`() = runTest {
+        val routines = com.fitlog.app.data.RoutinesRepository(
+            dao = database.routinesDao(),
+            now = { 1_700_000_000_000 },
+        )
+        val routine = routines.createRoutine("Dia de empuje", null)
+        routines.addExercise(
+            routine.id,
+            com.fitlog.app.data.RoutineExerciseInput(
+                exerciseId = exerciseA,
+                targetSets = 4,
+                targetReps = 8,
+                targetWeightKg = null,
+                restSeconds = 120,
+                notes = null,
+            ),
+        )
+        routines.addExercise(
+            routine.id,
+            com.fitlog.app.data.RoutineExerciseInput(
+                exerciseId = exerciseB,
+                targetSets = 3,
+                targetReps = 10,
+                targetWeightKg = null,
+                restSeconds = null,
+                notes = null,
+            ),
+        )
+
+        val session = repository.startSession(routine.id)
+        assertEquals(mapOf(exerciseA to 120), repository.restTargets(session.routineId))
+        assertEquals(emptyMap<String, Int>(), repository.restTargets(null))
+    }
+
+    @Test
+    fun `la serie guarda su marca de tiempo`() = runTest {
+        val session = repository.startSession()
+        repository.addSet(
+            AddSetInput(
+                sessionId = session.id,
+                exerciseId = exerciseA,
+                weightKg = 60.0,
+                reps = 10,
+                rir = 2,
+                notes = null,
+                isWarmup = false,
+            ),
+        )
+
+        val sets = repository.sessionDetail(session.id).sets
+        assertEquals(1, sets.size)
+        assertEquals(1_700_000_000_000, sets.first().createdAtMs)
+    }
+
+    @Test
     fun `inicia y finaliza una sesion`() = runTest {
         val session = repository.startSession()
         assertEquals(session.startedAt, 1_700_000_000_000)

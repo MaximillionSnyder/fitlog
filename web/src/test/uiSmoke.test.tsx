@@ -1,0 +1,235 @@
+import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, expect, it } from 'vitest';
+
+import { AppShell } from '@/ui/AppShell';
+import { HomeView } from '@/ui/HomeView';
+import { MoreView } from '@/ui/MoreView';
+import { SessionDetailView } from '@/ui/SessionDetailView';
+import { SettingsView } from '@/ui/SettingsView';
+import WorkoutView from '@/ui/WorkoutView';
+import type { RoutinesState } from '@/state/useRoutines';
+import type { BodyMetricsState } from '@/state/useBodyMetrics';
+import type { CatalogState } from '@/state/useCatalog';
+import type { WorkoutState } from '@/state/useWorkout';
+
+/**
+ * Prueba de humo de la capa de interfaz.
+ *
+ * No hay navegador en este entorno, asi que las vistas se renderizan a HTML estatico: alcanza para
+ * detectar errores de ejecucion (accesos indefinidos, props mal armadas) y para verificar que los
+ * textos y las clases del sistema de diseno lleguen al marcado.
+ */
+const catalog = {
+  snapshot: {
+    groups: [{ id: 'g1', slug: 'pecho', name: 'Pecho', bodyRegion: 'torso' }],
+    exercises: [
+      {
+        id: 'e1',
+        slug: 'press-banca',
+        name: 'Press banca',
+        muscleGroupId: 'g1',
+        secondaryMuscleGroupId: null,
+        equipment: 'barra',
+        kind: 'strength',
+        isCustom: false,
+      },
+    ],
+  },
+  loading: false,
+  error: null,
+  create: async () => {},
+  remove: async () => {},
+  reload: async () => {},
+} as unknown as CatalogState;
+
+const body = {
+  metrics: [],
+  series: [],
+  stats: { count: 0, first: null, latest: null, min: null, max: null, deltaAbs: null, deltaPct: null },
+  kind: 'body_weight',
+  preset: '90d',
+  loading: false,
+  error: null,
+  selectKind: () => {},
+  selectPreset: () => {},
+  add: async () => {},
+  edit: async () => {},
+  remove: async () => {},
+} as unknown as BodyMetricsState;
+
+const workout = {
+  active: null,
+  activeSets: [],
+  history: [],
+  detail: null,
+  loading: false,
+  error: null,
+  start: async () => {},
+  finish: async () => {},
+  add: async () => {},
+  update: async () => {},
+  remove: async () => {},
+  openDetail: async () => {},
+  closeDetail: () => {},
+} as unknown as WorkoutState;
+
+const routines = {
+  routines: [],
+  loading: false,
+  error: null,
+  create: async () => {},
+  update: async () => {},
+  remove: async () => {},
+  addExercise: async () => {},
+  removeExercise: async () => {},
+  moveExercise: async () => {},
+} as unknown as RoutinesState;
+
+const activeWorkout = {
+  ...workout,
+  active: {
+    id: 's1',
+    startedAt: Date.now() - 600_000,
+    finishedAt: null,
+    notes: null,
+    routineId: null,
+    routineName: null,
+    summary: { totalSets: 1, workingSets: 1, totalVolumeKg: 600, volumeByExercise: { e1: 600 } },
+  },
+  activeSets: [
+    {
+      id: 'set1',
+      sessionId: 's1',
+      exerciseId: 'e1',
+      exerciseName: 'Press banca',
+      setIndex: 1,
+      weightKg: 60,
+      reps: 10,
+      rir: 2,
+      isWarmup: false,
+      notes: null,
+      createdAtMs: Date.now() - 120_000,
+    },
+  ],
+} as unknown as WorkoutState;
+
+const detailWorkout = {
+  ...workout,
+  detail: {
+    session: {
+      id: 's1',
+      startedAt: Date.now() - 3_600_000,
+      finishedAt: Date.now() - 1_800_000,
+      notes: null,
+      routineId: null,
+      routineName: 'Día de empuje',
+      summary: { totalSets: 2, workingSets: 1, totalVolumeKg: 600, volumeByExercise: { e1: 600 } },
+    },
+    sets: [
+      {
+        id: 'set1',
+        sessionId: 's1',
+        exerciseId: 'e1',
+        exerciseName: 'Press banca',
+        setIndex: 1,
+        weightKg: 40,
+        reps: 10,
+        rir: null,
+        isWarmup: true,
+        notes: null,
+        createdAtMs: Date.now() - 3_000_000,
+      },
+      {
+        id: 'set2',
+        sessionId: 's1',
+        exerciseId: 'e1',
+        exerciseName: 'Press banca',
+        setIndex: 2,
+        weightKg: 60,
+        reps: 10,
+        rir: 2,
+        isWarmup: false,
+        notes: null,
+        createdAtMs: Date.now() - 2_900_000,
+      },
+    ],
+  },
+} as unknown as WorkoutState;
+
+describe('interfaz web', () => {
+  it('el shell muestra los cinco destinos y la marca', () => {
+    const html = renderToStaticMarkup(
+      <AppShell
+        view="inicio"
+        onNavigate={() => {}}
+        onBack={() => {}}
+        canGoBack={false}
+        isDark
+        onToggleTheme={() => {}}
+        children={<p>contenido</p>}
+      />
+    );
+
+    for (const label of ['Inicio', 'Entrenar', 'Progreso', 'Rutinas', 'Más']) {
+      expect(html).toContain(label);
+    }
+    expect(html).toContain('FitLog');
+    expect(html).toContain('fl-app-bg');
+  });
+
+  it('el panel de Inicio invita a entrenar y muestra las estadísticas en cero', () => {
+    const html = renderToStaticMarkup(
+      <HomeView workout={workout} body={body} catalog={catalog} onNavigate={() => {}} />
+    );
+
+    expect(html).toContain('¿Entrenamos?');
+    expect(html).toContain('Iniciar entrenamiento');
+    expect(html).toContain('Últimos 7 días');
+    expect(html).toContain('Racha');
+    expect(html).toContain('Tu primer entrenamiento');
+    expect(html).toContain('bg-surface');
+  });
+
+  it('Más agrupa los destinos secundarios con su descripción', () => {
+    const html = renderToStaticMarkup(<MoreView onNavigate={() => {}} />);
+
+    for (const title of ['Catálogo', 'Medidas', 'Comparativas', 'Tips', 'Respaldo', 'Ajustes']) {
+      expect(html).toContain(title);
+    }
+  });
+
+  it('Entrenar precarga la última serie y ofrece repetirla', () => {
+    const html = renderToStaticMarkup(
+      <WorkoutView
+        workout={activeWorkout}
+        catalog={catalog}
+        routines={routines}
+        onOpenSessionDetail={() => {}}
+      />
+    );
+
+    expect(html).toContain('Última:');
+    expect(html).toContain('Repetir');
+    expect(html).toContain('Registrar serie');
+    expect(html).toContain('Press banca');
+  });
+
+  it('el detalle del entrenamiento agrupa las series por ejercicio', () => {
+    const html = renderToStaticMarkup(<SessionDetailView workout={detailWorkout} />);
+
+    expect(html).toContain('Día de empuje');
+    expect(html).toContain('Volumen');
+    expect(html).toContain('Press banca');
+    expect(html).toContain('series efectivas');
+    expect(html).toContain('CALENTAMIENTO');
+  });
+
+  it('Ajustes ofrece los tres modos de tema y el estado de la base', () => {
+    const html = renderToStaticMarkup(<SettingsView choice="system" onChoice={() => {}} />);
+
+    for (const label of ['Auto', 'Claro', 'Oscuro']) {
+      expect(html).toContain(label);
+    }
+    expect(html).toContain('Base de datos');
+  });
+});
