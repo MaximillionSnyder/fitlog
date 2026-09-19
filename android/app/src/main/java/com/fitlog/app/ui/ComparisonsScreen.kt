@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fitlog.app.domain.Comparisons
+import com.fitlog.app.ui.motion.EmptyState
+import com.fitlog.app.ui.motion.sharedNavBounds
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -58,7 +60,12 @@ fun ComparisonsScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
-                Text(text = "Comparativas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Comparativas",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.sharedNavBounds("home-comparisons"),
+                )
                 Text(text = "PRs, periodos y balance muscular", style = MaterialTheme.typography.bodySmall)
             }
             OutlinedButton(onClick = onBack) { Text("Volver") }
@@ -105,7 +112,7 @@ fun ComparisonsScreen(
         )
 
         if (!state.loading && state.records.isEmpty()) {
-            Text(text = "Todavía no hay marcas registradas.", style = MaterialTheme.typography.bodySmall)
+            EmptyState(message = "Todavía no hay marcas registradas.")
         }
 
         state.records.forEach { record ->
@@ -143,10 +150,7 @@ fun ComparisonsScreen(
         )
 
         if (!state.loading && state.balance.isEmpty()) {
-            Text(
-                text = "No hay volumen registrado en el periodo elegido.",
-                style = MaterialTheme.typography.bodySmall,
-            )
+            EmptyState(message = "No hay volumen registrado en el periodo elegido.")
         }
 
         state.balance.forEach { entry ->

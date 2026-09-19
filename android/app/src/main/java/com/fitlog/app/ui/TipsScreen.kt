@@ -32,6 +32,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fitlog.app.domain.Comparisons
 import com.fitlog.app.domain.Insights
+import com.fitlog.app.ui.motion.EmptyState
+import com.fitlog.app.ui.motion.sharedNavBounds
 
 private val severityColors = mapOf(
     Insights.Severity.WARNING to Color(0xFFFBBF24),
@@ -71,7 +73,12 @@ fun TipsScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
-                Text(text = "Tips", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Tips",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.sharedNavBounds("home-tips"),
+                )
                 Text(
                     text = "Observaciones con reglas fijas",
                     style = MaterialTheme.typography.bodySmall,
@@ -100,13 +107,9 @@ fun TipsScreen(
         }
 
         if (!state.loading && state.tips.isEmpty()) {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "No hay observaciones para este periodo. Seguí registrando entrenamientos.",
-                    modifier = Modifier.padding(20.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
+            EmptyState(
+                message = "No hay observaciones para este periodo. Seguí registrando entrenamientos.",
+            )
         }
 
         val visible = if (showAll) state.tips else state.tips.take(Insights.TIP_LIMIT)

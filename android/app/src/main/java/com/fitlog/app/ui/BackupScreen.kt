@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.fitlog.app.ui.motion.sharedNavBounds
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -93,7 +94,12 @@ fun BackupScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
-                Text(text = "Respaldo", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Respaldo",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.sharedNavBounds("home-backup"),
+                )
                 Text(
                     text = "Exportá o fusioná tus datos",
                     style = MaterialTheme.typography.bodySmall,

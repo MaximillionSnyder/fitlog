@@ -36,6 +36,8 @@ import com.fitlog.app.domain.CatalogExercise
 import com.fitlog.app.domain.CatalogText
 import com.fitlog.app.domain.Formulas
 import com.fitlog.app.domain.Progress
+import com.fitlog.app.ui.motion.EmptyState
+import com.fitlog.app.ui.motion.sharedNavBounds
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -79,7 +81,12 @@ fun ProgressScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
-                Text(text = "Progreso", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Progreso",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.sharedNavBounds("home-progress"),
+                )
                 Text(
                     text = "Evolución por ejercicio",
                     style = MaterialTheme.typography.bodySmall,
@@ -119,17 +126,13 @@ fun ProgressScreen(
         }
 
         if (!state.loading && state.points.isEmpty()) {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = if (selectedExercise != null) {
-                        "No hay series registradas de \"${selectedExercise.name}\" en el rango elegido."
-                    } else {
-                        "Elegí un ejercicio para ver su progreso."
-                    },
-                    modifier = Modifier.padding(20.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
+            EmptyState(
+                message = if (selectedExercise != null) {
+                    "No hay series registradas de \"${selectedExercise.name}\" en el rango elegido."
+                } else {
+                    "Elegí un ejercicio para ver su progreso."
+                },
+            )
         }
 
         if (state.points.isNotEmpty()) {

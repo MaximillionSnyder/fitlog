@@ -1,6 +1,7 @@
 package com.fitlog.app.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -39,6 +40,10 @@ import com.fitlog.app.data.WorkoutSet
 import com.fitlog.app.domain.CatalogExercise
 import com.fitlog.app.domain.CatalogText
 import com.fitlog.app.domain.WorkoutSummary
+import com.fitlog.app.ui.motion.EmptyState
+import com.fitlog.app.ui.motion.MorphActionButton
+import com.fitlog.app.ui.motion.MorphingBlob
+import com.fitlog.app.ui.motion.sharedNavBounds
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -80,7 +85,12 @@ fun WorkoutScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
-                Text(text = "Entrenar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Entrenar",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.sharedNavBounds("home-workout"),
+                )
                 Text(
                     text = state.active?.let { active ->
                         "Sesión en curso" +
@@ -89,13 +99,21 @@ fun WorkoutScreen(
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 OutlinedButton(onClick = onBack) { Text("Volver") }
-                if (state.active != null) {
-                    OutlinedButton(onClick = viewModel::finishSession) { Text("Finalizar") }
-                } else {
-                    Button(onClick = { viewModel.startSession() }) { Text("Iniciar") }
-                }
+                MorphActionButton(
+                    started = state.active != null,
+                    onClick = {
+                        if (state.active != null) {
+                            viewModel.finishSession()
+                        } else {
+                            viewModel.startSession()
+                        }
+                    },
+                )
             }
         }
 
@@ -107,15 +125,26 @@ fun WorkoutScreen(
 
         state.active?.let { active ->
             Card(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    SummaryCell("Series efectivas", active.summary.workingSets.toString())
-                    SummaryCell("Volumen", "${active.summary.totalVolumeKg.toInt()} kg")
-                    SummaryCell("Totales", active.summary.totalSets.toString())
+                Box {
+                    MorphingBlob(
+                        modifier = Modifier.matchParentSize(),
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.02f),
+                        ),
+                        seed = 21,
+                        durationMillis = 18000,
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        SummaryCell("Series efectivas", active.summary.workingSets.toString())
+                        SummaryCell("Volumen", "${active.summary.totalVolumeKg.toInt()} kg")
+                        SummaryCell("Totales", active.summary.totalSets.toString())
+                    }
                 }
             }
 
@@ -193,10 +222,7 @@ fun WorkoutScreen(
             }
 
             if (state.activeSets.isEmpty()) {
-                Text(
-                    text = "Todavía no hay series en esta sesión.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
+                EmptyState(message = "Todavía no hay series en esta sesión.")
             }
 
             state.activeSets.forEach { set ->
@@ -239,10 +265,7 @@ fun WorkoutScreen(
         )
 
         if (state.history.isEmpty() && !state.loading) {
-            Text(
-                text = "Todavía no registraste entrenamientos.",
-                style = MaterialTheme.typography.bodySmall,
-            )
+            EmptyState(message = "Todavía no registraste entrenamientos.")
         }
 
         state.history.forEach { session ->

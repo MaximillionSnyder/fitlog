@@ -32,21 +32,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.fitlog.app.domain.CatalogExercise
 import com.fitlog.app.domain.ExerciseKind
 import com.fitlog.app.domain.MuscleGroup
+import com.fitlog.app.ui.motion.EmptyState
+import com.fitlog.app.ui.motion.sharedNavBounds
+import com.fitlog.app.ui.motion.sharedNavElement
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CatalogScreen(
     onBack: () -> Unit,
+    onOpenDetail: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CatalogViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showForm by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<String?>(null) }
-    var detailExercise by remember { mutableStateOf<CatalogExercise?>(null) }
 
     Column(
         modifier = modifier
@@ -61,7 +63,12 @@ fun CatalogScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
-                Text(text = "Catálogo", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Catálogo",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.sharedNavBounds("home-catalog"),
+                )
                 Text(
                     text = "${state.visible.size} de ${state.exercises.size} ejercicios",
                     style = MaterialTheme.typography.bodySmall,
@@ -130,19 +137,15 @@ fun CatalogScreen(
         }
 
         if (!state.loading && state.visible.isEmpty()) {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "No hay ejercicios que coincidan con la búsqueda.",
-                    modifier = Modifier.padding(20.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
+            EmptyState(message = "No hay ejercicios que coincidan con la búsqueda.")
         }
 
         state.visible.forEach { exercise ->
             Card(
-                onClick = { detailExercise = exercise },
-                modifier = Modifier.fillMaxWidth(),
+                onClick = { onOpenDetail(exercise.id) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .sharedNavBounds("exercise-card-${exercise.id}"),
             ) {
                 Row(
                     modifier = Modifier
@@ -156,7 +159,11 @@ fun CatalogScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(text = exercise.name, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                text = exercise.name,
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.sharedNavElement("exercise-name-${exercise.id}"),
+                            )
                             if (exercise.isCustom) {
                                 Text(
                                     text = "PROPIO",
@@ -208,70 +215,6 @@ fun CatalogScreen(
                 TextButton(onClick = { pendingDelete = null }) { Text("Cancelar") }
             },
         )
-    }
-
-    detailExercise?.let { exercise ->
-        ExerciseDetailDialog(
-            exercise = exercise,
-            groups = state.groups,
-            onDismiss = { detailExercise = null },
-        )
-    }
-}
-
-@Composable
-private fun ExerciseDetailDialog(
-    exercise: CatalogExercise,
-    groups: List<MuscleGroup>,
-    onDismiss: () -> Unit,
-) {
-    val groupName = groups.firstOrNull { it.id == exercise.muscleGroupId }?.name ?: "Sin grupo"
-    val secondaryGroupName = exercise.secondaryMuscleGroupId?.let { id ->
-        groups.firstOrNull { it.id == id }?.name
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(text = exercise.name)
-                if (exercise.isCustom) {
-                    Text(
-                        text = "PROPIO",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.tertiary,
-                    )
-                }
-            }
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                DetailField(label = "Tipo", value = kindLabel(exercise.kind))
-                DetailField(label = "Grupo muscular", value = groupName)
-                secondaryGroupName?.let { name ->
-                    DetailField(label = "Grupo secundario", value = name)
-                }
-                DetailField(label = "Equipamiento", value = exercise.equipment)
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Cerrar") }
-        },
-    )
-}
-
-@Composable
-private fun DetailField(label: String, value: String) {
-    Column {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -348,7 +291,7 @@ private fun NewExerciseDialog(
     )
 }
 
-private fun kindLabel(kind: ExerciseKind): String = when (kind) {
+internal fun kindLabel(kind: ExerciseKind): String = when (kind) {
     ExerciseKind.STRENGTH -> "Fuerza"
     ExerciseKind.CARDIO -> "Cardio"
     ExerciseKind.MOBILITY -> "Movilidad"

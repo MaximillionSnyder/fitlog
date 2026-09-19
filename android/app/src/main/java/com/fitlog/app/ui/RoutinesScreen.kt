@@ -39,6 +39,8 @@ import com.fitlog.app.data.RoutineExerciseInput
 import com.fitlog.app.data.RoutinesRepository
 import com.fitlog.app.domain.CatalogExercise
 import com.fitlog.app.domain.CatalogText
+import com.fitlog.app.ui.motion.EmptyState
+import com.fitlog.app.ui.motion.sharedNavBounds
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -67,7 +69,12 @@ fun RoutinesScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
-                Text(text = "Rutinas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Rutinas",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.sharedNavBounds("home-routines"),
+                )
                 Text(text = "Plantillas para arrancar a entrenar", style = MaterialTheme.typography.bodySmall)
             }
             OutlinedButton(onClick = onBack) { Text("Volver") }
@@ -110,7 +117,7 @@ fun RoutinesScreen(
         }
 
         if (!state.loading && state.routines.isEmpty()) {
-            Text(text = "Todavía no tenés rutinas.", style = MaterialTheme.typography.bodySmall)
+            EmptyState(message = "Todavía no tenés rutinas.")
         }
 
         state.routines.forEach { routine ->

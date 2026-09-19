@@ -36,6 +36,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fitlog.app.domain.Body
 import com.fitlog.app.domain.Progress
+import com.fitlog.app.ui.motion.EmptyState
+import com.fitlog.app.ui.motion.sharedNavBounds
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -67,7 +69,12 @@ fun BodyMetricsScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
-                Text(text = "Medidas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Medidas",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.sharedNavBounds("home-body"),
+                )
                 Text(text = "Peso corporal y medidas", style = MaterialTheme.typography.bodySmall)
             }
             OutlinedButton(onClick = onBack) { Text("Volver") }
@@ -163,9 +170,8 @@ fun BodyMetricsScreen(
         }
 
         if (!state.loading && state.series.isEmpty()) {
-            Text(
-                text = "No hay medidas de ${Body.label(state.kind).lowercase()} en el periodo elegido.",
-                style = MaterialTheme.typography.bodySmall,
+            EmptyState(
+                message = "No hay medidas de ${Body.label(state.kind).lowercase()} en el periodo elegido.",
             )
         }
 
