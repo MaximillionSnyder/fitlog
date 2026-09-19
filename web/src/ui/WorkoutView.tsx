@@ -66,9 +66,11 @@ function parseNumber(raw: string): number | null {
 export default function WorkoutView({
   workout,
   catalog,
+  onOpenSessionDetail,
 }: {
   workout: WorkoutState;
   catalog: CatalogState;
+  onOpenSessionDetail: (sessionId: string) => void;
 }) {
   const [exerciseId, setExerciseId] = useState('');
   const [weight, setWeight] = useState('60');
@@ -502,7 +504,7 @@ export default function WorkoutView({
                     <Button
                       variant="secondary"
                       className={rowButtonClass}
-                      onClick={() => void workout.openDetail(session.id)}
+                      onClick={() => onOpenSessionDetail(session.id)}
                     >
                       Ver detalle
                     </Button>
@@ -514,45 +516,6 @@ export default function WorkoutView({
         </ul>
       )}
 
-      {workout.detail ? (
-        <Card className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-ink text-sm font-semibold">
-              Detalle ·{' '}
-              <span className="fl-num">{formatDateTime(workout.detail.session.startedAt)}</span>
-              {workout.detail.session.routineName
-                ? ` · Rutina: ${workout.detail.session.routineName}`
-                : ''}
-            </h3>
-            <Button variant="ghost" className={rowButtonClass} onClick={workout.closeDetail}>
-              Cerrar
-            </Button>
-          </div>
-          {workout.detail.sets.length === 0 ? (
-            <p className="text-muted text-sm">Esta sesión no tiene series registradas.</p>
-          ) : (
-            <ul className="flex flex-col gap-1 text-sm">
-              {workout.detail.sets.map((set) => (
-                <li key={set.id} className="flex items-center justify-between gap-3">
-                  <span className="min-w-0 truncate">
-                    <span className="text-faint fl-num">#{set.setIndex}</span>{' '}
-                    <span className="text-ink">{set.exerciseName}</span>
-                    {set.isWarmup ? (
-                      <span className="text-warning ml-2 text-[0.625rem] font-semibold uppercase">
-                        calentamiento
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="text-muted fl-num shrink-0">
-                    {formatKg(set.weightKg)} kg × {set.reps ?? '—'}
-                    {set.rir !== null ? ` · RIR ${set.rir}` : ''}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      ) : null}
     </div>
   );
 }

@@ -59,6 +59,7 @@ import kotlinx.coroutines.delay
 fun WorkoutScreen(
     initialRoutineId: String? = null,
     autoStart: Boolean = false,
+    onOpenSessionDetail: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: WorkoutViewModel = hiltViewModel(),
 ) {
@@ -296,39 +297,9 @@ fun WorkoutScreen(
         }
 
         state.history.forEach { session ->
-            HistoryCard(session = session, onOpenDetail = { viewModel.openDetail(session.id) })
+            HistoryCard(session = session, onOpenDetail = { onOpenSessionDetail(session.id) })
         }
 
-        state.detail?.let { detail ->
-            AlertDialog(
-                onDismissRequest = viewModel::closeDetail,
-                title = { Text("Detalle de la sesión") },
-                text = {
-                    Column(
-                        modifier = Modifier
-                            .heightIn(max = 360.dp)
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        if (detail.sets.isEmpty()) {
-                            Text("Esta sesión no tiene series registradas.")
-                        }
-                        detail.sets.forEach { set ->
-                            Text(
-                                text = "#${set.setIndex} ${set.exerciseName}: " +
-                                    "${set.weightKg ?: "—"} kg × ${set.reps ?: "—"}" +
-                                    (set.rir?.let { " · RIR $it" } ?: "") +
-                                    if (set.isWarmup) " (calentamiento)" else "",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = viewModel::closeDetail) { Text("Cerrar") }
-                },
-            )
-        }
     }
 
     if (showExercisePicker) {

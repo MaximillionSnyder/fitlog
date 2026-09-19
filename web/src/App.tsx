@@ -12,6 +12,7 @@ import { useWorkout } from '@/state/useWorkout';
 import { AppShell } from '@/ui/AppShell';
 import { HomeView } from '@/ui/HomeView';
 import { MoreView } from '@/ui/MoreView';
+import { SessionDetailView } from '@/ui/SessionDetailView';
 import { SettingsView } from '@/ui/SettingsView';
 import BodyMetricsView from '@/ui/BodyMetricsView';
 import BackupView from '@/ui/BackupView';
@@ -61,6 +62,17 @@ export default function App() {
     [view]
   );
 
+  // El detalle del entrenamiento se carga antes de entrar a la vista, asi no hay efecto de carga.
+  const openSessionDetail = useCallback(
+    (id: string) => {
+      void workout.openDetail(id);
+      setHistory((current) => [...current, view]);
+      setView('sesion');
+      window.scrollTo({ top: 0 });
+    },
+    [view, workout]
+  );
+
   const goBack = useCallback(() => {
     setHistory((current) => {
       if (current.length === 0) {
@@ -84,7 +96,14 @@ export default function App() {
       {view === 'inicio' && (
         <HomeView workout={workout} body={body} catalog={catalog} onNavigate={navigate} />
       )}
-      {view === 'entrenar' && <WorkoutView workout={workout} catalog={catalog} />}
+      {view === 'entrenar' && (
+        <WorkoutView
+          workout={workout}
+          catalog={catalog}
+          onOpenSessionDetail={openSessionDetail}
+        />
+      )}
+      {view === 'sesion' && <SessionDetailView workout={workout} />}
       {view === 'progreso' && <ProgressView progress={progress} catalog={catalog} />}
       {view === 'rutinas' && (
         <RoutinesView routines={routines} catalog={catalog} workout={workout} />

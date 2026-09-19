@@ -13,6 +13,8 @@ object Routes {
     const val HOME = "home"
     const val WORKOUT = WORKOUT_ROOT
     const val WORKOUT_PATTERN = "$WORKOUT_ROOT?routineId={routineId}&autoStart={autoStart}"
+    const val SESSION_DETAIL_PATTERN = "$WORKOUT_ROOT/session/{sessionId}"
+    const val SESSION_ARG = "sessionId"
     const val ROUTINE_ARG = "routineId"
     const val AUTO_START_ARG = "autoStart"
     const val PROGRESS = "progress"
@@ -31,6 +33,8 @@ object Routes {
         "$WORKOUT?$ROUTINE_ARG=${routineId.orEmpty()}&$AUTO_START_ARG=true"
 
     fun catalogDetail(exerciseId: String): String = "$CATALOG/$exerciseId"
+
+    fun sessionDetail(sessionId: String): String = "$WORKOUT_ROOT/session/$sessionId"
 }
 
 /** Destino de primer nivel: una pestana de la barra inferior. */
@@ -98,10 +102,14 @@ val secondaryDestinations: List<SecondaryDestination> = listOf(
 
 fun moreDestinations(): List<SecondaryDestination> = secondaryDestinations.filter { it.inMore }
 
-fun titleForRoute(route: String?): String? = when (route) {
+fun titleForRoute(route: String?): String? = when {
+    route == null -> null
+    route.startsWith("${Routes.WORKOUT}/session") -> "Detalle del entrenamiento"
+    else -> when (route) {
     Routes.WORKOUT -> "Entrenar"
     Routes.PROGRESS -> "Progreso"
     Routes.ROUTINES -> "Rutinas"
     Routes.MORE -> "Más"
     else -> secondaryDestinations.firstOrNull { it.route == route }?.title
+    }
 }

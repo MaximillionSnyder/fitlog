@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fitlog.app.data.AddSetInput
 import com.fitlog.app.data.CatalogRepository
-import com.fitlog.app.data.SessionDetail
 import com.fitlog.app.data.UpdateSetInput
 import com.fitlog.app.data.WorkoutException
 import com.fitlog.app.data.WorkoutRepository
@@ -27,7 +26,6 @@ data class WorkoutUiState(
     val activeSets: List<WorkoutSet> = emptyList(),
     val history: List<WorkoutSession> = emptyList(),
     val exercises: List<CatalogExercise> = emptyList(),
-    val detail: SessionDetail? = null,
 )
 
 @HiltViewModel
@@ -145,9 +143,7 @@ class WorkoutViewModel @Inject constructor(
             try {
                 repository.updateSet(setId, UpdateSetInput(weightKg, reps, rir, notes))
                 _state.update { it.copy(formError = null) }
-                val detail = _state.value.detail
                 load()
-                if (detail != null) openDetail(detail.session.id)
             } catch (error: WorkoutException) {
                 _state.update { it.copy(formError = error.message) }
             }
@@ -158,27 +154,11 @@ class WorkoutViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 repository.deleteSet(setId)
-                val detail = _state.value.detail
                 load()
-                if (detail != null) openDetail(detail.session.id)
             } catch (error: WorkoutException) {
                 _state.update { it.copy(error = error.message) }
             }
         }
-    }
-
-    fun openDetail(sessionId: String) {
-        viewModelScope.launch {
-            try {
-                _state.update { it.copy(detail = repository.sessionDetail(sessionId)) }
-            } catch (error: WorkoutException) {
-                _state.update { it.copy(error = error.message) }
-            }
-        }
-    }
-
-    fun closeDetail() {
-        _state.update { it.copy(detail = null) }
     }
 
     fun clearFormError() {

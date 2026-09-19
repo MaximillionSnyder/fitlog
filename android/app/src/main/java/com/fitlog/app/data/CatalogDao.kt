@@ -1,6 +1,5 @@
 package com.fitlog.app.data
 
-import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy

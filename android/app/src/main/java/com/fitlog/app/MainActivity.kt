@@ -39,6 +39,7 @@ import com.fitlog.app.ui.HomeScreen
 import com.fitlog.app.ui.MoreScreen
 import com.fitlog.app.ui.ProgressScreen
 import com.fitlog.app.ui.RoutinesScreen
+import com.fitlog.app.ui.SessionDetailScreen
 import com.fitlog.app.ui.SettingsScreen
 import com.fitlog.app.ui.TipsScreen
 import com.fitlog.app.ui.WorkoutScreen
@@ -166,6 +167,22 @@ private fun FitLogApp(
                     WorkoutScreen(
                         initialRoutineId = entry.arguments?.getString(Routes.ROUTINE_ARG),
                         autoStart = entry.arguments?.getBoolean(Routes.AUTO_START_ARG) == true,
+                        onOpenSessionDetail = { sessionId ->
+                            navController.navigate(Routes.sessionDetail(sessionId))
+                        },
+                    )
+                }
+            }
+
+            composable(
+                route = Routes.SESSION_DETAIL_PATTERN,
+                arguments = listOf(
+                    navArgument(Routes.SESSION_ARG) { type = NavType.StringType }
+                ),
+            ) { entry ->
+                NavEntryScopes(this) {
+                    SessionDetailScreen(
+                        sessionId = entry.arguments?.getString(Routes.SESSION_ARG).orEmpty(),
                     )
                 }
             }

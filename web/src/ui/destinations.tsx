@@ -32,7 +32,8 @@ export type View =
   | 'tips'
   | 'medidas'
   | 'respaldo'
-  | 'ajustes';
+  | 'ajustes'
+  | 'sesion';
 
 export interface TopLevelDestination {
   readonly id: View;
@@ -98,6 +99,7 @@ export const secondaryDestinations: readonly SecondaryDestination[] = [
 
 export function titleForView(view: View): string | null {
   if (view === 'inicio') return null;
+  if (view === 'sesion') return 'Detalle del entrenamiento';
   const top = topLevelDestinations.find((destination) => destination.id === view);
   if (top) return top.label;
   return secondaryDestinations.find((destination) => destination.id === view)?.title ?? null;
