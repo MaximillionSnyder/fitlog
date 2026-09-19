@@ -76,6 +76,29 @@ describe('buildHomeSummary', () => {
     expect(summary.latestBodyWeightKg).toBeNull();
   });
 
+  it('agrupa la actividad de hoy segun el inicio del dia local', () => {
+    const startOfDay = () => NOW - 5 * 3_600_000; // hoy arranco hace 5 horas
+    const summary = buildHomeSummary(
+      [session(0, 400, 3), session(0.5, 900, 4)],
+      [],
+      NOW,
+      startOfDay
+    );
+    expect(summary.today.sessions).toBe(1);
+    expect(summary.today.volumeKg).toBe(400);
+  });
+
+  it('agrupa la actividad de hoy', () => {
+    const summary = buildHomeSummary(
+      [session(0, 400, 3), session(1, 900, 4), session(9, 300, 4)],
+      [],
+      NOW
+    );
+    expect(summary.today.sessions).toBe(1);
+    expect(summary.today.volumeKg).toBe(400);
+    expect(summary.today.workingSets).toBe(3);
+  });
+
   it('ignora sesiones con fecha futura', () => {
     const summary = buildHomeSummary([session(-3, 500)], [], NOW);
     expect(summary.totalSessions).toBe(0);

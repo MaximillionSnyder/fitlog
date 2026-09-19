@@ -152,6 +152,25 @@ export function HomeView({
         </Card>
       ) : null}
 
+      {summary.today.sessions > 0 ? (
+        <div className="rounded-card border border-line bg-surface flex items-center justify-between gap-3 p-4">
+          <div className="flex items-center gap-3">
+            <span className="rounded-field bg-accent-soft text-accent-text grid size-9 place-items-center">
+              <IconSpark className="size-4" />
+            </span>
+            <div>
+              <p className="text-ink text-sm font-semibold">Hoy</p>
+              <p className="text-muted fl-num text-xs">
+                {summary.today.workingSets} series · {formatVolumeKg(summary.today.volumeKg)} kg
+              </p>
+            </div>
+          </div>
+          <Button variant="ghost" onClick={() => onNavigate('entrenar')}>
+            {active ? 'Seguir' : 'Ver'}
+          </Button>
+        </div>
+      ) : null}
+
       <SectionHeader title="Últimos 7 días" trailing="vs. 7 anteriores" />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

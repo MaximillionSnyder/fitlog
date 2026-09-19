@@ -30,9 +30,20 @@ export interface HomeWindow {
   readonly workingSets: number;
 }
 
+/**
+ * Inicio del dia local: la app agrupa "Hoy" por el calendario del dispositivo, no por UTC. Como el
+ * resultado depende de la zona horaria, se pasa como parametro con el mismo valor por defecto que
+ * usa el panel.
+ */
+export type StartOfDay = (now: number) => number;
+
+const localStartOfDay: StartOfDay = (now) => new Date(now).setHours(0, 0, 0, 0);
+
 export interface HomeSummary {
   readonly current: HomeWindow;
   readonly previous: HomeWindow;
+  /** Actividad desde la medianoche de hoy (incluye la sesion en curso). */
+  readonly today: HomeWindow;
   readonly totalSessions: number;
   readonly streakWeeks: number;
   readonly latestBodyWeightKg: number | null;
@@ -73,11 +84,15 @@ function streakWeeks(sessions: readonly HomeSessionInput[], now: number): number
 export function buildHomeSummary(
   sessions: readonly HomeSessionInput[],
   bodyPoints: readonly HomeBodyInput[],
-  now: number
+  now: number,
+  startOfDay: StartOfDay = localStartOfDay
 ): HomeSummary {
   const effective = sessions.filter((session) => session.startedAt <= now);
   const currentFrom = now - HOME_WEEK_MS;
   const previousFrom = now - 2 * HOME_WEEK_MS;
+
+  const startOfToday = startOfDay(now);
+  const today = windowOf(effective.filter((session) => session.startedAt >= startOfToday));
 
   const current = windowOf(effective.filter((session) => session.startedAt > currentFrom));
   const previous = windowOf(
@@ -96,6 +111,7 @@ export function buildHomeSummary(
   return {
     current,
     previous,
+    today,
     totalSessions: effective.length,
     streakWeeks: streakWeeks(effective, now),
     latestBodyWeightKg: latestBody?.value ?? null,

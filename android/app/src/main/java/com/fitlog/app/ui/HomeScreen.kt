@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.fitlog.app.domain.Home
 import com.fitlog.app.ui.components.FitLogCard
 import com.fitlog.app.ui.components.FitLogIcons
 import com.fitlog.app.ui.components.Format
@@ -93,6 +94,10 @@ fun HomeScreen(
                         onContinue = onOpenWorkout,
                     )
                 }
+            }
+
+            if (state.summary.today.sessions > 0) {
+                item { TodayCard(today = state.summary.today, onOpenWorkout = onOpenWorkout) }
             }
 
             item { SectionHeader(title = "Últimos 7 días", trailing = "vs. 7 anteriores") }
@@ -290,6 +295,37 @@ private fun HeroCard(
                 .align(Alignment.TopStart)
                 .padding(start = Spacing.xl, top = Spacing.lg),
         )
+    }
+}
+
+@Composable
+private fun TodayCard(today: Home.Window, onOpenWorkout: () -> Unit) {
+    FitLogCard(onClick = onOpenWorkout) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = FitLogIcons.Spark,
+                contentDescription = null,
+                tint = MaterialTheme.fitLogColors.accent,
+                modifier = Modifier.size(20.dp),
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "Hoy", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "${today.workingSets} series · ${Format.volumeKg(today.volumeKg)} kg",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Text(
+                text = "Ver",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

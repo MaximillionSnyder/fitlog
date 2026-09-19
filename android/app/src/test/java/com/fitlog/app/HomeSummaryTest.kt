@@ -120,6 +120,39 @@ class HomeSummaryTest {
     }
 
     @Test
+    fun `agrupa la actividad de hoy segun el inicio del dia local`() {
+        val summary = Home.build(
+            sessions = listOf(
+                session(daysAgo = 0, volume = 400.0, sets = 3),
+                session(daysAgo = 0, volume = 900.0, sets = 4),
+            ),
+            bodyPoints = emptyList(),
+            nowMs = now,
+            startOfTodayMs = now - 5 * 3_600_000L,
+        )
+
+        assertEquals(1, summary.today.sessions)
+        assertEquals(400.0, summary.today.volumeKg, 0.001)
+    }
+
+    @Test
+    fun `agrupa la actividad de hoy`() {
+        val summary = Home.build(
+            sessions = listOf(
+                session(daysAgo = 0, volume = 400.0, sets = 3),
+                session(daysAgo = 1, volume = 900.0),
+                session(daysAgo = 9, volume = 300.0),
+            ),
+            bodyPoints = emptyList(),
+            nowMs = now,
+        )
+
+        assertEquals(1, summary.today.sessions)
+        assertEquals(400.0, summary.today.volumeKg, 0.001)
+        assertEquals(3, summary.today.workingSets)
+    }
+
+    @Test
     fun `ignora sesiones con fecha futura`() {
         val summary = Home.build(
             sessions = listOf(session(daysAgo = -3, volume = 500.0)),

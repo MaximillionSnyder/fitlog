@@ -11,6 +11,21 @@ object Home {
     const val WINDOW_DAYS = 7
     const val WEEK_MS = WINDOW_DAYS * Progress.DAY_MS
 
+    /**
+     * Inicio del dia local: la app agrupa "Hoy" por el calendario del dispositivo, no por UTC. Se
+     * pasa como parametro (igual que `now`) para que la agregacion sea pura y testeable.
+     */
+    fun startOfDay(
+        nowMs: Long,
+        zone: java.time.ZoneId = java.time.ZoneId.systemDefault(),
+    ): Long =
+        java.time.Instant.ofEpochMilli(nowMs)
+            .atZone(zone)
+            .toLocalDate()
+            .atStartOfDay(zone)
+            .toInstant()
+            .toEpochMilli()
+
     data class SessionInput(
         val id: String,
         val startedAtMs: Long,
@@ -36,6 +51,8 @@ object Home {
     data class Summary(
         val current: Window,
         val previous: Window,
+        /** Actividad desde la medianoche de hoy (incluye la sesion en curso). */
+        val today: Window,
         val totalSessions: Int,
         val streakWeeks: Int,
         val latestBodyWeightKg: Double?,
@@ -52,6 +69,7 @@ object Home {
         sessions: List<SessionInput>,
         bodyPoints: List<BodyInput>,
         nowMs: Long,
+        startOfTodayMs: Long = startOfDay(nowMs),
     ): Summary {
         val effective = sessions.filter { it.startedAtMs <= nowMs }
         val currentFrom = nowMs - WEEK_MS
@@ -69,6 +87,7 @@ object Home {
         return Summary(
             current = current,
             previous = previous,
+            today = window(effective.filter { it.startedAtMs >= startOfTodayMs }),
             totalSessions = effective.size,
             streakWeeks = streakWeeks(effective, nowMs),
             latestBodyWeightKg = latestBody?.value,
