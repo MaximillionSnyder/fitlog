@@ -77,14 +77,14 @@ fun WorkoutScreen(
         routineHandled = true
         viewModel.startSession(initialRoutineId)
     }
-    // La duracion de la sesion activa se refresca sola cada 30 s mientras haya una en curso.
+    // Reloj de la sesion: alimenta la duracion y el tiempo desde la ultima serie (descanso).
     var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
     val activeId = state.active?.id
     LaunchedEffect(activeId) {
         if (activeId == null) return@LaunchedEffect
         while (true) {
             nowMs = System.currentTimeMillis()
-            delay(30_000)
+            delay(REST_TICK_MS)
         }
     }
 
@@ -98,7 +98,25 @@ fun WorkoutScreen(
     var notes by remember { mutableStateOf("") }
     var isWarmup by remember { mutableStateOf(false) }
 
+    val selectedExerciseId = selectedExercise?.id ?: state.exercises.firstOrNull()?.id
     val exerciseName = selectedExercise?.name ?: state.exercises.firstOrNull()?.name ?: "Elegir ejercicio"
+
+    // Ultima serie del ejercicio elegido: sirve para precargar el formulario y para repetir.
+    val lastSet = state.activeSets
+        .filter { it.exerciseId == selectedExerciseId }
+        .maxByOrNull { it.setIndex }
+
+    // Al cambiar de ejercicio, el formulario arranca con lo ultimo que se hizo con ese ejercicio.
+    LaunchedEffect(selectedExerciseId) {
+        val previous = state.activeSets
+            .filter { it.exerciseId == selectedExerciseId }
+            .maxByOrNull { it.setIndex }
+        if (previous != null) {
+            weight = previous.weightKg?.let { formatWeightInput(it) } ?: weight
+            reps = previous.reps?.toString() ?: reps
+            rir = previous.rir?.toString() ?: ""
+        }
+    }
 
     Column(
         modifier = modifier
@@ -153,6 +171,38 @@ fun WorkoutScreen(
                     onClick = { showExercisePicker = true },
                     icon = FitLogIcons.Dumbbell,
                 )
+
+                lastSet?.let { previous ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "Última: ${Format.kg(previous.weightKg)} kg × ${previous.reps ?: "—"}" +
+                                (previous.rir?.let { " · RIR $it" } ?: "") +
+                                " · hace ${Format.duration((nowMs - previous.createdAtMs).coerceAtLeast(0L))}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(
+                            onClick = {
+                                val exercise = selectedExercise ?: state.exercises.firstOrNull()
+                                if (exercise != null) {
+                                    viewModel.addSet(
+                                        exerciseId = exercise.id,
+                                        weightKg = previous.weightKg,
+                                        reps = previous.reps,
+                                        rir = previous.rir,
+                                        notes = null,
+                                        isWarmup = false,
+                                    )
+                                }
+                            },
+                        ) { Text("Repetir") }
+                    }
+                }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     OutlinedTextField(
@@ -565,6 +615,12 @@ private fun SetEditDialog(
         },
     )
 }
+
+/** Cada cuanto se refresca el reloj de la sesion (duracion y descanso). */
+private const val REST_TICK_MS = 5_000L
+
+private fun formatWeightInput(value: Double): String =
+    if (value == value.toLong().toDouble()) value.toLong().toString() else value.toString()
 
 private fun parseDecimal(raw: String): Double? =
     raw.trim().replace(',', '.').takeIf { it.isNotEmpty() }?.toDoubleOrNull()

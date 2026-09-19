@@ -35,6 +35,8 @@ export interface WorkoutSet {
   readonly rir: number | null;
   readonly isWarmup: boolean;
   readonly notes: string | null;
+  /** Marca de tiempo del registro: sirve para el tiempo de descanso desde la ultima serie. */
+  readonly createdAtMs: number;
 }
 
 export interface WorkoutSession {
@@ -80,6 +82,7 @@ type SetRow = {
   rir: number | null;
   isWarmup: number;
   notes: string | null;
+  createdAt: number;
 };
 
 function toWorkoutSet(row: SetRow): WorkoutSet {
@@ -94,6 +97,7 @@ function toWorkoutSet(row: SetRow): WorkoutSet {
     rir: row.rir,
     isWarmup: row.isWarmup === 1,
     notes: row.notes,
+    createdAtMs: row.createdAt,
   };
 }
 
@@ -110,6 +114,7 @@ async function loadSets(db: FitLogDb, sessionId: string): Promise<SetRow[]> {
       rir: setEntry.rir,
       isWarmup: setEntry.isWarmup,
       notes: setEntry.notes,
+      createdAt: setEntry.createdAt,
     })
     .from(setEntry)
     .innerJoin(exercise, eq(setEntry.exerciseId, exercise.id))
@@ -328,6 +333,7 @@ export async function addSet(
     setIndex,
     weightKg: input.weightKg,
     reps: input.reps,
+    createdAt: timestamp,
     rir: input.rir,
     isWarmup: input.isWarmup ? 1 : 0,
     notes: input.notes,
@@ -403,6 +409,7 @@ export async function listSessions(db: FitLogDb): Promise<WorkoutSession[]> {
       rir: setEntry.rir,
       isWarmup: setEntry.isWarmup,
       notes: setEntry.notes,
+      createdAt: setEntry.createdAt,
     })
     .from(setEntry)
     .innerJoin(exercise, eq(setEntry.exerciseId, exercise.id))

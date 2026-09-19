@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import {
   formatDuration,
@@ -84,11 +84,31 @@ export default function WorkoutView({
   const exercises = catalog.snapshot.exercises;
   const selectedExerciseId = exerciseId || exercises[0]?.id || '';
 
-  // La duracion de la sesion activa se refresca sola mientras hay una en curso.
+  // Ultima serie del ejercicio elegido: sirve para precargar el formulario y para repetir.
+  const lastSet = useMemo(() => {
+    const ofExercise = workout.activeSets.filter((set) => set.exerciseId === selectedExerciseId);
+    return ofExercise.length === 0
+      ? null
+      : ofExercise.reduce((latest, set) => (set.setIndex > latest.setIndex ? set : latest));
+  }, [selectedExerciseId, workout.activeSets]);
+
+  // Al cambiar de ejercicio, el formulario arranca con lo ultimo que se hizo con ese ejercicio.
+  // Es el ajuste de estado durante el render que recomienda React, en lugar de un efecto.
+  const [prefilledFor, setPrefilledFor] = useState(selectedExerciseId);
+  if (prefilledFor !== selectedExerciseId) {
+    setPrefilledFor(selectedExerciseId);
+    if (lastSet) {
+      setWeight(lastSet.weightKg === null ? '' : String(lastSet.weightKg));
+      setReps(lastSet.reps === null ? '' : String(lastSet.reps));
+      setRir(lastSet.rir === null ? '' : String(lastSet.rir));
+    }
+  }
+
+  // Reloj de la sesion: alimenta la duracion y el tiempo desde la ultima serie (descanso).
   useEffect(() => {
     if (!active) return;
     const first = window.setTimeout(() => setNow(Date.now()), 0);
-    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    const timer = window.setInterval(() => setNow(Date.now()), 5_000);
     return () => {
       window.clearTimeout(first);
       window.clearInterval(timer);
@@ -263,6 +283,31 @@ export default function WorkoutView({
                   </option>
                 ))}
               </select>
+              {lastSet ? (
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-muted fl-num text-xs">
+                    Última: {formatKg(lastSet.weightKg)} kg × {lastSet.reps ?? '—'}
+                    {lastSet.rir === null ? '' : ` · RIR ${lastSet.rir}`} · hace{' '}
+                    {formatDuration(Math.max(0, now - lastSet.createdAtMs))}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    onClick={() =>
+                      void workout.add({
+                        exerciseId: selectedExerciseId,
+                        weightKg: lastSet.weightKg,
+                        reps: lastSet.reps,
+                        rir: lastSet.rir,
+                        notes: null,
+                        isWarmup: false,
+                      })
+                    }
+                  >
+                    Repetir
+                  </Button>
+                </div>
+              ) : null}
+
               <div className="grid grid-cols-3 gap-3">
                 <input
                   className={inputClass}

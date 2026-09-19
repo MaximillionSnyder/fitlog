@@ -31,6 +31,7 @@ data class WorkoutSet(
     val rir: Int?,
     val isWarmup: Boolean,
     val notes: String?,
+    val createdAtMs: Long,
 )
 
 data class WorkoutSession(
@@ -265,5 +266,6 @@ class WorkoutRepository(
         rir = rir,
         isWarmup = isWarmup,
         notes = notes,
+        createdAtMs = createdAt,
     )
 }

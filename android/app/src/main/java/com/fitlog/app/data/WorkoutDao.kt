@@ -17,6 +17,7 @@ data class WorkoutSetRow(
     @ColumnInfo(name = "rir") val rir: Int?,
     @ColumnInfo(name = "is_warmup") val isWarmup: Boolean,
     @ColumnInfo(name = "notes") val notes: String?,
+    @ColumnInfo(name = "created_at") val createdAt: Long,
 )
 
 @Dao
@@ -68,7 +69,8 @@ abstract class WorkoutDao {
         """
         SELECT s.id AS id, s.session_id AS session_id, s.exercise_id AS exercise_id,
                e.name AS exercise_name, s.set_index AS set_index, s.weight_kg AS weight_kg,
-               s.reps AS reps, s.rir AS rir, s.is_warmup AS is_warmup, s.notes AS notes
+               s.reps AS reps, s.rir AS rir, s.is_warmup AS is_warmup, s.notes AS notes,
+               s.created_at AS created_at
         FROM set_entry s
         INNER JOIN exercise e ON e.id = s.exercise_id
         WHERE s.session_id = :sessionId AND s.deleted_at IS NULL
@@ -81,7 +83,8 @@ abstract class WorkoutDao {
         """
         SELECT s.id AS id, s.session_id AS session_id, s.exercise_id AS exercise_id,
                e.name AS exercise_name, s.set_index AS set_index, s.weight_kg AS weight_kg,
-               s.reps AS reps, s.rir AS rir, s.is_warmup AS is_warmup, s.notes AS notes
+               s.reps AS reps, s.rir AS rir, s.is_warmup AS is_warmup, s.notes AS notes,
+               s.created_at AS created_at
         FROM set_entry s
         INNER JOIN exercise e ON e.id = s.exercise_id
         WHERE s.deleted_at IS NULL
