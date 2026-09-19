@@ -69,7 +69,7 @@ gradle :app:assembleRelease -PversionName=0.1.7 \
 ### Publicar una release
 
 ```bash
-git tag v0.1.7 && git push origin v0.1.7   # dispara release.yml: tests, firma y Release
+git tag v0.1.10 && git push origin v0.1.10   # dispara release.yml: tests, firma y Release
 ```
 
 El `versionName` sale del tag (sin la `v`) y el `versionCode` del historial de commits, así que no hay que tocarlos a mano.

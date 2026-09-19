@@ -23,7 +23,7 @@ android {
         minSdk = 26
         targetSdk = 37
         versionCode = gitCommitCount.get()
-        versionName = (project.findProperty("versionName") as String?) ?: "0.1.7"
+        versionName = (project.findProperty("versionName") as String?) ?: "0.1.10"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
