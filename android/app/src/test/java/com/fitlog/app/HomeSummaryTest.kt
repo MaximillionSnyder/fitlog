@@ -124,7 +124,14 @@ class HomeSummaryTest {
         val summary = Home.build(
             sessions = listOf(
                 session(daysAgo = 0, volume = 400.0, sets = 3),
-                session(daysAgo = 0, volume = 900.0, sets = 4),
+                // Seis horas antes de "ahora": cae fuera del dia cuando el dia empezo hace cinco.
+                Home.SessionInput(
+                    id = "s-ayer",
+                    startedAtMs = now - 6 * 3_600_000L,
+                    finishedAtMs = now - 5 * 3_600_000L,
+                    workingSets = 4,
+                    volumeKg = 900.0,
+                ),
             ),
             bodyPoints = emptyList(),
             nowMs = now,

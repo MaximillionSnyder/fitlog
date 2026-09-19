@@ -78,12 +78,8 @@ describe('buildHomeSummary', () => {
 
   it('agrupa la actividad de hoy segun el inicio del dia local', () => {
     const startOfDay = () => NOW - 5 * 3_600_000; // hoy arranco hace 5 horas
-    const summary = buildHomeSummary(
-      [session(0, 400, 3), session(0.5, 900, 4)],
-      [],
-      NOW,
-      startOfDay
-    );
+    const beforeToday = { ...session(0, 900, 4), id: 's-ayer', startedAt: NOW - 6 * 3_600_000 };
+    const summary = buildHomeSummary([session(0, 400, 3), beforeToday], [], NOW, startOfDay);
     expect(summary.today.sessions).toBe(1);
     expect(summary.today.volumeKg).toBe(400);
   });

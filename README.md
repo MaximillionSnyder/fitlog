@@ -19,6 +19,7 @@ La fuente de verdad de datos y comportamiento vive en `shared/` y en las specs d
 │   ├── schema/              Esquema canónico (migraciones + schema.sql generado)
 │   └── test-vectors/        Casos de prueba compartidos (formulas, ulid)
 ├── openspec/                Specs y cambios (spec-driven)
+├── docs/diseno.md           Sistema de diseño (tokens, componentes y navegación)
 ├── docs/prototipo-pwa/      Prototipo PWA histórico
 └── .github/workflows/       CI de Android y Web
 ```
@@ -103,6 +104,17 @@ La validación es previa y sin efectos: si el archivo es inválido, tiene una ve
 6. **Tips**: leer las observaciones del periodo y ajustar
 7. **Medidas**: registrar peso corporal y medidas
 8. **Respaldo**: exportar antes de cambiar de teléfono y fusionar en el nuevo
+
+### Sistema de diseño
+
+La presentación de las dos apps sigue un mismo sistema: tokens de color con tema claro y oscuro,
+tipografía con cifras tabulares para los datos, una biblioteca de componentes propia y una
+navegación de cinco destinos de primer nivel con el resto agrupado en "Más". Está documentado en
+[`docs/diseno.md`](docs/diseno.md).
+
+En Android, el tema se elige en **Ajustes** (`sistema`, `claro`, `oscuro`, más los colores dinámicos
+de Android 12+) y la preferencia se guarda en el dispositivo. En la web, el botón del encabezado
+alterna claro/oscuro y el modo automático sigue al sistema.
 
 ### Esquema canónico
 
