@@ -1,15 +1,14 @@
 package com.fitlog.app
 
 import com.fitlog.app.domain.Backup
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -32,8 +31,7 @@ class BackupDomainTest {
 
     private fun toSnapshot(element: JsonElement): Backup.Snapshot {
         val snapshot = Backup.emptySnapshot()
-        val obj = element.jsonObject
-        for ((table, rows) in obj) {
+        for ((table, rows) in element.jsonObject) {
             snapshot.tables[table] = rows.jsonArray.map { toRow(it) }.toMutableList()
         }
         return snapshot
@@ -56,8 +54,8 @@ class BackupDomainTest {
 
     @Test
     fun `la fusion coincide con los vectores compartidos`() {
-        vectors["cases"]!!.forEach { element ->
-            val testCase = element.jsonObject
+        for (caseElement in vectors["cases"]!!.jsonArray) {
+            val testCase = caseElement.jsonObject
             val name = testCase["name"]!!.jsonPrimitive.content
             val local = toSnapshot(testCase["local"]!!)
             val file = toFile(testCase["backup"]!!)
@@ -65,8 +63,8 @@ class BackupDomainTest {
             val result = Backup.merge(local, file)
             val expected = testCase["expected"]!!.jsonObject
 
-            for ((table, expectedSummaryElement) in expected["summary"]!!.jsonObject) {
-                val expectedSummary = expectedSummaryElement.jsonObject
+            for ((table, summaryElement) in expected["summary"]!!.jsonObject) {
+                val expectedSummary = summaryElement.jsonObject
                 val actual = result.summary[table] ?: error("falta el resumen de $table")
                 assertEquals(
                     "$name · $table · insertadas",
@@ -90,24 +88,30 @@ class BackupDomainTest {
                 )
             }
 
-            for ((table, expectedRowsElement) in expected["snapshot"]!!.jsonObject) {
-                val expectedRows = expectedRowsElement.jsonArray.map { toRow(it) }
+            for ((table, rowsElement) in expected["snapshot"]!!.jsonObject) {
+                val expectedRows = rowsElement.jsonArray.map { toRow(it) }
                 val actualRows = result.snapshot.rows(table)
                 assertEquals("$name · $table · filas", expectedRows.size, actualRows.size)
+
                 expectedRows.forEachIndexed { index, expectedRow ->
                     val actualRow = actualRows[index]
-                    assertEquals("$name · $table · fila $index", expectedRow.values.keys.sorted(), actualRow.values.keys.sorted())
+                    assertEquals(
+                        "$name · $table · columnas de la fila $index",
+                        expectedRow.values.keys.sorted(),
+                        actualRow.values.keys.sorted(),
+                    )
                     for ((column, expectedValue) in expectedRow.values) {
                         val actualValue = actualRow.values[column]
                         when (expectedValue) {
                             null -> assertNull("$name · $table.$column", actualValue)
                             is String -> assertEquals("$name · $table.$column", expectedValue, actualValue)
-                            else -> assertEquals(
+                            is Double -> assertEquals(
                                 "$name · $table.$column",
                                 expectedValue,
                                 (actualValue as? Double) ?: Double.NaN,
                                 1e-9,
                             )
+                            else -> error("valor esperado no soportado en $table.$column")
                         }
                     }
                 }
@@ -117,8 +121,8 @@ class BackupDomainTest {
 
     @Test
     fun `los archivos invalidos fallan con el codigo esperado`() {
-        vectors["invalid_cases"]!!.forEach { element ->
-            val testCase = element.jsonObject
+        for (caseElement in vectors["invalid_cases"]!!.jsonArray) {
+            val testCase = caseElement.jsonObject
             val name = testCase["name"]!!.jsonPrimitive.content
             val local = toSnapshot(testCase["local"]!!)
             val json = testCase["json"]!!.jsonPrimitive.content
@@ -203,4 +207,3 @@ class BackupDomainTest {
         assertEquals(10.0, file.sections["app_setting"]?.first()?.values?.get("updated_at"))
     }
 }
-
