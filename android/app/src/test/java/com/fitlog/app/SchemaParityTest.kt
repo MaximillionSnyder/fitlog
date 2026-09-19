@@ -1,14 +1,17 @@
 package com.fitlog.app
 
-import java.io.File
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import android.database.Cursor
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
+import com.fitlog.app.data.FitLogDatabase
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
 class SchemaParityTest {
 
     private data class Column(
@@ -18,73 +21,80 @@ class SchemaParityTest {
     )
 
     @Test
-    fun `las entidades Room declaran las mismas tablas que el esquema canonico`() {
-        val canonical = canonicalTables(TestVectors.loadText("schema.sql"))
-        val room = roomTables()
+    fun `las tablas creadas por Room coinciden con el esquema canonico`() {
+        val database = openDatabase()
+        try {
+            val room = roomTables(database)
+            val canonical = canonicalTables(TestVectors.loadText("schema.sql"))
 
-        assertEquals(canonical.keys.sorted(), room.keys.sorted())
-    }
-
-    @Test
-    fun `las entidades Room declaran las mismas columnas que el esquema canonico`() {
-        val canonical = canonicalTables(TestVectors.loadText("schema.sql"))
-        val room = roomTables()
-
-        for ((table, canonicalColumns) in canonical) {
-            val roomColumns = room[table] ?: error("Room no declara la tabla $table")
-            assertEquals("columnas de $table", canonicalColumns.keys.sorted(), roomColumns.keys.sorted())
+            assertEquals(canonical.keys.sorted(), room.keys.sorted())
+            for ((table, canonicalColumns) in canonical) {
+                val roomColumns = room[table] ?: error("Room no creo la tabla $table")
+                assertEquals("columnas de $table", canonicalColumns.keys.sorted(), roomColumns.keys.sorted())
+            }
+        } finally {
+            database.close()
         }
     }
 
     @Test
     fun `tipo, nulabilidad y clave primaria coinciden con el esquema canonico`() {
-        val canonical = canonicalTables(TestVectors.loadText("schema.sql"))
-        val room = roomTables()
+        val database = openDatabase()
+        try {
+            val room = roomTables(database)
+            val canonical = canonicalTables(TestVectors.loadText("schema.sql"))
 
-        for ((table, canonicalColumns) in canonical) {
-            val roomColumns = room[table] ?: error("Room no declara la tabla $table")
-            for ((column, expected) in canonicalColumns) {
-                val actual = roomColumns[column] ?: error("Room no declara $table.$column")
-                assertEquals("tipo de $table.$column", expected.type, actual.type)
-                assertEquals("nulabilidad de $table.$column", expected.notNull, actual.notNull)
-                assertEquals("PK de $table.$column", expected.primaryKey, actual.primaryKey)
+            for ((table, canonicalColumns) in canonical) {
+                val roomColumns = room[table] ?: error("Room no creo la tabla $table")
+                for ((column, expected) in canonicalColumns) {
+                    val actual = roomColumns[column] ?: error("Room no creo $table.$column")
+                    assertEquals("tipo de $table.$column", expected.type, actual.type)
+                    assertEquals("nulabilidad de $table.$column", expected.notNull, actual.notNull)
+                    assertEquals("PK de $table.$column", expected.primaryKey, actual.primaryKey)
+                }
             }
+        } finally {
+            database.close()
         }
     }
 
-    private fun roomTables(): Map<String, Map<String, Column>> {
-        val schemaFile = listOf(
-            File("schemas/com.fitlog.app.data.FitLogDatabase/1.json"),
-            File("app/schemas/com.fitlog.app.data.FitLogDatabase/1.json"),
-        ).firstOrNull { it.exists() }
-            ?: error("No se encontro el JSON de esquema exportado por Room; revisa room.schemaLocation")
+    private fun openDatabase(): FitLogDatabase =
+        Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            FitLogDatabase::class.java,
+        ).build()
 
-        val root = kotlinx.serialization.json.Json.parseToJsonElement(schemaFile.readText()).jsonObject
-        val entities = root.getValue("database").jsonObject.getValue("entities").jsonArray
+    private fun roomTables(database: FitLogDatabase): Map<String, Map<String, Column>> {
+        val sqlite = database.openHelper.readableDatabase
+        val tableNames = mutableListOf<String>()
 
-        val result = mutableMapOf<String, Map<String, Column>>()
-        for (entity in entities) {
-            val entityObject = entity.jsonObject
-            val tableName = entityObject.getValue("tableName").jsonPrimitive.content
-            val primaryKeys = entityObject.getValue("primaryKey").jsonObject
-                .getValue("columnNames").jsonArray
-                .map { it.jsonPrimitive.content }
-                .toSet()
-
-            val columns = entityObject.getValue("fields").jsonArray.associate { field ->
-                val fieldObject = field.jsonObject
-                val columnName = fieldObject.getValue("columnName").jsonPrimitive.content
-                columnName to Column(
-                    type = fieldObject.getValue("affinity").jsonPrimitive.content.uppercase(),
-                    notNull = fieldObject["notNull"]?.jsonPrimitive?.booleanOrNull ?: false,
-                    primaryKey = columnName in primaryKeys,
-                )
+        sqlite.query(
+            "SELECT name FROM sqlite_master WHERE type = 'table' " +
+                "AND name NOT LIKE 'sqlite_%' AND name <> 'room_master_table' ORDER BY name"
+        ).use { cursor ->
+            while (cursor.moveToNext()) {
+                tableNames.add(cursor.getString(0))
             }
-            result[tableName] = columns
         }
 
-        assertTrue("Room no exporto entidades", result.isNotEmpty())
-        return result
+        return tableNames.associateWith { tableName ->
+            val columns = mutableMapOf<String, Column>()
+            sqlite.query("PRAGMA table_info($tableName)").use { cursor ->
+                val nameIndex = cursor.columnIndexOrThrow("name")
+                val typeIndex = cursor.columnIndexOrThrow("type")
+                val notNullIndex = cursor.columnIndexOrThrow("notnull")
+                val pkIndex = cursor.columnIndexOrThrow("pk")
+                while (cursor.moveToNext()) {
+                    val name = cursor.getString(nameIndex)
+                    columns[name] = Column(
+                        type = cursor.getString(typeIndex).uppercase(),
+                        notNull = cursor.getInt(notNullIndex) == 1,
+                        primaryKey = cursor.getInt(pkIndex) > 0,
+                    )
+                }
+            }
+            columns
+        }
     }
 
     private fun canonicalTables(sql: String): Map<String, Map<String, Column>> {
@@ -133,6 +143,12 @@ class SchemaParityTest {
         }
         if (current.isNotBlank()) parts.add(current.toString())
         return parts
+    }
+
+    private fun Cursor.columnIndexOrThrow(name: String): Int {
+        val index = getColumnIndex(name)
+        check(index >= 0) { "columna $name no encontrada en el cursor" }
+        return index
     }
 
     private companion object {

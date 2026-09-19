@@ -9,9 +9,14 @@
 - [ ] 2.2 Renombrar el APK a `fitlog-<tag>.apk` y publicar la Release con notas generadas y advertencia de firma de depuración
 - [ ] 2.3 Verificar `permissions: contents: write` y que `gh release create` usa el tag correcto
 
-## 3. Publicación y verificación
+## 3. Paridad de esquema robusta
 
-- [ ] 3.1 Documentar en el README la instalación desde Releases y la migración a keystore propio
-- [ ] 3.2 Empujar el tag `v0.1`, esperar el workflow y confirmar que la Release existe con el APK adjunto
-- [ ] 3.3 Descargar el APK de la Release y validar que es un APK firmado y no vacío (`unzip -l` / tamaño)
-- [ ] 3.4 `openspec validate 03-release-android` y `openspec archive` del cambio
+- [ ] 3.1 Reescribir `SchemaParityTest` para introspeccionar el esquema que Room crea en memoria (Robolectric) en lugar del JSON exportado
+- [ ] 3.2 Verificar que la comparación cubre tablas, columnas, tipos, nulabilidad y PK contra `shared/schema/schema.sql`
+
+## 4. Publicación y verificación
+
+- [ ] 4.1 Documentar en el README la instalación desde Releases y la migración a keystore propio
+- [ ] 4.2 Empujar el tag `v0.1`, esperar el workflow y confirmar que la Release existe con el APK adjunto
+- [ ] 4.3 Descargar el APK de la Release y validar que es un APK firmado y no vacío (`unzip -l` / tamaño)
+- [ ] 4.4 `openspec validate 03-release-android` y `openspec archive` del cambio

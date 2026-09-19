@@ -19,6 +19,7 @@ Hoy el APK solo existe como artifact temporal de CI. Para instalar FitLog en un 
 ### Modified Capabilities
 
 - `platform/scaffold`: se agrega el requisito de publicación de releases de Android con tag, APK adjunto y trazabilidad de versión.
+- `data/schema-core`: la prueba de paridad de esquema pasa a validar el esquema real que Room crea (introspección en memoria) en lugar del JSON exportado, que no se restaura cuando el cache de Gradle evita re-ejecutar KSP.
 
 ## Impact
 

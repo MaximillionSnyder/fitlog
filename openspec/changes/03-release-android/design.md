@@ -28,6 +28,10 @@ El build type `release` usa `signingConfig = signingConfigs.getByName("debug")`.
 
 `versionName = "0.1"` en Gradle y tag `v0.1`. El APK se renombra a `fitlog-v0.1.apk` antes de adjuntarlo para que el archivo descargado identifique la versión.
 
+### D4. Paridad de esquema contra la base real, no contra el JSON exportado
+
+El primer run de release falló porque la prueba de paridad leía `app/schemas/*.json` y, al restaurarse KSP desde el cache de Gradle, ese archivo no se regenera. La prueba pasa a abrir Room en memoria (Robolectric) e introspeccionar `PRAGMA table_info`, comparando contra `shared/schema/schema.sql`. Ventajas: no depende de artefactos de build, valida exactamente lo que la app crea en el dispositivo y sigue fallando ante cualquier divergencia de tablas, columnas, tipos, nulabilidad o PK. `exportSchema` se mantiene para el historial de migraciones.
+
 ## Risks / Trade-offs
 
 - **Clave de depuración**: no hay continuidad de firma entre runners (AGP la regenera), por lo que las actualizaciones exigen desinstalar si cambia la clave. Mitigación: documentar y migrar a keystore propio en el cambio 09.
