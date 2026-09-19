@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import { useDatabase } from '@/db/bootstrap';
 import { useDbStatusStore } from '@/state/dbStatus';
+import { useBackup } from '@/state/useBackup';
 import { useBodyMetrics } from '@/state/useBodyMetrics';
 import { useCatalog } from '@/state/useCatalog';
 import { useComparisons } from '@/state/useComparisons';
@@ -9,6 +10,7 @@ import { useTips } from '@/state/useTips';
 import { useProgress } from '@/state/useProgress';
 import { useRoutines } from '@/state/useRoutines';
 import { useWorkout } from '@/state/useWorkout';
+import BackupView from '@/ui/BackupView';
 import BodyMetricsView from '@/ui/BodyMetricsView';
 import CatalogView from '@/ui/CatalogView';
 import ComparisonsView from '@/ui/ComparisonsView';
@@ -32,7 +34,8 @@ type View =
   | 'progreso'
   | 'comparativas'
   | 'tips'
-  | 'medidas';
+  | 'medidas'
+  | 'respaldo';
 
 export default function App() {
   const db = useDatabase();
@@ -44,6 +47,7 @@ export default function App() {
   const comparisons = useComparisons(db);
   const tips = useTips(db);
   const body = useBodyMetrics(db);
+  const backup = useBackup(db);
   const [view, setView] = useState<View>('inicio');
 
   return (
@@ -63,6 +67,7 @@ export default function App() {
               ['comparativas', 'Comparativas'],
               ['tips', 'Tips'],
               ['medidas', 'Medidas'],
+              ['respaldo', 'Respaldo'],
               ['catalogo', 'Catálogo'],
             ] as const
           ).map(([target, label]) => (
@@ -122,6 +127,7 @@ export default function App() {
       {view === 'progreso' && <ProgressView progress={progress} catalog={catalog} />}
       {view === 'tips' && <TipsView tips={tips} catalog={catalog} />}
       {view === 'medidas' && <BodyMetricsView body={body} />}
+      {view === 'respaldo' && <BackupView backup={backup} />}
       {view === 'comparativas' && (
         <ComparisonsView comparisons={comparisons} catalog={catalog} />
       )}

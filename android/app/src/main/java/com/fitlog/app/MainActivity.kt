@@ -31,6 +31,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.NavType
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.fitlog.app.ui.BackupScreen
 import com.fitlog.app.ui.BodyMetricsScreen
 import com.fitlog.app.ui.CatalogScreen
 import com.fitlog.app.ui.ComparisonsScreen
@@ -62,6 +63,7 @@ class MainActivity : ComponentActivity() {
                                 onOpenComparisons = { navController.navigate(COMPARISONS_ROUTE) },
                                 onOpenTips = { navController.navigate(TIPS_ROUTE) },
                                 onOpenBody = { navController.navigate(BODY_ROUTE) },
+                                onOpenBackup = { navController.navigate(BACKUP_ROUTE) },
                                 modifier = Modifier.padding(padding),
                             )
                         }
@@ -88,6 +90,14 @@ class MainActivity : ComponentActivity() {
                             WorkoutScreen(
                                 onBack = { navController.popBackStack() },
                                 initialRoutineId = backStackEntry.arguments?.getString(ROUTINE_ARG),
+                                modifier = Modifier.padding(padding),
+                            )
+                        }
+                    }
+                    composable(BACKUP_ROUTE) {
+                        Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
+                            BackupScreen(
+                                onBack = { navController.popBackStack() },
                                 modifier = Modifier.padding(padding),
                             )
                         }
@@ -151,6 +161,7 @@ class MainActivity : ComponentActivity() {
         const val COMPARISONS_ROUTE = "comparisons"
         const val TIPS_ROUTE = "tips"
         const val BODY_ROUTE = "body"
+        const val BACKUP_ROUTE = "backup"
     }
 }
 
@@ -163,6 +174,7 @@ private fun HomeScreen(
     onOpenComparisons: () -> Unit,
     onOpenTips: () -> Unit,
     onOpenBody: () -> Unit,
+    onOpenBackup: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DbStatusViewModel = hiltViewModel(),
 ) {
@@ -218,6 +230,10 @@ private fun HomeScreen(
 
         OutlinedButton(onClick = onOpenBody, modifier = Modifier.fillMaxWidth()) {
             Text("Medidas")
+        }
+
+        OutlinedButton(onClick = onOpenBackup, modifier = Modifier.fillMaxWidth()) {
+            Text("Respaldo")
         }
 
         OutlinedButton(onClick = onOpenRoutines, modifier = Modifier.fillMaxWidth()) {

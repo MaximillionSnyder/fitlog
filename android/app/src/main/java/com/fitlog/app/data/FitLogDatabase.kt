@@ -34,4 +34,5 @@ abstract class FitLogDatabase : RoomDatabase() {
     abstract fun progressDao(): ProgressDao
     abstract fun comparisonsDao(): ComparisonsDao
     abstract fun bodyMetricsDao(): BodyMetricsDao
+    abstract fun backupDao(): BackupDao
 }

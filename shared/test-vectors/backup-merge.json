@@ -1,0 +1,1094 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "name": "importa en base vacia",
+      "local": {
+        "exercise": [],
+        "routine": [],
+        "routine_exercise": [],
+        "session": [],
+        "set_entry": [],
+        "body_metric": [],
+        "app_setting": []
+      },
+      "backup": {
+        "format": "fitlog-backup",
+        "format_version": 1,
+        "exported_at_ms": 5000,
+        "app_version": "0.1.7",
+        "sections": {
+          "exercise": [
+            {
+              "id": "ex-a",
+              "slug": "press-mancuerna",
+              "name": "press-mancuerna",
+              "muscle_group_id": "mg-pecho",
+              "is_custom": 1,
+              "updated_at": 10,
+              "deleted_at": null
+            }
+          ],
+          "routine": [
+            {
+              "id": "r1",
+              "name": "Empuje",
+              "updated_at": 10,
+              "deleted_at": null
+            }
+          ],
+          "routine_exercise": [
+            {
+              "id": "re1",
+              "routine_id": "r1",
+              "exercise_id": "ex-a",
+              "position": 1,
+              "updated_at": 10,
+              "deleted_at": null
+            }
+          ],
+          "session": [
+            {
+              "id": "s1",
+              "started_at": 1000,
+              "updated_at": 10,
+              "deleted_at": null
+            }
+          ],
+          "set_entry": [
+            {
+              "id": "set1",
+              "session_id": "s1",
+              "exercise_id": "ex-a",
+              "set_index": 1,
+              "weight_kg": 100,
+              "reps": 8,
+              "updated_at": 10,
+              "deleted_at": null
+            }
+          ],
+          "body_metric": [
+            {
+              "id": "m1",
+              "measured_at": 1000,
+              "kind": "body_weight",
+              "value": 78.5,
+              "unit": "kg",
+              "updated_at": 10,
+              "deleted_at": null
+            }
+          ],
+          "app_setting": [
+            {
+              "key": "tema",
+              "value": "oscuro",
+              "updated_at": 10
+            }
+          ]
+        }
+      },
+      "expected": {
+        "summary": {
+          "exercise": {
+            "inserted": 1,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "routine": {
+            "inserted": 1,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "routine_exercise": {
+            "inserted": 1,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "session": {
+            "inserted": 1,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "set_entry": {
+            "inserted": 1,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "body_metric": {
+            "inserted": 1,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "app_setting": {
+            "inserted": 1,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          }
+        },
+        "snapshot": {
+          "exercise": [
+            {
+              "id": "ex-a",
+              "slug": "press-mancuerna",
+              "name": "press-mancuerna",
+              "muscle_group_id": "mg-pecho",
+              "is_custom": 1,
+              "updated_at": 10,
+              "deleted_at": null
+            }
+          ],
+          "routine": [
+            {
+              "id": "r1",
+              "name": "Empuje",
+              "updated_at": 10,
+              "deleted_at": null
+            }
+          ],
+          "routine_exercise": [
+            {
+              "id": "re1",
+              "routine_id": "r1",
+              "exercise_id": "ex-a",
+              "position": 1,
+              "updated_at": 10,
+              "deleted_at": null
+            }
+          ],
+          "session": [
+            {
+              "id": "s1",
+              "started_at": 1000,
+              "updated_at": 10,
+              "deleted_at": null
+            }
+          ],
+          "set_entry": [
+            {
+              "id": "set1",
+              "session_id": "s1",
+              "exercise_id": "ex-a",
+              "set_index": 1,
+              "weight_kg": 100,
+              "reps": 8,
+              "updated_at": 10,
+              "deleted_at": null
+            }
+          ],
+          "body_metric": [
+            {
+              "id": "m1",
+              "measured_at": 1000,
+              "kind": "body_weight",
+              "value": 78.5,
+              "unit": "kg",
+              "updated_at": 10,
+              "deleted_at": null
+            }
+          ],
+          "app_setting": [
+            {
+              "key": "tema",
+              "value": "oscuro",
+              "updated_at": 10
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "ignora filas mas antiguas",
+      "local": {
+        "exercise": [],
+        "routine": [
+          {
+            "id": "r1",
+            "name": "Nombre local",
+            "updated_at": 200,
+            "deleted_at": null
+          }
+        ],
+        "routine_exercise": [],
+        "session": [],
+        "set_entry": [],
+        "body_metric": [],
+        "app_setting": []
+      },
+      "backup": {
+        "format": "fitlog-backup",
+        "format_version": 1,
+        "exported_at_ms": 5000,
+        "app_version": "0.1.7",
+        "sections": {
+          "routine": [
+            {
+              "id": "r1",
+              "name": "Nombre viejo",
+              "updated_at": 100,
+              "deleted_at": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "summary": {
+          "exercise": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "routine": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 1,
+            "remapped": 0
+          },
+          "routine_exercise": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "session": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "set_entry": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "body_metric": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "app_setting": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          }
+        },
+        "snapshot": {
+          "exercise": [],
+          "routine": [
+            {
+              "id": "r1",
+              "name": "Nombre local",
+              "updated_at": 200,
+              "deleted_at": null
+            }
+          ],
+          "routine_exercise": [],
+          "session": [],
+          "set_entry": [],
+          "body_metric": [],
+          "app_setting": []
+        }
+      }
+    },
+    {
+      "name": "actualiza filas mas nuevas",
+      "local": {
+        "exercise": [],
+        "routine": [
+          {
+            "id": "r1",
+            "name": "Nombre local",
+            "updated_at": 200,
+            "deleted_at": null
+          }
+        ],
+        "routine_exercise": [],
+        "session": [],
+        "set_entry": [],
+        "body_metric": [],
+        "app_setting": []
+      },
+      "backup": {
+        "format": "fitlog-backup",
+        "format_version": 1,
+        "exported_at_ms": 5000,
+        "app_version": "0.1.7",
+        "sections": {
+          "routine": [
+            {
+              "id": "r1",
+              "name": "Nombre actualizado",
+              "updated_at": 300,
+              "deleted_at": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "summary": {
+          "exercise": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "routine": {
+            "inserted": 0,
+            "updated": 1,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "routine_exercise": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "session": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "set_entry": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "body_metric": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "app_setting": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          }
+        },
+        "snapshot": {
+          "exercise": [],
+          "routine": [
+            {
+              "id": "r1",
+              "name": "Nombre actualizado",
+              "updated_at": 300,
+              "deleted_at": null
+            }
+          ],
+          "routine_exercise": [],
+          "session": [],
+          "set_entry": [],
+          "body_metric": [],
+          "app_setting": []
+        }
+      }
+    },
+    {
+      "name": "empate conserva la fila local",
+      "local": {
+        "exercise": [],
+        "routine": [
+          {
+            "id": "r1",
+            "name": "Nombre local",
+            "updated_at": 200,
+            "deleted_at": null
+          }
+        ],
+        "routine_exercise": [],
+        "session": [],
+        "set_entry": [],
+        "body_metric": [],
+        "app_setting": []
+      },
+      "backup": {
+        "format": "fitlog-backup",
+        "format_version": 1,
+        "exported_at_ms": 5000,
+        "app_version": "0.1.7",
+        "sections": {
+          "routine": [
+            {
+              "id": "r1",
+              "name": "Nombre importado",
+              "updated_at": 200,
+              "deleted_at": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "summary": {
+          "exercise": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "routine": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 1,
+            "remapped": 0
+          },
+          "routine_exercise": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "session": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "set_entry": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "body_metric": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "app_setting": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          }
+        },
+        "snapshot": {
+          "exercise": [],
+          "routine": [
+            {
+              "id": "r1",
+              "name": "Nombre local",
+              "updated_at": 200,
+              "deleted_at": null
+            }
+          ],
+          "routine_exercise": [],
+          "session": [],
+          "set_entry": [],
+          "body_metric": [],
+          "app_setting": []
+        }
+      }
+    },
+    {
+      "name": "propaga el borrado mas nuevo",
+      "local": {
+        "exercise": [
+          {
+            "id": "ex-local",
+            "slug": "remo-maquina",
+            "name": "remo-maquina",
+            "muscle_group_id": "mg-pecho",
+            "is_custom": 1,
+            "updated_at": 100,
+            "deleted_at": null
+          }
+        ],
+        "routine": [],
+        "routine_exercise": [],
+        "session": [
+          {
+            "id": "s1",
+            "started_at": 1000,
+            "updated_at": 100,
+            "deleted_at": null
+          }
+        ],
+        "set_entry": [
+          {
+            "id": "set1",
+            "session_id": "s1",
+            "exercise_id": "ex-local",
+            "set_index": 1,
+            "weight_kg": 100,
+            "reps": 8,
+            "updated_at": 100,
+            "deleted_at": null
+          }
+        ],
+        "body_metric": [],
+        "app_setting": []
+      },
+      "backup": {
+        "format": "fitlog-backup",
+        "format_version": 1,
+        "exported_at_ms": 5000,
+        "app_version": "0.1.7",
+        "sections": {
+          "session": [
+            {
+              "id": "s1",
+              "started_at": 1000,
+              "updated_at": 100,
+              "deleted_at": null
+            }
+          ],
+          "set_entry": [
+            {
+              "id": "set1",
+              "session_id": "s1",
+              "exercise_id": "ex-local",
+              "set_index": 1,
+              "weight_kg": 100,
+              "reps": 8,
+              "updated_at": 500,
+              "deleted_at": 500
+            }
+          ]
+        }
+      },
+      "expected": {
+        "summary": {
+          "exercise": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "routine": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "routine_exercise": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "session": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 1,
+            "remapped": 0
+          },
+          "set_entry": {
+            "inserted": 0,
+            "updated": 1,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "body_metric": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "app_setting": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          }
+        },
+        "snapshot": {
+          "exercise": [
+            {
+              "id": "ex-local",
+              "slug": "remo-maquina",
+              "name": "remo-maquina",
+              "muscle_group_id": "mg-pecho",
+              "is_custom": 1,
+              "updated_at": 100,
+              "deleted_at": null
+            }
+          ],
+          "routine": [],
+          "routine_exercise": [],
+          "session": [
+            {
+              "id": "s1",
+              "started_at": 1000,
+              "updated_at": 100,
+              "deleted_at": null
+            }
+          ],
+          "set_entry": [
+            {
+              "id": "set1",
+              "session_id": "s1",
+              "exercise_id": "ex-local",
+              "set_index": 1,
+              "weight_kg": 100,
+              "reps": 8,
+              "updated_at": 500,
+              "deleted_at": 500
+            }
+          ],
+          "body_metric": [],
+          "app_setting": []
+        }
+      }
+    },
+    {
+      "name": "remapea ejercicios por slug",
+      "local": {
+        "exercise": [
+          {
+            "id": "ex-local",
+            "slug": "remo-maquina",
+            "name": "remo-maquina",
+            "muscle_group_id": "mg-pecho",
+            "is_custom": 1,
+            "updated_at": 100,
+            "deleted_at": null
+          }
+        ],
+        "routine": [],
+        "routine_exercise": [],
+        "session": [],
+        "set_entry": [],
+        "body_metric": [],
+        "app_setting": []
+      },
+      "backup": {
+        "format": "fitlog-backup",
+        "format_version": 1,
+        "exported_at_ms": 5000,
+        "app_version": "0.1.7",
+        "sections": {
+          "exercise": [
+            {
+              "id": "ex-remoto",
+              "slug": "remo-maquina",
+              "name": "remo-maquina",
+              "muscle_group_id": "mg-pecho",
+              "is_custom": 1,
+              "updated_at": 50,
+              "deleted_at": null
+            }
+          ],
+          "session": [
+            {
+              "id": "s2",
+              "started_at": 2000,
+              "updated_at": 50,
+              "deleted_at": null
+            }
+          ],
+          "set_entry": [
+            {
+              "id": "set2",
+              "session_id": "s2",
+              "exercise_id": "ex-remoto",
+              "set_index": 1,
+              "weight_kg": 100,
+              "reps": 8,
+              "updated_at": 50,
+              "deleted_at": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "summary": {
+          "exercise": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 1
+          },
+          "routine": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "routine_exercise": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "session": {
+            "inserted": 1,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "set_entry": {
+            "inserted": 1,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "body_metric": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "app_setting": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          }
+        },
+        "snapshot": {
+          "exercise": [
+            {
+              "id": "ex-local",
+              "slug": "remo-maquina",
+              "name": "remo-maquina",
+              "muscle_group_id": "mg-pecho",
+              "is_custom": 1,
+              "updated_at": 100,
+              "deleted_at": null
+            }
+          ],
+          "routine": [],
+          "routine_exercise": [],
+          "session": [
+            {
+              "id": "s2",
+              "started_at": 2000,
+              "updated_at": 50,
+              "deleted_at": null
+            }
+          ],
+          "set_entry": [
+            {
+              "id": "set2",
+              "session_id": "s2",
+              "exercise_id": "ex-local",
+              "set_index": 1,
+              "weight_kg": 100,
+              "reps": 8,
+              "updated_at": 50,
+              "deleted_at": null
+            }
+          ],
+          "body_metric": [],
+          "app_setting": []
+        }
+      }
+    },
+    {
+      "name": "las filas locales fuera del archivo quedan intactas",
+      "local": {
+        "exercise": [],
+        "routine": [
+          {
+            "id": "r1",
+            "name": "Empuje",
+            "updated_at": 100,
+            "deleted_at": null
+          },
+          {
+            "id": "r2",
+            "name": "Pierna",
+            "updated_at": 100,
+            "deleted_at": null
+          }
+        ],
+        "routine_exercise": [],
+        "session": [],
+        "set_entry": [],
+        "body_metric": [],
+        "app_setting": []
+      },
+      "backup": {
+        "format": "fitlog-backup",
+        "format_version": 1,
+        "exported_at_ms": 5000,
+        "app_version": "0.1.7",
+        "sections": {
+          "routine": [
+            {
+              "id": "r3",
+              "name": "Nueva",
+              "updated_at": 100,
+              "deleted_at": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "summary": {
+          "exercise": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "routine": {
+            "inserted": 1,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "routine_exercise": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "session": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "set_entry": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "body_metric": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "app_setting": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          }
+        },
+        "snapshot": {
+          "exercise": [],
+          "routine": [
+            {
+              "id": "r1",
+              "name": "Empuje",
+              "updated_at": 100,
+              "deleted_at": null
+            },
+            {
+              "id": "r2",
+              "name": "Pierna",
+              "updated_at": 100,
+              "deleted_at": null
+            },
+            {
+              "id": "r3",
+              "name": "Nueva",
+              "updated_at": 100,
+              "deleted_at": null
+            }
+          ],
+          "routine_exercise": [],
+          "session": [],
+          "set_entry": [],
+          "body_metric": [],
+          "app_setting": []
+        }
+      }
+    },
+    {
+      "name": "los ajustes se fusionan por clave",
+      "local": {
+        "exercise": [],
+        "routine": [],
+        "routine_exercise": [],
+        "session": [],
+        "set_entry": [],
+        "body_metric": [],
+        "app_setting": [
+          {
+            "key": "tema",
+            "value": "claro",
+            "updated_at": 200
+          }
+        ]
+      },
+      "backup": {
+        "format": "fitlog-backup",
+        "format_version": 1,
+        "exported_at_ms": 5000,
+        "app_version": "0.1.7",
+        "sections": {
+          "app_setting": [
+            {
+              "key": "tema",
+              "value": "oscuro",
+              "updated_at": 300
+            },
+            {
+              "key": "unidad",
+              "value": "kg",
+              "updated_at": 300
+            }
+          ]
+        }
+      },
+      "expected": {
+        "summary": {
+          "exercise": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "routine": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "routine_exercise": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "session": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "set_entry": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "body_metric": {
+            "inserted": 0,
+            "updated": 0,
+            "ignored": 0,
+            "remapped": 0
+          },
+          "app_setting": {
+            "inserted": 1,
+            "updated": 1,
+            "ignored": 0,
+            "remapped": 0
+          }
+        },
+        "snapshot": {
+          "exercise": [],
+          "routine": [],
+          "routine_exercise": [],
+          "session": [],
+          "set_entry": [],
+          "body_metric": [],
+          "app_setting": [
+            {
+              "key": "tema",
+              "value": "oscuro",
+              "updated_at": 300
+            },
+            {
+              "key": "unidad",
+              "value": "kg",
+              "updated_at": 300
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "invalid_cases": [
+    {
+      "name": "formato desconocido",
+      "local": {
+        "exercise": [],
+        "routine": [],
+        "routine_exercise": [],
+        "session": [],
+        "set_entry": [],
+        "body_metric": [],
+        "app_setting": []
+      },
+      "json": "{\"format\":\"otro-formato\",\"format_version\":1,\"exported_at_ms\":5000,\"app_version\":\"0.1.7\",\"sections\":{}}",
+      "expected_error": "unknown_format"
+    },
+    {
+      "name": "version desconocida",
+      "local": {
+        "exercise": [],
+        "routine": [],
+        "routine_exercise": [],
+        "session": [],
+        "set_entry": [],
+        "body_metric": [],
+        "app_setting": []
+      },
+      "json": "{\"format\":\"fitlog-backup\",\"format_version\":99,\"exported_at_ms\":5000,\"app_version\":\"0.1.7\",\"sections\":{}}",
+      "expected_error": "unsupported_version"
+    },
+    {
+      "name": "referencia faltante",
+      "local": {
+        "exercise": [],
+        "routine": [],
+        "routine_exercise": [],
+        "session": [],
+        "set_entry": [],
+        "body_metric": [],
+        "app_setting": []
+      },
+      "json": "{\"format\":\"fitlog-backup\",\"format_version\":1,\"exported_at_ms\":5000,\"app_version\":\"0.1.7\",\"sections\":{\"session\":[{\"id\":\"s1\",\"started_at\":1000,\"updated_at\":10,\"deleted_at\":null}],\"set_entry\":[{\"id\":\"set1\",\"session_id\":\"s1\",\"exercise_id\":\"ex-fantasma\",\"set_index\":1,\"weight_kg\":100,\"reps\":8,\"updated_at\":10,\"deleted_at\":null}]}}",
+      "expected_error": "missing_reference"
+    },
+    {
+      "name": "fila sin campo requerido",
+      "local": {
+        "exercise": [],
+        "routine": [],
+        "routine_exercise": [],
+        "session": [],
+        "set_entry": [],
+        "body_metric": [],
+        "app_setting": []
+      },
+      "json": "{\"format\":\"fitlog-backup\",\"format_version\":1,\"exported_at_ms\":5000,\"app_version\":\"0.1.7\",\"sections\":{\"body_metric\":[{\"id\":\"m1\",\"kind\":\"body_weight\",\"value\":80,\"unit\":\"kg\",\"updated_at\":10}]}}",
+      "expected_error": "invalid_row"
+    },
+    {
+      "name": "json invalido",
+      "local": {
+        "exercise": [],
+        "routine": [],
+        "routine_exercise": [],
+        "session": [],
+        "set_entry": [],
+        "body_metric": [],
+        "app_setting": []
+      },
+      "json": "{no-json",
+      "expected_error": "invalid_json"
+    }
+  ],
+  "description": "Casos de prueba compartidos del respaldo: formato, validacion y fusion por ULID. Se ejecutan en Android (JUnit) y Web (Vitest).",
+  "rules": {
+    "format": "format = fitlog-backup; format_version soportada = 1",
+    "sections": "claves por tabla: exercise, routine, routine_exercise, session, set_entry, body_metric, app_setting",
+    "merge": "upsert por clave primaria (id, o key en app_setting); gana updated_at mayor; empate conserva la fila local; deleted_at mas nuevo propaga el borrado",
+    "remap": "si un ejercicio importado tiene un slug que ya existe local con otro id, no se inserta y las referencias del archivo apuntan al id local",
+    "untouched": "las filas locales que no estan en el archivo no se modifican",
+    "validation": "campos requeridos por tabla y referencias resueltas contra archivo + base local; cualquier fallo aborta sin efectos",
+    "order": "el snapshot final se ordena por clave primaria para comparacion determinista"
+  }
+}
