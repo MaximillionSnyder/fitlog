@@ -13,7 +13,14 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.fitlog.app.ui.theme.fitLogColors
 
+/**
+ * Grafico de lineas del sistema: serie de valores con sus etiquetas.
+ *
+ * Usa el token de datos para la linea y los tokens de superficie para la grilla y las etiquetas,
+ * asi el mismo grafico se ve igual en las tres pantallas que lo usan.
+ */
 @Composable
 fun FitLogLineChart(
     values: List<Double>,
@@ -21,9 +28,9 @@ fun FitLogLineChart(
     modifier: Modifier = Modifier,
     valueFormatter: (Double) -> String = { it.toString() },
 ) {
-    val lineColor = MaterialTheme.colorScheme.primary
-    val gridColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f)
-    val labelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+    val lineColor = MaterialTheme.fitLogColors.data
+    val gridColor = MaterialTheme.colorScheme.outlineVariant
+    val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
     val textMeasurer = rememberTextMeasurer()
     val labelStyle = TextStyle(color = labelColor, fontSize = 10.sp)
 

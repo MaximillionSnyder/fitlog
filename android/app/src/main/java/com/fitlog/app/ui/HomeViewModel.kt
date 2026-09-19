@@ -36,6 +36,7 @@ data class HomeUiState(
     val activeSession: WorkoutSession? = null,
     val recentSessions: List<RecentSession> = emptyList(),
     val steps: Home.Steps = Home.steps(routineCount = 0, sessionCount = 0, bodyMetricCount = 0),
+    val trend: List<Home.TrendPoint> = emptyList(),
 )
 
 @HiltViewModel
@@ -93,6 +94,7 @@ class HomeViewModel @Inject constructor(
                         greeting = greetingFor(now),
                         summary = Home.build(sessionInputs, bodyInputs, now),
                         activeSession = snapshot.active,
+                        trend = Home.trend(sessionInputs),
                         recentSessions = snapshot.sessions
                             .filter { it.finishedAt != null }
                             .take(RECENT_LIMIT)

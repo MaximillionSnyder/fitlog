@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildHomeSummary, type HomeSessionInput } from '@/domain/home';
+import {
+  buildHomeSummary,
+  buildVolumeTrend,
+  TREND_LIMIT,
+  type HomeSessionInput,
+} from '@/domain/home';
 import { DAY_MS } from '@/domain/progress';
 
 const NOW = 1_800_000_000_000;
@@ -93,6 +98,27 @@ describe('buildHomeSummary', () => {
     expect(summary.today.sessions).toBe(1);
     expect(summary.today.volumeKg).toBe(400);
     expect(summary.today.workingSets).toBe(3);
+  });
+
+  it('la tendencia toma las últimas sesiones terminadas en orden', () => {
+    const sessions = Array.from({ length: 10 }, (_, index) => session(index + 1, (index + 1) * 100));
+    const trend = buildVolumeTrend(sessions);
+
+    expect(trend).toHaveLength(TREND_LIMIT);
+    expect(trend[0]!.volumeKg).toBe(800);
+    expect(trend[trend.length - 1]!.volumeKg).toBe(100);
+  });
+
+  it('la tendencia ignora la sesión en curso', () => {
+    const enCurso: HomeSessionInput = {
+      ...session(1, 999),
+      id: 'activa',
+      finishedAt: null,
+    };
+    const trend = buildVolumeTrend([enCurso, session(2, 400)]);
+
+    expect(trend).toHaveLength(1);
+    expect(trend[0]!.volumeKg).toBe(400);
   });
 
   it('ignora sesiones con fecha futura', () => {

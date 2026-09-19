@@ -75,6 +75,24 @@ object Home {
         enum class Id { ROUTINE, WORKOUT, BODY_METRIC }
     }
 
+    /** Punto de la tendencia de volumen: una sesion terminada. */
+    data class TrendPoint(val startedAtMs: Long, val volumeKg: Double)
+
+    /**
+     * Tendencia de volumen de las ultimas sesiones terminadas, en orden cronologico.
+     *
+     * Solo entran sesiones finalizadas: una en curso todavia no tiene volumen definitivo y
+     * distorsionaria la lectura de la tendencia.
+     */
+    fun trend(sessions: List<SessionInput>, limit: Int = TREND_LIMIT): List<TrendPoint> =
+        sessions
+            .filter { it.finishedAtMs != null }
+            .sortedBy { it.startedAtMs }
+            .takeLast(limit)
+            .map { TrendPoint(startedAtMs = it.startedAtMs, volumeKg = it.volumeKg) }
+
+    const val TREND_LIMIT = 8
+
     data class Steps(val items: List<Step>) {
         val doneCount: Int get() = items.count { it.done }
         val total: Int get() = items.size

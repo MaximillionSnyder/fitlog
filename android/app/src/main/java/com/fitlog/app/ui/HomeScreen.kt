@@ -154,6 +154,12 @@ fun HomeScreen(
                 }
             }
 
+            if (state.trend.size > 1) {
+                item {
+                    TrendCard(trend = state.trend)
+                }
+            }
+
             if (!state.steps.isComplete) {
                 item {
                     OnboardingCard(
@@ -400,6 +406,35 @@ private fun RecentSessionRow(recent: RecentSession, onClick: () -> Unit) {
             )
         }
     }
+}
+
+/**
+ * Tendencia de volumen de las ultimas sesiones: el numero de la semana dice cuanto, esto dice
+ * hacia donde va.
+ */
+@Composable
+private fun TrendCard(trend: List<Home.TrendPoint>) {
+    val fitLog = MaterialTheme.fitLogColors
+    FitLogCard {
+        SectionHeader(
+            title = "Volumen por sesión",
+            trailing = "${Format.integer(trend.size)} últimas",
+        )
+        FitLogLineChart(
+            values = trend.map { it.volumeKg },
+            labels = trend.map { formatTrendDay(it.startedAtMs) },
+            valueFormatter = { "${Format.volumeKg(it)} kg" },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp),
+        )
+    }
+}
+
+/** Dia corto de la tendencia: `12/3`. */
+private fun formatTrendDay(timestampMs: Long): String {
+    val formatter = java.text.SimpleDateFormat("d/M", java.util.Locale.getDefault())
+    return formatter.format(java.util.Date(timestampMs))
 }
 
 /**

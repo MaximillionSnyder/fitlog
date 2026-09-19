@@ -175,6 +175,33 @@ class HomeSummaryTest {
     }
 
     @Test
+    fun `la tendencia toma las ultimas sesiones terminadas en orden`() {
+        val sessions = (1..10).map { daysAgo -> session(daysAgo = daysAgo.toLong(), volume = daysAgo * 100.0) }
+        val trend = Home.trend(sessions)
+
+        assertEquals(Home.TREND_LIMIT, trend.size)
+        // Cronologico: la mas vieja de las ultimas ocho primero.
+        assertEquals(now - 8 * day, trend.first().startedAtMs)
+        assertEquals(now - 1 * day, trend.last().startedAtMs)
+        assertEquals(800.0, trend.first().volumeKg, 0.001)
+    }
+
+    @Test
+    fun `la tendencia ignora la sesion en curso`() {
+        val enCurso = Home.SessionInput(
+            id = "activa",
+            startedAtMs = now - day,
+            finishedAtMs = null,
+            workingSets = 3,
+            volumeKg = 999.0,
+        )
+        val trend = Home.trend(listOf(enCurso, session(daysAgo = 2, volume = 400.0)))
+
+        assertEquals(1, trend.size)
+        assertEquals(400.0, trend.first().volumeKg, 0.001)
+    }
+
+    @Test
     fun `ignora sesiones con fecha futura`() {
         val summary = Home.build(
             sessions = listOf(session(daysAgo = -3, volume = 500.0)),

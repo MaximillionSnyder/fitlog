@@ -11,6 +11,32 @@ import { DAY_MS } from '@/domain/progress';
 export const HOME_WINDOW_DAYS = 7;
 export const HOME_WEEK_MS = HOME_WINDOW_DAYS * DAY_MS;
 
+/** Punto de la tendencia de volumen: una sesion terminada. */
+export interface HomeTrendPoint {
+  readonly startedAtMs: number;
+  readonly volumeKg: number;
+}
+
+export const TREND_LIMIT = 8;
+
+/**
+ * Tendencia de volumen de las ultimas sesiones terminadas, en orden cronologico.
+ *
+ * Solo entran sesiones finalizadas: una en curso todavia no tiene volumen definitivo y
+ * distorsionaria la lectura de la tendencia.
+ */
+export function buildVolumeTrend(
+  sessions: readonly HomeSessionInput[],
+  limit: number = TREND_LIMIT
+): HomeTrendPoint[] {
+  return sessions
+    .filter((session) => session.finishedAt !== null)
+    .slice()
+    .sort((a, b) => a.startedAt - b.startedAt)
+    .slice(-limit)
+    .map((session) => ({ startedAtMs: session.startedAt, volumeKg: session.volumeKg }));
+}
+
 /** Paso del recorrido de inicio, con su estado. */
 export type HomeStepId = 'routine' | 'workout' | 'body_metric';
 

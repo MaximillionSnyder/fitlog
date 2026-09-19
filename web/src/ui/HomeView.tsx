@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-import { buildHomeSteps, buildHomeSummary, type HomeSessionInput, type HomeSteps } from '@/domain/home';
+import {
+  buildHomeSteps,
+  buildHomeSummary,
+  buildVolumeTrend,
+  type HomeSessionInput,
+  type HomeSteps,
+} from '@/domain/home';
 import {
   formatDuration,
   formatDurationLong,
@@ -70,6 +77,18 @@ export function HomeView({
       .map((metric) => ({ measuredAt: metric.measuredAtMs, value: metric.value }));
     return buildHomeSummary(sessions, weights, now);
   }, [body.metrics, now, workout.history]);
+
+  // Tendencia de volumen: el numero de la semana dice cuanto, esto dice hacia donde va.
+  const trend = useMemo(() => {
+    const sessions: HomeSessionInput[] = workout.history.map((session) => ({
+      id: session.id,
+      startedAt: session.startedAt,
+      finishedAt: session.finishedAt,
+      workingSets: session.summary.workingSets,
+      volumeKg: session.summary.totalVolumeKg,
+    }));
+    return buildVolumeTrend(sessions);
+  }, [workout.history]);
 
   const recent = useMemo(
     () => workout.history.filter((session) => session.finishedAt !== null).slice(0, 3),
@@ -220,6 +239,46 @@ export function HomeView({
         />
       </div>
 
+      {trend.length > 1 ? (
+        <Card className="!p-4">
+          <SectionHeader title="Volumen por sesión" trailing={`${trend.length} últimas`} />
+          <div className="mt-3">
+            <ResponsiveContainer width="100%" height={160}>
+              <LineChart
+                data={trend.map((point) => ({
+                  label: formatTrendDay(point.startedAtMs),
+                  value: point.volumeKg,
+                }))}
+                margin={{ top: 8, right: 8, bottom: 0, left: -18 }}
+              >
+                <CartesianGrid stroke="var(--fl-line)" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" tick={{ fill: 'var(--fl-muted)', fontSize: 10 }} />
+                <YAxis tick={{ fill: 'var(--fl-muted)', fontSize: 10 }} width={48} />
+                <Tooltip
+                  contentStyle={{
+                    background: 'var(--fl-surface)',
+                    border: '1px solid var(--fl-line-strong)',
+                    borderRadius: 12,
+                    fontSize: 12,
+                    color: 'var(--fl-ink)',
+                  }}
+                  labelStyle={{ color: 'var(--fl-muted)' }}
+                  formatter={(value) => [`${formatVolumeKg(Number(value ?? 0))} kg`, 'Volumen']}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="var(--fl-data)"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: 'var(--fl-data)' }}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      ) : null}
+
       {steps.isComplete ? null : (
         <Card tone="data">
           <SectionHeader
@@ -307,6 +366,12 @@ export function HomeView({
       </div>
     </div>
   );
+}
+
+/** Dia corto de la tendencia: `12/3`. */
+function formatTrendDay(timestamp: number): string {
+  const date = new Date(timestamp);
+  return `${date.getDate()}/${date.getMonth() + 1}`;
 }
 
 function stepView(id: HomeSteps['items'][number]['id']): View {
