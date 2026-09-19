@@ -78,7 +78,9 @@ El `versionName` sale del tag (sin la `v`) y el `versionCode` del historial de c
 
 1. Ejecutar el workflow `keystore.yml` (`gh workflow run keystore.yml`), que genera un keystore nuevo y lo publica como artifact temporal con `credentials.txt`
 2. Descargar el artifact, actualizar los 4 secretos con `gh secret set` y borrar el artifact
-3. Guardar una copia del `.jks` en un lugar seguro: sin él no se pueden firmar actualizaciones de la misma app
+3. Guardar una copia del  en un lugar seguro: sin él no se pueden firmar actualizaciones de la misma app
+
+> El keystore es PKCS12, que usa **una sola contraseña**: `KEY_PASSWORD` debe tener el mismo valor que `KEYSTORE_PASSWORD` (keytool ignora `-keypass` en PKCS12).
 
 ### Respaldo y restauración
 
