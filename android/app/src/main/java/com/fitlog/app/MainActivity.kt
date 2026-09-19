@@ -32,6 +32,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.fitlog.app.ui.CatalogScreen
+import com.fitlog.app.ui.ComparisonsScreen
 import com.fitlog.app.ui.ProgressScreen
 import com.fitlog.app.ui.RoutinesScreen
 import com.fitlog.app.ui.WorkoutScreen
@@ -56,6 +57,7 @@ class MainActivity : ComponentActivity() {
                                 onOpenWorkout = { navController.navigate(WORKOUT_ROUTE) },
                                 onOpenRoutines = { navController.navigate(ROUTINES_ROUTE) },
                                 onOpenProgress = { navController.navigate(PROGRESS_ROUTE) },
+                                onOpenComparisons = { navController.navigate(COMPARISONS_ROUTE) },
                                 modifier = Modifier.padding(padding),
                             )
                         }
@@ -82,6 +84,14 @@ class MainActivity : ComponentActivity() {
                             WorkoutScreen(
                                 onBack = { navController.popBackStack() },
                                 initialRoutineId = backStackEntry.arguments?.getString(ROUTINE_ARG),
+                                modifier = Modifier.padding(padding),
+                            )
+                        }
+                    }
+                    composable(COMPARISONS_ROUTE) {
+                        Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
+                            ComparisonsScreen(
+                                onBack = { navController.popBackStack() },
                                 modifier = Modifier.padding(padding),
                             )
                         }
@@ -118,6 +128,7 @@ class MainActivity : ComponentActivity() {
         const val WORKOUT_PATTERN = "workout?$ROUTINE_ARG={$ROUTINE_ARG}"
         const val ROUTINES_ROUTE = "routines"
         const val PROGRESS_ROUTE = "progress"
+        const val COMPARISONS_ROUTE = "comparisons"
     }
 }
 
@@ -127,6 +138,7 @@ private fun HomeScreen(
     onOpenWorkout: () -> Unit,
     onOpenRoutines: () -> Unit,
     onOpenProgress: () -> Unit,
+    onOpenComparisons: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DbStatusViewModel = hiltViewModel(),
 ) {
@@ -170,6 +182,10 @@ private fun HomeScreen(
 
         OutlinedButton(onClick = onOpenProgress, modifier = Modifier.fillMaxWidth()) {
             Text("Progreso")
+        }
+
+        OutlinedButton(onClick = onOpenComparisons, modifier = Modifier.fillMaxWidth()) {
+            Text("Comparativas")
         }
 
         OutlinedButton(onClick = onOpenRoutines, modifier = Modifier.fillMaxWidth()) {

@@ -1,0 +1,296 @@
+{
+  "version": 1,
+  "description": "Casos de prueba compartidos de marcas personales, comparacion de periodos y balance muscular. Se ejecutan en Android (JUnit) y Web (Vitest).",
+  "rules": {
+    "effective_set": "is_warmup = 0; las eliminadas las filtra la consulta",
+    "weight_metrics": "peso, 1RM y volumen solo consideran series con peso y repeticiones",
+    "reps_metric": "la marca de repeticiones considera series con repeticiones, aunque no tengan peso",
+    "ties": "en empate gana la fecha mas antigua",
+    "session_volume": "volumen por ejercicio y sesion sumando peso * reps de sus series efectivas completas",
+    "pr_order": "por mejor 1RM descendente, desempate por exercise_id",
+    "ranges": "actual = [T - N dias, T]; anterior = [T - 2N dias, T - N dias - 1 ms]",
+    "delta": "porcentaje redondeado a 1 decimal; nulo si el periodo anterior tiene 0",
+    "balance": "volumen por grupo principal; los ejercicios sin grupo se agrupan en sin-grupo; orden por volumen descendente con desempate por slug",
+    "share": "participacion sobre el volumen total del periodo, redondeada a 1 decimal"
+  },
+  "range_cases": [
+    {
+      "name": "30 dias",
+      "preset": "30d",
+      "now_ms": 1700000000000,
+      "expected": {
+        "current": { "from_ms": 1697408000000, "to_ms": 1700000000000 },
+        "previous": { "from_ms": 1694816000000, "to_ms": 1697407999999 }
+      }
+    },
+    {
+      "name": "90 dias",
+      "preset": "90d",
+      "now_ms": 1700000000000,
+      "expected": {
+        "current": { "from_ms": 1692224000000, "to_ms": 1700000000000 },
+        "previous": { "from_ms": 1684448000000, "to_ms": 1692223999999 }
+      }
+    }
+  ],
+  "pr_cases": [
+    {
+      "name": "progresion en dos sesiones",
+      "sets": [
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 8, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "session_id": "s2", "started_at_ms": 2000, "weight_kg": 105, "reps": 5, "is_warmup": 0 }
+      ],
+      "expected": [
+        {
+          "exercise_id": "ex-a",
+          "best_weight_kg": 105,
+          "best_weight_at_ms": 2000,
+          "best_one_rep_max_kg": 126.7,
+          "best_one_rep_max_at_ms": 1000,
+          "best_session_volume_kg": 800,
+          "best_session_volume_at_ms": 1000,
+          "best_reps": 8,
+          "best_reps_at_ms": 1000
+        }
+      ]
+    },
+    {
+      "name": "empate conserva la fecha mas antigua",
+      "sets": [
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 8, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "session_id": "s2", "started_at_ms": 2000, "weight_kg": 100, "reps": 8, "is_warmup": 0 }
+      ],
+      "expected": [
+        {
+          "exercise_id": "ex-a",
+          "best_weight_kg": 100,
+          "best_weight_at_ms": 1000,
+          "best_one_rep_max_kg": 126.7,
+          "best_one_rep_max_at_ms": 1000,
+          "best_session_volume_kg": 800,
+          "best_session_volume_at_ms": 1000,
+          "best_reps": 8,
+          "best_reps_at_ms": 1000
+        }
+      ]
+    },
+    {
+      "name": "mejor volumen en otra sesion",
+      "sets": [
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 8, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 6, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "session_id": "s2", "started_at_ms": 2000, "weight_kg": 110, "reps": 5, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "session_id": "s2", "started_at_ms": 2000, "weight_kg": 110, "reps": 5, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "session_id": "s2", "started_at_ms": 2000, "weight_kg": 110, "reps": 5, "is_warmup": 0 }
+      ],
+      "expected": [
+        {
+          "exercise_id": "ex-a",
+          "best_weight_kg": 110,
+          "best_weight_at_ms": 2000,
+          "best_one_rep_max_kg": 128.3,
+          "best_one_rep_max_at_ms": 2000,
+          "best_session_volume_kg": 1650,
+          "best_session_volume_at_ms": 2000,
+          "best_reps": 8,
+          "best_reps_at_ms": 1000
+        }
+      ]
+    },
+    {
+      "name": "calentamiento ignorado",
+      "sets": [
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 200, "reps": 1, "is_warmup": 1 },
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 8, "is_warmup": 0 }
+      ],
+      "expected": [
+        {
+          "exercise_id": "ex-a",
+          "best_weight_kg": 100,
+          "best_weight_at_ms": 1000,
+          "best_one_rep_max_kg": 126.7,
+          "best_one_rep_max_at_ms": 1000,
+          "best_session_volume_kg": 800,
+          "best_session_volume_at_ms": 1000,
+          "best_reps": 8,
+          "best_reps_at_ms": 1000
+        }
+      ]
+    },
+    {
+      "name": "series incompletas",
+      "sets": [
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": null, "reps": 12, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 80, "reps": null, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 80, "reps": 10, "is_warmup": 0 }
+      ],
+      "expected": [
+        {
+          "exercise_id": "ex-a",
+          "best_weight_kg": 80,
+          "best_weight_at_ms": 1000,
+          "best_one_rep_max_kg": 106.7,
+          "best_one_rep_max_at_ms": 1000,
+          "best_session_volume_kg": 800,
+          "best_session_volume_at_ms": 1000,
+          "best_reps": 12,
+          "best_reps_at_ms": 1000
+        }
+      ]
+    },
+    {
+      "name": "sin series completas",
+      "sets": [
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": null, "reps": 10, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 80, "reps": null, "is_warmup": 0 }
+      ],
+      "expected": [
+        {
+          "exercise_id": "ex-a",
+          "best_weight_kg": 0,
+          "best_weight_at_ms": null,
+          "best_one_rep_max_kg": 0,
+          "best_one_rep_max_at_ms": null,
+          "best_session_volume_kg": 0,
+          "best_session_volume_at_ms": null,
+          "best_reps": 10,
+          "best_reps_at_ms": 1000
+        }
+      ]
+    },
+    {
+      "name": "dos ejercicios ordenados por mejor 1RM",
+      "sets": [
+        { "exercise_id": "ex-b", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 60, "reps": 10, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 8, "is_warmup": 0 }
+      ],
+      "expected": [
+        {
+          "exercise_id": "ex-a",
+          "best_weight_kg": 100,
+          "best_weight_at_ms": 1000,
+          "best_one_rep_max_kg": 126.7,
+          "best_one_rep_max_at_ms": 1000,
+          "best_session_volume_kg": 800,
+          "best_session_volume_at_ms": 1000,
+          "best_reps": 8,
+          "best_reps_at_ms": 1000
+        },
+        {
+          "exercise_id": "ex-b",
+          "best_weight_kg": 60,
+          "best_weight_at_ms": 1000,
+          "best_one_rep_max_kg": 80,
+          "best_one_rep_max_at_ms": 1000,
+          "best_session_volume_kg": 600,
+          "best_session_volume_at_ms": 1000,
+          "best_reps": 10,
+          "best_reps_at_ms": 1000
+        }
+      ]
+    }
+  ],
+  "comparison_cases": [
+    {
+      "name": "periodo actual mejor que el anterior",
+      "sets": [
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 8, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "session_id": "s2", "started_at_ms": 2000, "weight_kg": 100, "reps": 8, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "session_id": "s2", "started_at_ms": 2000, "weight_kg": 100, "reps": 6, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "session_id": "s3", "started_at_ms": 3000, "weight_kg": 100, "reps": 5, "is_warmup": 0 }
+      ],
+      "current": { "from_ms": 2000, "to_ms": 3000 },
+      "previous": { "from_ms": 1000, "to_ms": 1999 },
+      "expected": {
+        "current": { "volume_kg": 1900, "working_sets": 3, "sessions": 2 },
+        "previous": { "volume_kg": 800, "working_sets": 1, "sessions": 1 },
+        "volume_delta_pct": 137.5,
+        "sets_delta_pct": 200,
+        "sessions_delta_pct": 100
+      }
+    },
+    {
+      "name": "periodo anterior vacio",
+      "sets": [
+        { "exercise_id": "ex-a", "session_id": "s2", "started_at_ms": 2000, "weight_kg": 100, "reps": 8, "is_warmup": 0 }
+      ],
+      "current": { "from_ms": 2000, "to_ms": 3000 },
+      "previous": { "from_ms": 1000, "to_ms": 1999 },
+      "expected": {
+        "current": { "volume_kg": 800, "working_sets": 1, "sessions": 1 },
+        "previous": { "volume_kg": 0, "working_sets": 0, "sessions": 0 },
+        "volume_delta_pct": null,
+        "sets_delta_pct": null,
+        "sessions_delta_pct": null
+      }
+    },
+    {
+      "name": "calentamientos no cuentan",
+      "sets": [
+        { "exercise_id": "ex-a", "session_id": "s2", "started_at_ms": 2000, "weight_kg": 40, "reps": 10, "is_warmup": 1 },
+        { "exercise_id": "ex-a", "session_id": "s2", "started_at_ms": 2000, "weight_kg": 100, "reps": 8, "is_warmup": 0 }
+      ],
+      "current": { "from_ms": 2000, "to_ms": 3000 },
+      "previous": { "from_ms": 1000, "to_ms": 1999 },
+      "expected": {
+        "current": { "volume_kg": 800, "working_sets": 1, "sessions": 1 },
+        "previous": { "volume_kg": 0, "working_sets": 0, "sessions": 0 },
+        "volume_delta_pct": null,
+        "sets_delta_pct": null,
+        "sessions_delta_pct": null
+      }
+    },
+    {
+      "name": "sesion sin series efectivas no cuenta",
+      "sets": [
+        { "exercise_id": "ex-a", "session_id": "s2", "started_at_ms": 2000, "weight_kg": 40, "reps": 10, "is_warmup": 1 },
+        { "exercise_id": "ex-a", "session_id": "s3", "started_at_ms": 3000, "weight_kg": 100, "reps": 8, "is_warmup": 0 }
+      ],
+      "current": { "from_ms": 2000, "to_ms": 3000 },
+      "previous": { "from_ms": 1000, "to_ms": 1999 },
+      "expected": {
+        "current": { "volume_kg": 800, "working_sets": 1, "sessions": 1 },
+        "previous": { "volume_kg": 0, "working_sets": 0, "sessions": 0 },
+        "volume_delta_pct": null,
+        "sets_delta_pct": null,
+        "sessions_delta_pct": null
+      }
+    }
+  ],
+  "balance_cases": [
+    {
+      "name": "dos grupos con calentamiento",
+      "groups": { "ex-a": "pecho", "ex-b": "espalda" },
+      "sets": [
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 8, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 4, "is_warmup": 0 },
+        { "exercise_id": "ex-b", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 20, "reps": 10, "is_warmup": 1 },
+        { "exercise_id": "ex-b", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 60, "reps": 10, "is_warmup": 0 }
+      ],
+      "expected": [
+        { "muscle_group_slug": "pecho", "volume_kg": 1200, "share_pct": 66.7 },
+        { "muscle_group_slug": "espalda", "volume_kg": 600, "share_pct": 33.3 }
+      ]
+    },
+    {
+      "name": "ejercicio sin grupo conocido",
+      "groups": { "ex-a": "pecho" },
+      "sets": [
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 8, "is_warmup": 0 },
+        { "exercise_id": "ex-c", "session_id": "s1", "started_at_ms": 1000, "weight_kg": 50, "reps": 10, "is_warmup": 0 }
+      ],
+      "expected": [
+        { "muscle_group_slug": "pecho", "volume_kg": 800, "share_pct": 61.5 },
+        { "muscle_group_slug": "sin-grupo", "volume_kg": 500, "share_pct": 38.5 }
+      ]
+    },
+    {
+      "name": "sin volumen",
+      "groups": { "ex-a": "pecho" },
+      "sets": [
+        { "exercise_id": "ex-a", "session_id": "s1", "started_at_ms": 1000, "weight_kg": null, "reps": 10, "is_warmup": 0 }
+      ],
+      "expected": []
+    }
+  ]
+}
