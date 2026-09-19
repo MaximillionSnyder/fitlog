@@ -45,4 +45,6 @@
 - [x] 6.2 Mostrar la sesión activa en el shell (punto en la pestaña Entrenar y acción Continuar en el encabezado)
 - [x] 6.3 Agregar el resumen de la actividad de hoy al panel, con la medianoche local inyectable y sus tests
 - [x] 6.4 Documentar el sistema de diseño en `docs/diseno.md` y enlazarlo desde el README
+- [x] 6.6 Migrar las ocho pantallas restantes de Android al sistema de diseño (tarjetas, encabezados, tiles, acciones y estados)
+- [x] 6.7 Unificar los errores de carga con `ErrorState` y reintento, y los estados de carga con `LoadingState`
 - [ ] 6.5 Revisar el resultado en el APK y en la web con el usuario y ajustar lo que pida
