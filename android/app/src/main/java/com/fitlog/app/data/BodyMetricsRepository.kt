@@ -66,6 +66,7 @@ class BodyMetricsRepository(
 
     suspend fun create(input: BodyMetricInput): Body.Point {
         val kind = validateKind(input.kind)
+        validate(kind.wire, input.value)
         val timestamp = now()
         val entity = BodyMetricEntity(
             id = idGenerator(),
