@@ -4,26 +4,36 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
+import com.fitlog.app.ui.components.FitLogCard
+import com.fitlog.app.ui.components.LabeledValue
+import com.fitlog.app.ui.components.SectionHeader
+import com.fitlog.app.ui.motion.ErrorState
+import com.fitlog.app.ui.motion.LoadingState
 import com.fitlog.app.ui.motion.sharedNavBounds
 import com.fitlog.app.ui.motion.sharedNavElement
+import com.fitlog.app.ui.theme.Spacing
+import com.fitlog.app.ui.theme.fitLogColors
 
+/**
+ * Detalle de un ejercicio: encabezado con la marca de propio y ficha con sus datos.
+ *
+ * La tarjeta y el nombre conservan las claves de transicion compartida con el catalogo, asi el
+ * elemento viaja entre las dos pantallas.
+ */
 @Composable
 fun ExerciseDetailScreen(
     exerciseId: String,
@@ -40,97 +50,70 @@ fun ExerciseDetailScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(Spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "Detalle",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-            )
-            OutlinedButton(onClick = onBack) { Text("Volver") }
-        }
-
         if (state.loading) {
-            Text(text = "Cargando ejercicio…", style = MaterialTheme.typography.bodySmall)
+            LoadingState(message = "Cargando ejercicio…")
         }
 
         if (!state.loading && exercise == null) {
-            Text(
-                text = "El ejercicio no existe.",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium,
-            )
+            ErrorState(message = "El ejercicio no existe.")
         }
 
         exercise?.let { current ->
             val groupName = groups[current.muscleGroupId]?.name ?: "Sin grupo"
             val secondaryGroupName = current.secondaryMuscleGroupId?.let { id -> groups[id]?.name }
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .sharedNavBounds("exercise-card-${current.id}"),
+            FitLogCard(
+                modifier = Modifier.sharedNavBounds("exercise-card-${current.id}"),
             ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = current.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.sharedNavElement("exercise-name-${current.id}"),
-                        )
-                        if (current.isCustom) {
-                            Text(
-                                text = "PROPIO",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.tertiary,
-                            )
-                        }
-                    }
                     Text(
-                        text = "$groupName · ${current.equipment} · ${kindLabel(current.kind)}",
-                        style = MaterialTheme.typography.bodySmall,
+                        text = current.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.sharedNavElement("exercise-name-${current.id}"),
                     )
+                    if (current.isCustom) {
+                        CustomBadge()
+                    }
                 }
+                Text(
+                    text = "$groupName · ${current.equipment} · ${kindLabel(current.kind)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    DetailField(label = "Tipo", value = kindLabel(current.kind))
-                    DetailField(label = "Grupo muscular", value = groupName)
-                    secondaryGroupName?.let { name ->
-                        DetailField(label = "Grupo secundario", value = name)
-                    }
-                    DetailField(label = "Equipamiento", value = current.equipment)
+            FitLogCard {
+                SectionHeader(title = "Ficha")
+                LabeledValue(label = "Tipo", value = kindLabel(current.kind))
+                LabeledValue(label = "Grupo muscular", value = groupName)
+                secondaryGroupName?.let { name ->
+                    LabeledValue(label = "Grupo secundario", value = name)
                 }
+                LabeledValue(label = "Equipamiento", value = current.equipment)
             }
         }
     }
 }
 
+/** Marca de ejercicio propio, con el token de aviso. */
 @Composable
-private fun DetailField(label: String, value: String) {
-    Column {
+private fun CustomBadge() {
+    val fitLog = MaterialTheme.fitLogColors
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = fitLog.warningSoft,
+        contentColor = fitLog.warning,
+    ) {
         Text(
-            text = label,
+            text = "PROPIO",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = Spacing.sm, vertical = 2.dp),
         )
-        Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
 }

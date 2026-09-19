@@ -43,6 +43,8 @@ import com.fitlog.app.ui.components.SectionHeader
 import com.fitlog.app.ui.motion.EmptyState
 import com.fitlog.app.ui.motion.LoadingState
 import com.fitlog.app.ui.motion.ErrorState
+import com.fitlog.app.ui.theme.Spacing
+import com.fitlog.app.ui.theme.fitLogColors
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
