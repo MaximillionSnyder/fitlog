@@ -35,3 +35,6 @@ npm-debug.log*
 
 # Test vectors outputs
 shared/test-vectors/.output/
+
+# Artefactos locales del agente
+.dsh-artifacts/
