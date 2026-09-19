@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,6 +57,7 @@ fun HomeScreen(
     onOpenRoutines: () -> Unit,
     onOpenProgress: () -> Unit,
     onOpenComparisons: () -> Unit,
+    onOpenBody: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
@@ -152,9 +154,14 @@ fun HomeScreen(
                 }
             }
 
-            if (state.summary.totalSessions == 0) {
+            if (!state.steps.isComplete) {
                 item {
-                    StartHintCard(onOpenRoutines = onOpenRoutines)
+                    OnboardingCard(
+                        steps = state.steps,
+                        onOpenRoutines = onOpenRoutines,
+                        onOpenWorkout = onStartWorkout,
+                        onOpenBody = onOpenBody,
+                    )
                 }
             }
 
@@ -395,21 +402,72 @@ private fun RecentSessionRow(recent: RecentSession, onClick: () -> Unit) {
     }
 }
 
+/**
+ * Primeros pasos: los tres gestos que dejan la app en marcha, con su estado.
+ *
+ * Se muestra mientras quede algun paso pendiente y desaparece sola cuando el recorrido termina.
+ */
 @Composable
-private fun StartHintCard(onOpenRoutines: () -> Unit) {
+private fun OnboardingCard(
+    steps: Home.Steps,
+    onOpenRoutines: () -> Unit,
+    onOpenWorkout: () -> Unit,
+    onOpenBody: () -> Unit,
+) {
     val fitLog = MaterialTheme.fitLogColors
     FitLogCard(containerColor = fitLog.dataSoft) {
-        Text(text = "Tu primer entrenamiento", style = MaterialTheme.typography.titleMedium)
-        Text(
-            text = "Armá una rutina o iniciá una sesión libre: después vas a ver acá tu volumen, " +
-                "tu racha y tu evolución.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        SectionHeader(
+            title = "Primeros pasos",
+            trailing = "${Format.integer(steps.doneCount)} de ${Format.integer(steps.total)}",
         )
-        PrimaryAction(
-            label = "Crear una rutina",
-            icon = FitLogIcons.Plus,
-            onClick = onOpenRoutines,
+        steps.items.forEach { step ->
+            val onClick = when (step.id) {
+                Home.Step.Id.ROUTINE -> onOpenRoutines
+                Home.Step.Id.WORKOUT -> onOpenWorkout
+                Home.Step.Id.BODY_METRIC -> onOpenBody
+            }
+            OnboardingStepRow(step = step, onClick = onClick)
+        }
+    }
+}
+
+@Composable
+private fun OnboardingStepRow(step: Home.Step, onClick: () -> Unit) {
+    val fitLog = MaterialTheme.fitLogColors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = if (step.done) FitLogIcons.Check else FitLogIcons.Circle,
+            contentDescription = null,
+            tint = if (step.done) fitLog.success else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp),
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = step.title,
+                style = MaterialTheme.typography.titleMedium,
+                color = if (step.done) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+            )
+            Text(
+                text = step.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Icon(
+            imageVector = FitLogIcons.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp),
         )
     }
 }

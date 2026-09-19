@@ -179,14 +179,22 @@ describe('interfaz web', () => {
 
   it('el panel de Inicio invita a entrenar y muestra las estadísticas en cero', () => {
     const html = renderToStaticMarkup(
-      <HomeView workout={workout} body={body} catalog={catalog} onNavigate={() => {}} />
+      <HomeView
+        workout={workout}
+        body={body}
+        catalog={catalog}
+        routines={routines}
+        onNavigate={() => {}}
+      />
     );
 
     expect(html).toContain('¿Entrenamos?');
     expect(html).toContain('Iniciar entrenamiento');
     expect(html).toContain('Últimos 7 días');
     expect(html).toContain('Racha');
-    expect(html).toContain('Tu primer entrenamiento');
+    expect(html).toContain('Primeros pasos');
+    expect(html).toContain('Armá una rutina');
+    expect(html).toContain('0 de 3');
     expect(html).toContain('bg-surface');
   });
 

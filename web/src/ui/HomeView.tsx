@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { buildHomeSummary, type HomeSessionInput } from '@/domain/home';
+import { buildHomeSteps, buildHomeSummary, type HomeSessionInput, type HomeSteps } from '@/domain/home';
 import {
   formatDuration,
   formatDurationLong,
@@ -10,12 +10,16 @@ import {
 } from '@/domain/format';
 import type { CatalogState } from '@/state/useCatalog';
 import type { BodyMetricsState } from '@/state/useBodyMetrics';
+import type { RoutinesState } from '@/state/useRoutines';
 import type { WorkoutState } from '@/state/useWorkout';
 import type { View } from '@/ui/destinations';
 import {
   IconCalendar,
+  IconCheck,
+  IconCircle,
   IconChart,
   IconDumbbell,
+  IconChevronRight,
   IconGrid,
   IconPlay,
   IconScale,
@@ -34,11 +38,13 @@ export function HomeView({
   workout,
   body,
   catalog,
+  routines,
   onNavigate,
 }: {
   workout: WorkoutState;
   body: BodyMetricsState;
   catalog: CatalogState;
+  routines: RoutinesState;
   onNavigate: (view: View) => void;
 }) {
   const [now, setNow] = useState(() => Date.now());
@@ -73,6 +79,11 @@ export function HomeView({
   const active = workout.active;
   const activeVolume = active ? active.summary.totalVolumeKg : 0;
   const activeSets = active ? active.summary.workingSets : 0;
+  const steps = buildHomeSteps(
+    routines.routines.length,
+    summary.totalSessions,
+    body.metrics.length
+  );
   const greeting = greetingFor(now);
   const exerciseCount = catalog.snapshot.exercises.length;
 
@@ -209,23 +220,42 @@ export function HomeView({
         />
       </div>
 
-      {summary.totalSessions === 0 ? (
+      {steps.isComplete ? null : (
         <Card tone="data">
-          <p className="text-ink text-sm font-semibold">Tu primer entrenamiento</p>
-          <p className="text-muted mt-1 text-sm">
-            Armá una rutina o iniciá una sesión libre. Después vas a ver acá tu volumen, tu racha y tu
-            evolución.
-          </p>
-          <Button
-            variant="secondary"
-            className="mt-3"
-            onClick={() => onNavigate('rutinas')}
-            icon={<IconCalendar className="size-4" />}
-          >
-            Crear una rutina
-          </Button>
+          <SectionHeader
+            title="Primeros pasos"
+            trailing={`${steps.doneCount} de ${steps.total}`}
+          />
+          <ul className="mt-3 flex flex-col gap-3">
+            {steps.items.map((step) => (
+              <li key={step.id}>
+                <button
+                  type="button"
+                  onClick={() => onNavigate(stepView(step.id))}
+                  className="flex w-full items-center gap-3 text-left"
+                >
+                  {step.done ? (
+                    <IconCheck className="text-success size-4 shrink-0" />
+                  ) : (
+                    <IconCircle className="text-muted size-4 shrink-0" />
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span
+                      className={`block text-sm font-semibold ${
+                        step.done ? 'text-muted' : 'text-ink'
+                      }`}
+                    >
+                      {step.title}
+                    </span>
+                    <span className="text-muted block text-xs">{step.description}</span>
+                  </span>
+                  <IconChevronRight className="text-muted size-4 shrink-0" />
+                </button>
+              </li>
+            ))}
+          </ul>
         </Card>
-      ) : null}
+      )}
 
       {recent.length > 0 ? (
         <>
@@ -277,6 +307,12 @@ export function HomeView({
       </div>
     </div>
   );
+}
+
+function stepView(id: HomeSteps['items'][number]['id']): View {
+  if (id === 'routine') return 'rutinas';
+  if (id === 'workout') return 'entrenar';
+  return 'medidas';
 }
 
 function greetingFor(now: number): string {

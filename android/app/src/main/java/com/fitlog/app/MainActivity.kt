@@ -145,6 +145,7 @@ private fun FitLogApp(
                         onOpenRoutines = { navController.navigate(Routes.ROUTINES) },
                         onOpenProgress = { navController.navigate(Routes.PROGRESS) },
                         onOpenComparisons = { navController.navigate(Routes.COMPARISONS) },
+                        onOpenBody = { navController.navigate(Routes.BODY) },
                     )
                 }
             }

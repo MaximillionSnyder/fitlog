@@ -65,6 +65,49 @@ object Home {
             get() = Formulas.deltaPercent(current.sessions.toDouble(), previous.sessions.toDouble())
     }
 
+    /** Paso del recorrido de inicio, con su estado. */
+    data class Step(
+        val id: Id,
+        val title: String,
+        val description: String,
+        val done: Boolean,
+    ) {
+        enum class Id { ROUTINE, WORKOUT, BODY_METRIC }
+    }
+
+    data class Steps(val items: List<Step>) {
+        val doneCount: Int get() = items.count { it.done }
+        val total: Int get() = items.size
+        val isComplete: Boolean get() = doneCount == total
+    }
+
+    /**
+     * Recorrido de los primeros pasos: armar una rutina, registrar un entrenamiento y cargar una
+     * medida. La tarjeta desaparece cuando los tres estan hechos.
+     */
+    fun steps(routineCount: Int, sessionCount: Int, bodyMetricCount: Int): Steps = Steps(
+        items = listOf(
+            Step(
+                id = Step.Id.ROUTINE,
+                title = "Armá una rutina",
+                description = "Definí los ejercicios, las series y las reps objetivo",
+                done = routineCount > 0,
+            ),
+            Step(
+                id = Step.Id.WORKOUT,
+                title = "Registrá un entrenamiento",
+                description = "Series con peso, reps y RIR, con el descanso medido",
+                done = sessionCount > 0,
+            ),
+            Step(
+                id = Step.Id.BODY_METRIC,
+                title = "Cargá una medida",
+                description = "Peso corporal o perímetros para seguir su evolución",
+                done = bodyMetricCount > 0,
+            ),
+        ),
+    )
+
     fun build(
         sessions: List<SessionInput>,
         bodyPoints: List<BodyInput>,

@@ -94,7 +94,13 @@ export default function App() {
       onToggleTheme={toggle}
     >
       {view === 'inicio' && (
-        <HomeView workout={workout} body={body} catalog={catalog} onNavigate={navigate} />
+        <HomeView
+          workout={workout}
+          body={body}
+          catalog={catalog}
+          routines={routines}
+          onNavigate={navigate}
+        />
       )}
       {view === 'entrenar' && (
         <WorkoutView

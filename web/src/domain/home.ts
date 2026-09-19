@@ -11,6 +11,56 @@ import { DAY_MS } from '@/domain/progress';
 export const HOME_WINDOW_DAYS = 7;
 export const HOME_WEEK_MS = HOME_WINDOW_DAYS * DAY_MS;
 
+/** Paso del recorrido de inicio, con su estado. */
+export type HomeStepId = 'routine' | 'workout' | 'body_metric';
+
+export interface HomeStep {
+  readonly id: HomeStepId;
+  readonly title: string;
+  readonly description: string;
+  readonly done: boolean;
+}
+
+export interface HomeSteps {
+  readonly items: readonly HomeStep[];
+  readonly doneCount: number;
+  readonly total: number;
+  readonly isComplete: boolean;
+}
+
+/**
+ * Recorrido de los primeros pasos: armar una rutina, registrar un entrenamiento y cargar una
+ * medida. La tarjeta desaparece cuando los tres estan hechos.
+ */
+export function buildHomeSteps(
+  routineCount: number,
+  sessionCount: number,
+  bodyMetricCount: number
+): HomeSteps {
+  const items: HomeStep[] = [
+    {
+      id: 'routine',
+      title: 'Armá una rutina',
+      description: 'Definí los ejercicios, las series y las reps objetivo',
+      done: routineCount > 0,
+    },
+    {
+      id: 'workout',
+      title: 'Registrá un entrenamiento',
+      description: 'Series con peso, reps y RIR, con el descanso medido',
+      done: sessionCount > 0,
+    },
+    {
+      id: 'body_metric',
+      title: 'Cargá una medida',
+      description: 'Peso corporal o perímetros para seguir su evolución',
+      done: bodyMetricCount > 0,
+    },
+  ];
+  const doneCount = items.filter((item) => item.done).length;
+  return { items, doneCount, total: items.length, isComplete: doneCount === items.length };
+}
+
 export interface HomeSessionInput {
   readonly id: string;
   readonly startedAt: number;

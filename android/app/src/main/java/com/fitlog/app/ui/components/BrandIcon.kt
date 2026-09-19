@@ -197,6 +197,14 @@ object FitLogIcons {
         stroke { moveTo(11.4f, 5.8f); lineTo(5.2f, 12f); lineTo(11.4f, 18.2f) }
     }
 
+    val Check: ImageVector = icon("Check") {
+        stroke { moveTo(5.4f, 12.6f); lineTo(10f, 17.2f); lineTo(18.6f, 7.4f) }
+    }
+
+    val Circle: ImageVector = icon("Circle") {
+        stroke { addCircle(12f, 12f, 8f) }
+    }
+
     val More: ImageVector = icon("More") {
         fill { addCircle(5.6f, 12f, 1.9f) }
         fill { addCircle(12f, 12f, 1.9f) }

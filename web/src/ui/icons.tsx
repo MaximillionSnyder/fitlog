@@ -179,6 +179,18 @@ export const IconBack = (props: IconProps) => (
   </Stroke>
 );
 
+export const IconCheck = (props: IconProps) => (
+  <Stroke {...props}>
+    <path d="m5.4 12.6 4.6 4.6 8.6-9.8" />
+  </Stroke>
+);
+
+export const IconCircle = (props: IconProps) => (
+  <Stroke {...props}>
+    <circle cx="12" cy="12" r="8" />
+  </Stroke>
+);
+
 export const IconMore = (props: IconProps) => (
   <Solid {...props}>
     <circle cx="5.6" cy="12" r="1.9" />

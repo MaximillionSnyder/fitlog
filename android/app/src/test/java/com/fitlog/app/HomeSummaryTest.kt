@@ -160,6 +160,21 @@ class HomeSummaryTest {
     }
 
     @Test
+    fun `los primeros pasos se completan con rutina, entrenamiento y medida`() {
+        val vacio = Home.steps(routineCount = 0, sessionCount = 0, bodyMetricCount = 0)
+        assertEquals(0, vacio.doneCount)
+        assertEquals(3, vacio.total)
+        assertEquals(false, vacio.isComplete)
+
+        val conRutina = Home.steps(routineCount = 1, sessionCount = 0, bodyMetricCount = 0)
+        assertEquals(1, conRutina.doneCount)
+        assertEquals(true, conRutina.items.first { it.id == Home.Step.Id.ROUTINE }.done)
+
+        val completo = Home.steps(routineCount = 2, sessionCount = 5, bodyMetricCount = 3)
+        assertEquals(true, completo.isComplete)
+    }
+
+    @Test
     fun `ignora sesiones con fecha futura`() {
         val summary = Home.build(
             sessions = listOf(session(daysAgo = -3, volume = 500.0)),

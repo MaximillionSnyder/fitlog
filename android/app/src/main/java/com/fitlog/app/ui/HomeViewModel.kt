@@ -3,6 +3,7 @@ package com.fitlog.app.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fitlog.app.data.BodyMetricsRepository
+import com.fitlog.app.data.RoutinesRepository
 import com.fitlog.app.data.WorkoutRepository
 import com.fitlog.app.data.WorkoutSession
 import com.fitlog.app.domain.Body
@@ -34,12 +35,14 @@ data class HomeUiState(
     val summary: Home.Summary = Home.build(emptyList(), emptyList(), 0L),
     val activeSession: WorkoutSession? = null,
     val recentSessions: List<RecentSession> = emptyList(),
+    val steps: Home.Steps = Home.steps(routineCount = 0, sessionCount = 0, bodyMetricCount = 0),
 )
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val workout: WorkoutRepository,
     private val body: BodyMetricsRepository,
+    private val routines: RoutinesRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeUiState())
@@ -57,10 +60,12 @@ class HomeViewModel @Inject constructor(
                     val active = async { workout.activeSession() }
                     val sessions = async { workout.sessions() }
                     val metrics = async { body.metrics() }
+                    val routineList = async { routines.routines() }
                     Loaded(
                         active = active.await(),
                         sessions = sessions.await(),
                         metrics = metrics.await(),
+                        routineCount = routineList.await().size,
                     )
                 }
                 _state.update { current ->
@@ -80,6 +85,11 @@ class HomeViewModel @Inject constructor(
 
                     current.copy(
                         loading = false,
+                        steps = Home.steps(
+                            routineCount = snapshot.routineCount,
+                            sessionCount = snapshot.sessions.size,
+                            bodyMetricCount = snapshot.metrics.size,
+                        ),
                         greeting = greetingFor(now),
                         summary = Home.build(sessionInputs, bodyInputs, now),
                         activeSession = snapshot.active,
@@ -112,6 +122,7 @@ class HomeViewModel @Inject constructor(
         val active: WorkoutSession?,
         val sessions: List<WorkoutSession>,
         val metrics: List<Body.Point>,
+        val routineCount: Int,
     )
 
     companion object {
