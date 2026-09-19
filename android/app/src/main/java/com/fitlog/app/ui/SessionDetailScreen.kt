@@ -81,7 +81,7 @@ fun SessionDetailScreen(
                     StatTile(
                         label = "Series",
                         value = Format.integer(session.summary.workingSets),
-                        hint = "${Format.integer(session.summary.totalSets)} en total",
+                        deltaLabel = "${Format.integer(session.summary.totalSets)} en total",
                         modifier = Modifier.weight(1f),
                     )
                 }
