@@ -12,13 +12,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -41,9 +39,20 @@ import com.fitlog.app.data.WorkoutSet
 import com.fitlog.app.domain.CatalogExercise
 import com.fitlog.app.domain.CatalogText
 import com.fitlog.app.domain.WorkoutSummary
+import com.fitlog.app.ui.components.FitLogCard
+import com.fitlog.app.ui.components.FitLogIcons
+import com.fitlog.app.ui.components.Format
+import com.fitlog.app.ui.components.PrimaryAction
+import com.fitlog.app.ui.components.SecondaryAction
+import com.fitlog.app.ui.components.SectionHeader
 import com.fitlog.app.ui.motion.EmptyState
+import com.fitlog.app.ui.motion.ErrorState
+import com.fitlog.app.ui.motion.LoadingState
 import com.fitlog.app.ui.motion.MorphActionButton
 import com.fitlog.app.ui.motion.MorphingBlob
+import com.fitlog.app.ui.theme.Spacing
+import com.fitlog.app.ui.theme.fitLogColors
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -68,6 +77,17 @@ fun WorkoutScreen(
         routineHandled = true
         viewModel.startSession(initialRoutineId)
     }
+    // La duracion de la sesion activa se refresca sola cada 30 s mientras haya una en curso.
+    var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
+    val activeId = state.active?.id
+    LaunchedEffect(activeId) {
+        if (activeId == null) return@LaunchedEffect
+        while (true) {
+            nowMs = System.currentTimeMillis()
+            delay(30_000)
+        }
+    }
+
     var showExercisePicker by remember { mutableStateOf(false) }
     var selectedExercise by remember { mutableStateOf<CatalogExercise?>(null) }
     var editingSet by remember { mutableStateOf<WorkoutSet?>(null) }
@@ -84,8 +104,8 @@ fun WorkoutScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(Spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -101,7 +121,7 @@ fun WorkoutScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 MorphActionButton(
@@ -117,94 +137,77 @@ fun WorkoutScreen(
             }
         }
 
-        state.error?.let { message -> Text(text = message, color = MaterialTheme.colorScheme.error) }
+        state.error?.let { message -> ErrorState(message = message, onRetry = { viewModel.load() }) }
 
         if (state.loading) {
-            Text(text = "Cargando entrenamientos…", style = MaterialTheme.typography.bodySmall)
+            LoadingState(message = "Cargando entrenamientos…")
         }
 
         state.active?.let { active ->
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Box {
-                    MorphingBlob(
-                        modifier = Modifier.matchParentSize(),
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.02f),
-                        ),
-                        seed = 21,
-                        durationMillis = 18000,
-                    )
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        SummaryCell("Series efectivas", active.summary.workingSets.toString())
-                        SummaryCell("Volumen", "${active.summary.totalVolumeKg.toInt()} kg")
-                        SummaryCell("Totales", active.summary.totalSets.toString())
-                    }
-                }
-            }
+            SessionSummaryCard(active = active, nowMs = nowMs)
 
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedButton(
-                        onClick = { showExercisePicker = true },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(exerciseName) }
+            FitLogCard {
+                SectionHeader(title = "Registrar serie")
+                SecondaryAction(
+                    label = exerciseName,
+                    onClick = { showExercisePicker = true },
+                    icon = FitLogIcons.Dumbbell,
+                )
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = weight,
-                            onValueChange = { weight = it },
-                            label = { Text("Peso kg") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                        )
-                        OutlinedTextField(
-                            value = reps,
-                            onValueChange = { reps = it },
-                            label = { Text("Reps") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                        )
-                        OutlinedTextField(
-                            value = rir,
-                            onValueChange = { rir = it },
-                            label = { Text("RIR") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                        )
-                    }
-
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     OutlinedTextField(
-                        value = notes,
-                        onValueChange = { notes = it },
-                        label = { Text("Notas (opcional)") },
-                        modifier = Modifier.fillMaxWidth(),
+                        value = weight,
+                        onValueChange = { weight = it },
+                        label = { Text("Peso kg") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.weight(1f),
                         singleLine = true,
                     )
+                    OutlinedTextField(
+                        value = reps,
+                        onValueChange = { reps = it },
+                        label = { Text("Reps") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                    )
+                    OutlinedTextField(
+                        value = rir,
+                        onValueChange = { rir = it },
+                        label = { Text("RIR") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                    )
+                }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = isWarmup, onCheckedChange = { isWarmup = it })
-                        Text(text = "Serie de calentamiento", style = MaterialTheme.typography.bodyMedium)
-                    }
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notas (opcional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
 
-                    state.formError?.let { message ->
-                        Text(text = message, color = MaterialTheme.colorScheme.error)
-                    }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = isWarmup, onCheckedChange = { isWarmup = it })
+                    Text(text = "Serie de calentamiento", style = MaterialTheme.typography.bodyMedium)
+                }
 
-                    Button(
-                        onClick = {
-                            val exercise = selectedExercise ?: state.exercises.firstOrNull()
-                            if (exercise == null) {
-                                return@Button
-                            }
+                state.formError?.let { message ->
+                    Text(
+                        text = message,
+                        color = MaterialTheme.fitLogColors.danger,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+
+                PrimaryAction(
+                    label = "Registrar serie",
+                    icon = FitLogIcons.Plus,
+                    onClick = {
+                        val exercise = selectedExercise ?: state.exercises.firstOrNull()
+                        if (exercise != null) {
                             viewModel.addSet(
                                 exerciseId = exercise.id,
                                 weightKg = parseDecimal(weight),
@@ -215,10 +218,9 @@ fun WorkoutScreen(
                             )
                             notes = ""
                             isWarmup = false
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text("Registrar serie") }
-                }
+                        }
+                    },
+                )
             }
 
             if (state.activeSets.isEmpty()) {
@@ -226,42 +228,17 @@ fun WorkoutScreen(
             }
 
             state.activeSets.forEach { set ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "#${set.setIndex} ${set.exerciseName}" +
-                                    if (set.isWarmup) "  ·  CALENTAMIENTO" else "",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                            )
-                            Text(
-                                text = "${set.weightKg ?: "—"} kg × ${set.reps ?: "—"}" +
-                                    (set.rir?.let { " · RIR $it" } ?: ""),
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            TextButton(onClick = { editingSet = set }) { Text("Editar") }
-                            TextButton(onClick = { viewModel.deleteSet(set.id) }) {
-                                Text(text = "Borrar", color = MaterialTheme.colorScheme.error)
-                            }
-                        }
-                    }
-                }
+                SetRow(
+                    set = set,
+                    onEdit = { editingSet = set },
+                    onDelete = { viewModel.deleteSet(set.id) },
+                )
             }
         }
 
-        Text(
-            text = "HISTORIAL",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+        SectionHeader(
+            title = "Historial",
+            trailing = if (state.history.isEmpty()) null else Format.integer(state.history.size) + " sesiones",
         )
 
         if (state.history.isEmpty() && !state.loading) {
@@ -327,36 +304,161 @@ fun WorkoutScreen(
     }
 }
 
+/**
+ * Resumen de la sesion en curso: duracion, series y volumen, con el fondo de marca animado.
+ */
 @Composable
-private fun SummaryCell(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = label, style = MaterialTheme.typography.labelSmall)
-        Text(text = value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+private fun SessionSummaryCard(active: WorkoutSession, nowMs: Long) {
+    val fitLog = MaterialTheme.fitLogColors
+    FitLogCard(containerColor = fitLog.accentSoft) {
+        Box {
+            MorphingBlob(
+                modifier = Modifier.matchParentSize(),
+                colors = listOf(
+                    fitLog.accent.copy(alpha = 0.16f),
+                    fitLog.accent.copy(alpha = 0.02f),
+                ),
+                seed = 21,
+                durationMillis = 18000,
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                SectionHeader(title = "Sesión activa")
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    SummaryCell(
+                        label = "Duración",
+                        value = Format.duration((nowMs - active.startedAt).coerceAtLeast(0L)),
+                        modifier = Modifier.weight(1f),
+                    )
+                    SummaryCell(
+                        label = "Series",
+                        value = Format.integer(active.summary.workingSets),
+                        modifier = Modifier.weight(1f),
+                    )
+                    SummaryCell(
+                        label = "Volumen",
+                        value = "${Format.volumeKg(active.summary.totalVolumeKg)} kg",
+                        modifier = Modifier.weight(1f),
+                    )
+                    SummaryCell(
+                        label = "Totales",
+                        value = Format.integer(active.summary.totalSets),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SummaryCell(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(text = value, style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+/** Fila de una serie registrada: datos, edicion y borrado. */
+@Composable
+private fun SetRow(set: WorkoutSet, onEdit: () -> Unit, onDelete: () -> Unit) {
+    val fitLog = MaterialTheme.fitLogColors
+    FitLogCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "#${set.setIndex} ${set.exerciseName}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    if (set.isWarmup) {
+                        WarmupBadge()
+                    }
+                }
+                Text(
+                    text = "${Format.kg(set.weightKg)} kg × ${set.reps ?: "—"}" +
+                        (set.rir?.let { " · RIR $it" } ?: ""),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                TextButton(onClick = onEdit) { Text("Editar") }
+                TextButton(onClick = onDelete) {
+                    Text(text = "Borrar", color = fitLog.danger)
+                }
+            }
+        }
+    }
+}
+
+/** Marca de serie de calentamiento. */
+@Composable
+private fun WarmupBadge() {
+    val fitLog = MaterialTheme.fitLogColors
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = fitLog.warningSoft,
+        contentColor = fitLog.warning,
+    ) {
+        Text(
+            text = "CALENTAMIENTO",
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(horizontal = Spacing.sm, vertical = 2.dp),
+        )
     }
 }
 
 @Composable
 private fun HistoryCard(session: WorkoutSession, onOpenDetail: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    val fitLog = MaterialTheme.fitLogColors
+    FitLogCard {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = formatTimestamp(session.startedAt) +
-                        if (session.finishedAt == null) "  ·  EN CURSO" else "",
-                    fontWeight = FontWeight.Medium,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = formatTimestamp(session.startedAt),
+                        fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    if (session.finishedAt == null) {
+                        Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = fitLog.accentSoft,
+                            contentColor = fitLog.accentText,
+                        ) {
+                            Text(
+                                text = "EN CURSO",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = Spacing.sm, vertical = 2.dp),
+                            )
+                        }
+                    }
+                }
                 Text(
                     text = (WorkoutSummary.formatDuration(session.startedAt, session.finishedAt) ?: "—") +
-                        " · ${session.summary.workingSets} series · " +
-                        "${session.summary.totalVolumeKg.toInt()} kg",
+                        " · ${Format.integer(session.summary.workingSets)} series · " +
+                        "${Format.volumeKg(session.summary.totalVolumeKg)} kg",
                     style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             TextButton(onClick = onOpenDetail) { Text("Detalle") }
@@ -381,7 +483,7 @@ private fun ExercisePickerDialog(
         onDismissRequest = onDismiss,
         title = { Text("Elegir ejercicio") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
@@ -393,7 +495,7 @@ private fun ExercisePickerDialog(
                     modifier = Modifier
                         .heightIn(max = 320.dp)
                         .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.xs),
                 ) {
                     visible.forEach { exercise ->
                         TextButton(
@@ -429,7 +531,7 @@ private fun SetEditDialog(
         onDismissRequest = onDismiss,
         title = { Text("#${set.setIndex} ${set.exerciseName}") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 OutlinedTextField(
                     value = weight,
                     onValueChange = { weight = it },

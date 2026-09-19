@@ -39,6 +39,7 @@ import com.fitlog.app.data.RoutinesRepository
 import com.fitlog.app.domain.CatalogExercise
 import com.fitlog.app.domain.CatalogText
 import com.fitlog.app.ui.motion.EmptyState
+import com.fitlog.app.ui.motion.ErrorState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -62,7 +63,7 @@ fun RoutinesScreen(
     ) {
         Text(text = "Plantillas para arrancar a entrenar", style = MaterialTheme.typography.bodySmall)
 
-        state.error?.let { message -> Text(text = message, color = MaterialTheme.colorScheme.error) }
+        state.error?.let { message -> ErrorState(message = message, onRetry = { viewModel.load() }) }
 
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

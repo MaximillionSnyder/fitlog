@@ -12,29 +12,38 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fitlog.app.domain.Comparisons
+import com.fitlog.app.ui.components.FitLogCard
+import com.fitlog.app.ui.components.Format
+import com.fitlog.app.ui.components.LabeledValue
+import com.fitlog.app.ui.components.SectionHeader
+import com.fitlog.app.ui.components.StatTile
 import com.fitlog.app.ui.motion.EmptyState
+import com.fitlog.app.ui.motion.ErrorState
+import com.fitlog.app.ui.motion.LoadingState
+import com.fitlog.app.ui.theme.Spacing
+import com.fitlog.app.ui.theme.fitLogColors
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.math.roundToInt
 
+/**
+ * Comparativas: deltas del periodo, marcas personales por ejercicio y balance muscular.
+ *
+ * La pantalla no arma su propio encabezado (el shell ya muestra "Comparativas"): empieza con los
+ * filtros de periodo y baja en secciones con el mismo sistema visual que el resto de la app.
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ComparisonsScreen(
@@ -48,14 +57,20 @@ fun ComparisonsScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
+        verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        Text(text = "PRs, periodos y balance muscular", style = MaterialTheme.typography.bodySmall)
+        Text(
+            text = "PRs, periodos y balance muscular",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
 
-        state.error?.let { message -> Text(text = message, color = MaterialTheme.colorScheme.error) }
+        state.error?.let { message ->
+            ErrorState(message = message, onRetry = { viewModel.load() })
+        }
 
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             FilterChip(
                 selected = state.preset == Comparisons.Preset.LAST_30_DAYS,
                 onClick = { viewModel.selectPreset(Comparisons.Preset.LAST_30_DAYS) },
@@ -69,74 +84,80 @@ fun ComparisonsScreen(
         }
 
         if (state.loading) {
-            Text(text = "Calculando comparativas…", style = MaterialTheme.typography.bodySmall)
+            LoadingState(message = "Calculando comparativas…")
         }
 
         state.comparison?.let { comparison ->
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    DeltaCell("Volumen", formatKg(comparison.current.volumeKg), comparison.volumeDeltaPct)
-                    DeltaCell("Series", comparison.current.workingSets.toString(), comparison.setsDeltaPct)
-                    DeltaCell("Sesiones", comparison.current.sessions.toString(), comparison.sessionsDeltaPct)
-                }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                StatTile(
+                    label = "Volumen",
+                    value = Format.volumeKg(comparison.current.volumeKg),
+                    unit = "kg",
+                    deltaPercent = comparison.volumeDeltaPct,
+                    deltaLabel = deltaFallbackLabel(comparison.volumeDeltaPct),
+                    accent = MaterialTheme.fitLogColors.data,
+                    modifier = Modifier.weight(1f),
+                )
+                StatTile(
+                    label = "Series",
+                    value = Format.integer(comparison.current.workingSets),
+                    deltaPercent = comparison.setsDeltaPct,
+                    deltaLabel = deltaFallbackLabel(comparison.setsDeltaPct),
+                    modifier = Modifier.weight(1f),
+                )
+                StatTile(
+                    label = "Sesiones",
+                    value = Format.integer(comparison.current.sessions),
+                    deltaPercent = comparison.sessionsDeltaPct,
+                    deltaLabel = deltaFallbackLabel(comparison.sessionsDeltaPct),
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
 
-        Text(
-            text = "MARCAS PERSONALES",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-        )
+        SectionHeader(title = "Marcas personales")
 
         if (!state.loading && state.records.isEmpty()) {
             EmptyState(message = "Todavía no hay marcas registradas.")
         }
 
         state.records.forEach { record ->
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = exerciseNames[record.exerciseId] ?: record.exerciseId,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Text(
-                        text = "Peso: ${formatKg(record.bestWeightKg)} · ${formatDate(record.bestWeightAtMs)}",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    Text(
-                        text = "1RM: ${formatKg(record.bestOneRepMaxKg)} · ${formatDate(record.bestOneRepMaxAtMs)}",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    Text(
-                        text = "Volumen: ${formatKg(record.bestSessionVolumeKg)} · " +
-                            formatDate(record.bestSessionVolumeAtMs),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    Text(
-                        text = "Reps: ${record.bestReps} · ${formatDate(record.bestRepsAtMs)}",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
+            FitLogCard {
+                Text(
+                    text = exerciseNames[record.exerciseId] ?: record.exerciseId,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                LabeledValue(
+                    label = "Peso",
+                    value = "${Format.kg(record.bestWeightKg)} kg · ${formatDate(record.bestWeightAtMs)}",
+                )
+                LabeledValue(
+                    label = "1RM",
+                    value = "${Format.kg(record.bestOneRepMaxKg)} kg · ${formatDate(record.bestOneRepMaxAtMs)}",
+                )
+                LabeledValue(
+                    label = "Volumen",
+                    value = "${Format.kg(record.bestSessionVolumeKg)} kg · " +
+                        formatDate(record.bestSessionVolumeAtMs),
+                )
+                LabeledValue(
+                    label = "Reps",
+                    value = "${Format.integer(record.bestReps)} · ${formatDate(record.bestRepsAtMs)}",
+                )
             }
         }
 
-        Text(
-            text = "BALANCE MUSCULAR DEL PERIODO",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-        )
+        SectionHeader(title = "Balance muscular del periodo")
 
         if (!state.loading && state.balance.isEmpty()) {
             EmptyState(message = "No hay volumen registrado en el periodo elegido.")
         }
 
         state.balance.forEach { entry ->
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -144,24 +165,31 @@ fun ComparisonsScreen(
                     Text(
                         text = groupLabel(entry.muscleGroupSlug),
                         style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        text = "${formatKg(entry.volumeKg)} · ${entry.sharePct}%",
+                        text = "${Format.volumeKg(entry.volumeKg)} kg · ${entry.sharePct}%",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(8.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            shape = MaterialTheme.shapes.small,
+                        )
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth(fraction = (entry.sharePct / 100.0).toFloat().coerceIn(0f, 1f))
                             .height(8.dp)
-                            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
+                            .background(
+                                color = MaterialTheme.fitLogColors.data,
+                                shape = MaterialTheme.shapes.small,
+                            )
                     )
                 }
             }
@@ -169,32 +197,13 @@ fun ComparisonsScreen(
     }
 }
 
-@Composable
-private fun DeltaCell(label: String, value: String, deltaPct: Double?) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = label, style = MaterialTheme.typography.labelSmall)
-        Text(text = value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Text(
-            text = Comparisons.formatDelta(deltaPct),
-            style = MaterialTheme.typography.labelSmall,
-            color = when {
-                deltaPct == null -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                deltaPct > 0 -> Color(0xFF6EE7B7)
-                deltaPct < 0 -> Color(0xFFFDA4AF)
-                else -> MaterialTheme.colorScheme.onSurface
-            },
-        )
-    }
-}
+/** Texto de la variacion cuando no hay periodo previo con el que comparar. */
+private fun deltaFallbackLabel(percent: Double?): String? =
+    if (percent == null) "sin datos" else null
 
 private fun groupLabel(slug: String): String = when (slug) {
     "sin-grupo" -> "Sin grupo"
     else -> slug.replaceFirstChar { it.uppercase() }
-}
-
-private fun formatKg(value: Double): String {
-    val rounded = (value * 10).roundToInt() / 10.0
-    return if (rounded == rounded.toInt().toDouble()) "${rounded.toInt()} kg" else "$rounded kg"
 }
 
 private fun formatDate(timestampMs: Long?): String {

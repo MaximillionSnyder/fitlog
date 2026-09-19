@@ -13,11 +13,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -27,7 +25,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,7 +32,18 @@ import com.fitlog.app.domain.CatalogExercise
 import com.fitlog.app.domain.CatalogText
 import com.fitlog.app.domain.Formulas
 import com.fitlog.app.domain.Progress
+import com.fitlog.app.ui.components.FitLogCard
+import com.fitlog.app.ui.components.FitLogIcons
+import com.fitlog.app.ui.components.Format
+import com.fitlog.app.ui.components.LabeledValue
+import com.fitlog.app.ui.components.SecondaryAction
+import com.fitlog.app.ui.components.SectionHeader
+import com.fitlog.app.ui.components.StatTile
 import com.fitlog.app.ui.motion.EmptyState
+import com.fitlog.app.ui.motion.ErrorState
+import com.fitlog.app.ui.motion.LoadingState
+import com.fitlog.app.ui.theme.Spacing
+import com.fitlog.app.ui.theme.fitLogColors
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -69,23 +77,21 @@ fun ProgressScreen(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(Spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        Column {
-Text(
-            text = "Evolución por ejercicio",
-            style = MaterialTheme.typography.bodySmall,
+        SectionHeader(title = "Evolución por ejercicio")
+
+        state.error?.let { message ->
+            ErrorState(message = message, onRetry = { viewModel.refreshSeries() })
+        }
+
+        SecondaryAction(
+            label = selectedExercise?.name ?: "Elegir ejercicio",
+            onClick = { showPicker = true },
         )
-        }
 
-        state.error?.let { message -> Text(text = message, color = MaterialTheme.colorScheme.error) }
-
-        OutlinedButton(onClick = { showPicker = true }, modifier = Modifier.fillMaxWidth()) {
-            Text(selectedExercise?.name ?: "Elegir ejercicio")
-        }
-
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             metricLabels.forEach { (metric, label) ->
                 FilterChip(
                     selected = state.metric == metric,
@@ -95,7 +101,7 @@ Text(
             }
         }
 
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             presetLabels.forEach { (preset, label) ->
                 FilterChip(
                     selected = state.preset == preset,
@@ -106,7 +112,7 @@ Text(
         }
 
         if (state.loading || state.refreshing) {
-            Text(text = "Calculando progreso…", style = MaterialTheme.typography.bodySmall)
+            LoadingState(message = "Calculando progreso…")
         }
 
         if (!state.loading && state.points.isEmpty()) {
@@ -120,44 +126,42 @@ Text(
         }
 
         if (state.points.isNotEmpty()) {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            text = "${metricLabels[state.metric]} · ${state.points.size} sesiones",
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                        Text(
-                            text = formatMetric(values.last(), state.metric),
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-
-                    FitLogLineChart(
-                        values = values,
-                        labels = state.points.map { formatDay(it.startedAtMs) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        valueFormatter = { formatMetric(it, state.metric) },
-                    )
-                }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+            ) {
+                StatTile(
+                    label = metricLabels.getValue(state.metric),
+                    value = formatMetric(values.last(), state.metric),
+                    icon = FitLogIcons.Chart,
+                    accent = MaterialTheme.fitLogColors.data,
+                    modifier = Modifier.weight(1f),
+                )
+                StatTile(
+                    label = "Sesiones",
+                    value = Format.integer(state.points.size),
+                    icon = FitLogIcons.Calendar,
+                    modifier = Modifier.weight(1f),
+                )
             }
 
-            state.points.reversed().forEach { point ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(text = formatDay(point.startedAtMs), style = MaterialTheme.typography.bodySmall)
-                    Text(
-                        text = "${point.workingSets} series · " +
+            FitLogCard {
+                FitLogLineChart(
+                    values = values,
+                    labels = state.points.map { formatDay(it.startedAtMs) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    valueFormatter = { formatMetric(it, state.metric) },
+                )
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                state.points.reversed().forEach { point ->
+                    LabeledValue(
+                        label = formatDay(point.startedAtMs),
+                        value = "${Format.integer(point.workingSets)} series · " +
                             formatMetric(Progress.metricValue(point, state.metric), state.metric),
-                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
@@ -193,7 +197,7 @@ private fun ProgressExercisePickerDialog(
         onDismissRequest = onDismiss,
         title = { Text("Elegir ejercicio") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
