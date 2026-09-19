@@ -70,7 +70,8 @@ class SchemaParityTest {
 
         sqlite.query(
             "SELECT name FROM sqlite_master WHERE type = 'table' " +
-                "AND name NOT LIKE 'sqlite_%' AND name <> 'room_master_table' ORDER BY name"
+                "AND name NOT LIKE 'sqlite_%' " +
+                "AND name NOT IN ('room_master_table', 'android_metadata') ORDER BY name"
         ).use { cursor ->
             while (cursor.moveToNext()) {
                 tableNames.add(cursor.getString(0))
