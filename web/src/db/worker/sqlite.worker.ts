@@ -2,6 +2,9 @@ import sqlite3InitModule, { type Database, type Sqlite3Static } from '@sqlite.or
 
 import { applyMigrations, type SqlRunner, type SqlValue } from '@/db/migrate';
 import { migrations } from '@/db/migrations';
+import { seedCatalog } from '@/data/catalogSeed';
+
+import catalogSeed from '@shared/seed/catalog.json';
 
 import type { WorkerRequest, WorkerResponse } from './protocol';
 
@@ -68,6 +71,7 @@ async function init(): Promise<void> {
   db.exec('PRAGMA foreign_keys = ON');
 
   const schemaVersion = applyMigrations(createRunner(), migrations);
+  const seedResult = seedCatalog(createRunner(), catalogSeed);
 
   const ready: WorkerResponse = {
     id: 0,
@@ -76,6 +80,8 @@ async function init(): Promise<void> {
     schemaVersion,
     persistence: 'opfs',
     sqliteVersion: sqlite3.version.libVersion,
+    catalogSeeded: seedResult.seeded,
+    catalogExercises: seedResult.exercises,
   };
   ctx.postMessage(ready);
 }

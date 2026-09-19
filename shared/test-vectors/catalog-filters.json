@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "description": "Casos de prueba compartidos del catalogo de ejercicios. Se ejecutan contra shared/seed/catalog.json en Android (JUnit) y Web (Vitest).",
+  "rules": {
+    "normalize": "minusculas, NFD sin diacriticos, espacios colapsados y recortados",
+    "slugify": "normalize + todo caracter no alfanumerico reemplazado por '-', guiones colapsados y recortados",
+    "order": "nombre normalizado ascendente por puntos de codigo, desempate por slug",
+    "search": "coincidencia por subcadena sobre el nombre normalizado",
+    "muscle_group": "coincide con el grupo principal o el secundario",
+    "equipment": "coincidencia exacta",
+    "kind": "coincidencia exacta"
+  },
+  "normalize": [
+    { "input": "Press  BANCA", "expected": "press banca" },
+    { "input": "Extensión", "expected": "extension" },
+    { "input": "  Jalón   al pecho ", "expected": "jalon al pecho" },
+    { "input": "CURL MARTILLO", "expected": "curl martillo" }
+  ],
+  "slugify": [
+    { "input": "Press banca con barra", "expected": "press-banca-con-barra" },
+    { "input": "  Extensión de tríceps  ", "expected": "extension-de-triceps" },
+    { "input": "Face pull", "expected": "face-pull" },
+    { "input": "¡Remo a 1 mano!", "expected": "remo-a-1-mano" },
+    { "input": "Jalón al pecho", "expected": "jalon-al-pecho" }
+  ],
+  "cases": [
+    {
+      "name": "busqueda por subcadena",
+      "query": "press",
+      "muscle_group_slug": null,
+      "equipment": null,
+      "kind": null,
+      "expected": [
+        "press-arnold",
+        "press-banca-barra",
+        "press-frances",
+        "press-inclinado-mancuernas",
+        "press-militar-barra",
+        "press-plano-mancuernas"
+      ]
+    },
+    {
+      "name": "busqueda sin acentos",
+      "query": "triceps",
+      "muscle_group_slug": null,
+      "equipment": null,
+      "kind": null,
+      "expected": ["extension-triceps-polea"]
+    },
+    {
+      "name": "busqueda insensible a mayusculas",
+      "query": "PRESS",
+      "muscle_group_slug": null,
+      "equipment": null,
+      "kind": null,
+      "expected": [
+        "press-arnold",
+        "press-banca-barra",
+        "press-frances",
+        "press-inclinado-mancuernas",
+        "press-militar-barra",
+        "press-plano-mancuernas"
+      ]
+    },
+    {
+      "name": "espacios multiples colapsados",
+      "query": "  press   banca ",
+      "muscle_group_slug": null,
+      "equipment": null,
+      "kind": null,
+      "expected": ["press-banca-barra"]
+    },
+    {
+      "name": "filtro por grupo principal y secundario",
+      "query": "",
+      "muscle_group_slug": "pecho",
+      "equipment": null,
+      "kind": null,
+      "expected": [
+        "aperturas-mancuernas",
+        "fondos-banco",
+        "fondos-paralelas",
+        "press-banca-barra",
+        "press-inclinado-mancuernas",
+        "press-plano-mancuernas"
+      ]
+    },
+    {
+      "name": "filtros combinados de grupo y equipamiento",
+      "query": "",
+      "muscle_group_slug": "espalda",
+      "equipment": "barra",
+      "kind": null,
+      "expected": ["peso-muerto", "remo-barra"]
+    },
+    {
+      "name": "filtro por tipo cardio",
+      "query": "",
+      "muscle_group_slug": null,
+      "equipment": null,
+      "kind": "cardio",
+      "expected": ["bicicleta-fija", "burpees", "cinta-correr", "remo-ergometro"]
+    },
+    {
+      "name": "busqueda y filtro combinados",
+      "query": "curl",
+      "muscle_group_slug": null,
+      "equipment": "mancuernas",
+      "kind": null,
+      "expected": ["curl-inclinado-mancuernas", "curl-martillo"]
+    },
+    {
+      "name": "sin resultados",
+      "query": "zzz",
+      "muscle_group_slug": null,
+      "equipment": null,
+      "kind": null,
+      "expected": []
+    }
+  ]
+}

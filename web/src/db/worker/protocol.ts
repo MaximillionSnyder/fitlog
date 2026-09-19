@@ -23,6 +23,8 @@ export interface ReadyMessage {
   readonly schemaVersion: number;
   readonly persistence: 'opfs';
   readonly sqliteVersion: string;
+  readonly catalogSeeded: boolean;
+  readonly catalogExercises: number;
 }
 
 export interface SuccessMessage {

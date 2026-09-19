@@ -39,13 +39,17 @@ android {
     }
 
     testOptions {
-        unitTests.isIncludeAndroidResources = false
+        unitTests.isIncludeAndroidResources = true
     }
 
     sourceSets {
+        getByName("main") {
+            assets.srcDir("../../shared")
+        }
         getByName("test") {
             resources.srcDir("../../shared/test-vectors")
             resources.srcDir("../../shared/schema")
+            resources.srcDir("../../shared/seed")
         }
     }
 }
@@ -81,6 +85,7 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.navigation.compose)
 
     implementation(libs.kotlinx.coroutines.android)
 
@@ -88,4 +93,6 @@ dependencies {
     testImplementation(libs.org.json)
     testImplementation(libs.kotlinx.serialization.json)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
 }

@@ -9,12 +9,17 @@ export interface ReadyInfo {
   readonly persistence: 'opfs';
 }
 
+export interface SqlClient {
+  exec(sql: string, params?: readonly SqlValue[]): Promise<SqlValue[][]>;
+  query(sql: string, params?: readonly SqlValue[]): Promise<SqlValue[][]>;
+}
+
 interface Pending {
   resolve: (rows: SqlValue[][]) => void;
   reject: (error: Error) => void;
 }
 
-export class SqliteWorkerClient {
+export class SqliteWorkerClient implements SqlClient {
   private readonly worker: Worker;
   private readonly pending = new Map<number, Pending>();
   private nextId = 1;
@@ -108,7 +113,7 @@ export class SqliteWorkerClient {
   }
 }
 
-export function createFitLogDb(client: SqliteWorkerClient) {
+export function createFitLogDb(client: SqlClient) {
   return drizzle(
     async (sql, params, method) => {
       const values = params as SqlValue[];
