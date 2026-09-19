@@ -1,8 +1,5 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
@@ -19,12 +16,12 @@ val gitCommitCount = providers.exec {
 
 android {
     namespace = "com.fitlog.app"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.fitlog.app"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 37
         versionCode = gitCommitCount.get()
         versionName = (project.findProperty("versionName") as String?) ?: "0.1.7"
 
@@ -75,12 +72,6 @@ android {
             resources.srcDir("../../shared/schema")
             resources.srcDir("../../shared/seed")
         }
-    }
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
