@@ -87,6 +87,15 @@ class BackupRepositoryTest {
         return session.id
     }
 
+    private suspend fun createSeededTarget(): FitLogDatabase {
+        val target = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            FitLogDatabase::class.java,
+        ).allowMainThreadQueries().build()
+        CatalogRepository(dao = target.catalogDao(), seedJsonProvider = { seedJson }).ensureSeeded()
+        return target
+    }
+
     @Test
     fun `exporta e importa un respaldo completo`() = runTest {
         val routine = routines.createRoutine("Empuje", null)
@@ -99,10 +108,7 @@ class BackupRepositoryTest {
 
         val json = backup.export(Backup.TABLES, "0.1.7")
 
-        val target = Room.inMemoryDatabaseBuilder(
-            ApplicationProvider.getApplicationContext(),
-            FitLogDatabase::class.java,
-        ).allowMainThreadQueries().build()
+        val target = createSeededTarget()
         try {
             val targetBackup = BackupRepository(
                 database = target,
@@ -241,10 +247,7 @@ class BackupRepositoryTest {
         routines.addExercise(sourceRoutine.id, RoutineExerciseInput(pressBanca, 4, 8, null, null, null))
         val json = backup.export(Backup.TABLES, "0.1.7")
 
-        val target = Room.inMemoryDatabaseBuilder(
-            ApplicationProvider.getApplicationContext(),
-            FitLogDatabase::class.java,
-        ).allowMainThreadQueries().build()
+        val target = createSeededTarget()
         try {
             val targetRoutines = RoutinesRepository(dao = target.routinesDao(), now = { currentTime })
             val localRoutine = targetRoutines.createRoutine("Full body", null)
