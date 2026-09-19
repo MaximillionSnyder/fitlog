@@ -49,4 +49,6 @@
 - [x] 6.7 Unificar los errores de carga con `ErrorState` y reintento, y los estados de carga con `LoadingState`
 - [x] 6.8 Repetir la última serie con un toque y mostrar el descanso desde la última serie (Android + web)
 - [x] 6.9 Pasar el detalle del entrenamiento de diálogo a pantalla propia (Android + web)
+- [x] 6.10 Temporizador de descanso con el objetivo de la rutina (Android + web)
+- [x] 6.11 Prueba de humo de la interfaz web renderizada a HTML (shell, panel, Entrenar, detalle, Más y Ajustes)
 - [ ] 6.5 Revisar el resultado en el APK y en la web con el usuario y ajustar lo que pida
