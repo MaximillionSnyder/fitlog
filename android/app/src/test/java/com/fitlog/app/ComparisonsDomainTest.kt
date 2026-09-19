@@ -1,6 +1,7 @@
 package com.fitlog.app
 
 import com.fitlog.app.domain.Comparisons
+import com.fitlog.app.domain.Progress
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
