@@ -1,7 +1,6 @@
 package com.fitlog.app.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -15,7 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.fitlog.app.ui.theme.Spacing
 
 /**
@@ -120,38 +118,3 @@ fun LabeledValue(
         )
     }
 }
-
-/** Contenedor del encabezado de una pantalla: titulo grande y bajada. */
-@Composable
-fun ScreenIntro(
-    title: String,
-    subtitle: String? = null,
-    modifier: Modifier = Modifier,
-    trailing: (@Composable () -> Unit)? = null,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.headlineSmall)
-            if (subtitle != null) {
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        if (trailing != null) {
-            Box(contentAlignment = Alignment.Center) { trailing() }
-        }
-    }
-}
-
-/** Separador vertical fino entre bloques. */
-val CardSpacing = Spacing.md
-
-/** Espacio entre tarjetas de una lista. */
-val ListSpacing = 12.dp

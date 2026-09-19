@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
@@ -103,21 +102,5 @@ private fun MoreIntro() {
                 )
             }
         }
-    }
-}
-
-/** Contenedor del contenido secundario con el padding de la pantalla. */
-@Composable
-fun SecondaryScreenContent(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
-        verticalArrangement = Arrangement.spacedBy(Spacing.md),
-    ) {
-        content()
     }
 }
