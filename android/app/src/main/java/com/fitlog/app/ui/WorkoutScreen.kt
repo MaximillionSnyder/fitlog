@@ -22,9 +22,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,13 +49,22 @@ import com.fitlog.app.ui.motion.MorphingBlob
 @Composable
 fun WorkoutScreen(
     initialRoutineId: String? = null,
+    autoStart: Boolean = false,
     modifier: Modifier = Modifier,
     viewModel: WorkoutViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var routineHandled by remember { mutableStateOf(false) }
 
-    if (initialRoutineId != null && !routineHandled && !state.loading && state.active == null) {
+    // Un id vacio (autoarranque desde Inicio sin rutina) es una sesion libre, no un id invalido.
+    val routineId = initialRoutineId?.takeIf { it.isNotBlank() }
+
+    var routineHandled by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(autoStart, routineId) {
+        if (autoStart) viewModel.autoStartOnce(routineId)
+    }
+
+    if (routineId != null && !routineHandled && !state.loading && state.active == null) {
         routineHandled = true
         viewModel.startSession(initialRoutineId)
     }

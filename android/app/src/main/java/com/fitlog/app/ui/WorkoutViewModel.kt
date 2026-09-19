@@ -39,8 +39,25 @@ class WorkoutViewModel @Inject constructor(
     private val _state = MutableStateFlow(WorkoutUiState())
     val state: StateFlow<WorkoutUiState> = _state.asStateFlow()
 
+    private var autoStartHandled = false
+
     init {
         load()
+    }
+
+    /**
+     * Arranca una sesion apenas se abre la pantalla, una sola vez por instancia.
+     *
+     * Es lo que usa el panel de Inicio cuando el usuario toca "Iniciar entrenamiento": entra a
+     * Entrenar ya con la sesion abierta, sin un segundo toque.
+     */
+    fun autoStartOnce(routineId: String? = null) {
+        if (autoStartHandled) return
+        autoStartHandled = true
+        viewModelScope.launch {
+            if (repository.activeSession() != null) return@launch
+            startSession(routineId)
+        }
     }
 
     fun load() {

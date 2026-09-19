@@ -12,8 +12,9 @@ object Routes {
 
     const val HOME = "home"
     const val WORKOUT = WORKOUT_ROOT
-    const val WORKOUT_PATTERN = "$WORKOUT_ROOT?routineId={routineId}"
+    const val WORKOUT_PATTERN = "$WORKOUT_ROOT?routineId={routineId}&autoStart={autoStart}"
     const val ROUTINE_ARG = "routineId"
+    const val AUTO_START_ARG = "autoStart"
     const val PROGRESS = "progress"
     const val ROUTINES = "routines"
     const val MORE = "more"
@@ -26,7 +27,8 @@ object Routes {
     const val BACKUP = "backup"
     const val SETTINGS = "settings"
 
-    fun workout(routineId: String): String = "$WORKOUT?$ROUTINE_ARG=$routineId"
+    fun workout(routineId: String?) =
+        "$WORKOUT?$ROUTINE_ARG=${routineId.orEmpty()}&$AUTO_START_ARG=true"
 
     fun catalogDetail(exerciseId: String): String = "$CATALOG/$exerciseId"
 }

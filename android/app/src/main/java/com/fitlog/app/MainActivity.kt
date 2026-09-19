@@ -120,7 +120,8 @@ private fun FitLogApp(
             composable(Routes.HOME) {
                 NavEntryScopes(this) {
                     HomeScreen(
-                        onStartWorkout = { navController.navigate(Routes.WORKOUT) },
+                        // Iniciar entra a Entrenar con la sesion ya abierta; continuar solo entra.
+                        onStartWorkout = { navController.navigate(Routes.workout(null)) },
                         onOpenWorkout = { navController.navigate(Routes.WORKOUT) },
                         onOpenRoutines = { navController.navigate(Routes.ROUTINES) },
                         onOpenProgress = { navController.navigate(Routes.PROGRESS) },
@@ -136,12 +137,17 @@ private fun FitLogApp(
                         type = NavType.StringType
                         nullable = true
                         defaultValue = null
-                    }
+                    },
+                    navArgument(Routes.AUTO_START_ARG) {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    },
                 ),
             ) { entry ->
                 NavEntryScopes(this) {
                     WorkoutScreen(
                         initialRoutineId = entry.arguments?.getString(Routes.ROUTINE_ARG),
+                        autoStart = entry.arguments?.getBoolean(Routes.AUTO_START_ARG) == true,
                     )
                 }
             }
