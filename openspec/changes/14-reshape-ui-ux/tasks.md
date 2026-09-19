@@ -53,4 +53,5 @@
 - [x] 6.11 Prueba de humo de la interfaz web renderizada a HTML (shell, panel, Entrenar, detalle, Más y Ajustes)
 - [x] 6.12 Recorrido de primeros pasos en el panel, con estado y navegación (Android + web)
 - [x] 6.13 Estados vacíos con salida (limpiar filtros, ampliar el rango, ir a entrenar) en Android y web
+- [x] 6.14 Ritmo, duración real y descanso promedio del entrenamiento en el detalle (Android + web)
 - [ ] 6.5 Revisar el resultado en el APK y en la web con el usuario y ajustar lo que pida
