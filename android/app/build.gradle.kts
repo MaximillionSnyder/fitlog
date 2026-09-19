@@ -8,6 +8,15 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+val appKeystore = rootProject.file("keystore/fitlog.jks")
+
+val gitCommitCount = providers.exec {
+    commandLine("git", "rev-list", "--count", "HEAD")
+    workingDir = rootDir
+    isIgnoreExitValue = true
+}.standardOutput.asText.map { output -> output.trim().toIntOrNull() ?: 1 }.orElse(1)
+
+
 android {
     namespace = "com.fitlog.app"
     compileSdk = 35
@@ -16,18 +25,30 @@ android {
         applicationId = "com.fitlog.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "0.1.7"
+        versionCode = gitCommitCount.get()
+        versionName = (project.findProperty("versionName") as String?) ?: "0.1.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        if (appKeystore.exists()) {
+            create("app") {
+                storeFile = appKeystore
+                storePassword = project.findProperty("FITLOG_STORE_PASSWORD") as String?
+                keyAlias = project.findProperty("FITLOG_KEY_ALIAS") as String?
+                keyPassword = project.findProperty("FITLOG_KEY_PASSWORD") as String?
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            // Release 0.1 firmada con la clave de depuracion de CI (no apta para tiendas).
-            // Migrar a un keystore propio con secretos antes de distribuir en Play Store.
-            signingConfig = signingConfigs.getByName("debug")
+            if (appKeystore.exists()) {
+                // Firma real: el keystore llega por secretos en release.yml.
+                signingConfig = signingConfigs.getByName("app")
+            }
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }

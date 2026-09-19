@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag de la release (ej. v0.1)'
+        description: 'Tag de la release (ej. v0.1.7)'
         required: true
-        default: 'v0.1'
+        default: 'v0.1.7'
 
 permissions:
   contents: write
@@ -28,6 +28,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: JDK 17
         uses: actions/setup-java@v5
@@ -54,11 +56,30 @@ jobs:
           node shared/schema/build-schema.mjs
           git diff --exit-code -- shared/schema/schema.sql
 
+      - name: Recrear keystore desde secretos
+        id: fingerprint
+        working-directory: .
+        run: |
+          mkdir -p android/keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/keystore/fitlog.jks
+          test -s android/keystore/fitlog.jks || { echo "El keystore esta vacio"; exit 1; }
+          SHA256=$(keytool -list -v -keystore android/keystore/fitlog.jks \
+            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" | grep -E "SHA256:" | head -1 | sed 's/.*SHA256: //')
+          echo "Huella SHA-256: $SHA256"
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+
       - name: Tests unitarios
         run: gradle :app:testDebugUnitTest
 
       - name: Build APK release
-        run: gradle :app:assembleRelease
+        env:
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          gradle :app:assembleRelease \
+            -PversionName="${TAG#v}" \
+            -PFITLOG_STORE_PASSWORD="${{ secrets.KEYSTORE_PASSWORD }}" \
+            -PFITLOG_KEY_ALIAS="${{ secrets.KEY_ALIAS }}" \
+            -PFITLOG_KEY_PASSWORD="${{ secrets.KEY_PASSWORD }}"
 
       - name: Subir reportes de tests si fallan
         if: failure()
@@ -76,20 +97,19 @@ jobs:
           mkdir -p "$RUNNER_TEMP/release"
           cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/release/fitlog-$TAG.apk"
           echo "path=$RUNNER_TEMP/release/fitlog-$TAG.apk" >> "$GITHUB_OUTPUT"
-          echo "asset=fitlog-$TAG.apk" >> "$GITHUB_OUTPUT"
           ls -la "$RUNNER_TEMP/release"
 
       - name: Publicar Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          FINGERPRINT: ${{ steps.fingerprint.outputs.sha256 }}
         run: |
           NOTES="$(cat <<'EOF'
-          APK de FitLog para instalar en Android 8 o superior.
+          APK de FitLog para instalar en Android 8 o superior, firmado con el keystore propio del proyecto.
 
-          **Firma**: este APK usa la clave de depuracion (no es apto para Play Store).
-          **Instalacion**: descargar el APK en el telefono y abrirlo; aceptar el aviso de
-          "instalar apps de origen desconocido" si aparece.
+          **Firma**: clave `fitlog` (RSA 4096). Huella SHA-256: `${FINGERPRINT}`
+          **Instalacion**: si venis de una version 0.1.x anterior (firmada con la clave de depuracion), desinstala la app antes de instalar esta.
           EOF
           )"
           if gh release view "$TAG" >/dev/null 2>&1; then

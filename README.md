@@ -46,7 +46,9 @@ gh release download --pattern '*.apk'     # o desde la pestaña Releases en GitH
 
 Instalación: abrir el APK en el teléfono y aceptar el aviso de "instalar apps de origen desconocido".
 
-> **Firma**: las releases 0.x usan la clave de depuración de CI (sirven para instalar y probar, no para Play Store). Para migrar a un keystore propio hay que generar uno, guardarlo como secreto (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) y reemplazar `signingConfig` en `android/app/build.gradle.kts`.
+> **Firma**: las releases se firman con el keystore propio del proyecto (`android/keystore/fitlog.jks`), que nunca se versiona: el workflow `release.yml` lo recrea desde los secretos `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` y `KEY_PASSWORD`. La huella SHA-256 de la clave se imprime en el log del workflow y en las notas de la Release.
+>
+> **Cambio de firma**: las versiones 0.1 a 0.1.6 estaban firmadas con la clave de depuración. La primera release firmada con el keystore propio **no actualiza** esas instalaciones: hay que desinstalar la app una vez.
 
 El APK de depuración también se publica como artifact de cada push a `main`:
 
@@ -60,13 +62,45 @@ Localmente se puede compilar con JDK 17 + Android SDK 35 y Gradle 8.11.1 dentro 
 ```bash
 gradle :app:testDebugUnitTest
 gradle :app:assembleDebug
+gradle :app:assembleRelease -PversionName=0.1.7 \
+  -PFITLOG_STORE_PASSWORD=... -PFITLOG_KEY_ALIAS=fitlog -PFITLOG_KEY_PASSWORD=...
 ```
 
 ### Publicar una release
 
 ```bash
-git tag v0.1 && git push origin v0.1     # dispara release.yml y crea la Release
+git tag v0.1.7 && git push origin v0.1.7   # dispara release.yml: tests, firma y Release
 ```
+
+El `versionName` sale del tag (sin la `v`) y el `versionCode` del historial de commits, así que no hay que tocarlos a mano.
+
+### Rotar el keystore
+
+1. Ejecutar el workflow `keystore.yml` (`gh workflow run keystore.yml`), que genera un keystore nuevo y lo publica como artifact temporal con `credentials.txt`
+2. Descargar el artifact, actualizar los 4 secretos con `gh secret set` y borrar el artifact
+3. Guardar una copia del `.jks` en un lugar seguro: sin él no se pueden firmar actualizaciones de la misma app
+
+### Respaldo y restauración
+
+En la app, sección **Respaldo**: se eligen las secciones (ejercicios propios, rutinas, entrenamientos, medidas, ajustes) y se descarga un JSON. Al importar, los datos se **fusionan** con los del dispositivo:
+
+- gana la fila con `updated_at` más nuevo (los empates conservan lo local)
+- los borrados más nuevos se propagan
+- las filas locales que no están en el archivo no se tocan
+- si un ejercicio propio del archivo ya existe local con el mismo nombre, se reutiliza el local y se reescriben las referencias
+
+La validación es previa y sin efectos: si el archivo es inválido, tiene una versión más nueva o le falta una referencia, no se modifica nada.
+
+### Checklist de uso
+
+1. **Catálogo**: revisar los 36 ejercicios base y agregar los propios
+2. **Rutinas**: armar los días de entrenamiento con series y reps objetivo
+3. **Entrenar**: iniciar sesión (o desde una rutina), registrar series con peso, reps y RIR
+4. **Progreso**: seguir la evolución por ejercicio (peso máximo, volumen, 1RM estimado)
+5. **Comparativas**: revisar PRs, comparar el último mes contra el anterior y el balance muscular
+6. **Tips**: leer las observaciones del periodo y ajustar
+7. **Medidas**: registrar peso corporal y medidas
+8. **Respaldo**: exportar antes de cambiar de teléfono y fusionar en el nuevo
 
 ### Esquema canónico
 
