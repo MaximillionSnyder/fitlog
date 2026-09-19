@@ -93,7 +93,8 @@ object Backup {
         Reference("set_entry", "exercise_id", "exercise"),
     )
 
-    fun emptySnapshot(): Snapshot = Snapshot(TABLES.associateWith { mutableListOf() }.toMutableMap())
+    fun emptySnapshot(): Snapshot =
+        Snapshot(TABLES.associateWith { mutableListOf<Row>() }.toMutableMap())
 
     private fun JsonElement.toValue(): Any? = when (this) {
         is JsonNull -> null
