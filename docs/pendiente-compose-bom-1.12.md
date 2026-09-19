@@ -1,53 +1,40 @@
-# Pendiente: subir Compose BOM a 1.12 (2026.08.00)
+# Compose BOM 2026.09.00 (Compose 1.12.1): migración aplicada
 
-**Estado:** pendiente, no iniciado
-**Fecha de registro:** 2026-09-19
-**Contexto:** al implementar el cambio `12-motion-ui` se evaluó subir el BOM y se decidió posponerlo para no mezclar la migración de toolchain con la mejora de UI.
+**Estado:** aplicado y verificado en CI el 2026-09-19 (el nombre del archivo quedó de cuando era un pendiente)
+**Contexto:** al implementar el cambio `12-motion-ui` se evaluó subir el BOM y se decidió posponerlo para no mezclar la migración de toolchain con la mejora de UI. La migración se hizo en el cambio `13-compose-bom-2026-09-00`.
 
-## Qué hay que subir
+## Resultado
 
-| | Actual | Objetivo |
+| | Antes | Ahora |
 |---|---|---|
-| Compose BOM | `2024.12.01` (Compose 1.7.6, Material3 1.3.1) | `2026.08.00` (Compose 1.12, Material3 1.4.0) |
-| compileSdk | 35 | 37 |
-| AGP | 8.7.3 | 9.2.0 (las notas de Material3 piden ≥ 9.2.0; el blog de Compose dice ≥ 9.1.1) |
-| Gradle | 8.11.1 | ≥ 9.3.1 (mínimo de AGP 9.1) |
-| Kotlin | 2.1.0 | 2.2/2.3 |
-| KSP | 2.1.0-1.0.29 | a juego con Kotlin |
-| Hilt | 2.53.1 | 2.59.2 (2.53.1 no soporta AGP 9) |
-| Room | 2.6.1 | revisar compatibilidad con KSP nuevo |
-| Robolectric | 4.14.1 | versión con soporte de SDK 37 (o fijar `@Config(sdk = 35)` en los tests) |
+| Compose BOM | `2024.12.01` (Compose 1.7.6, Material3 1.3.1) | `2026.09.00` (Compose 1.12.1, Material3 1.4.0) |
+| compileSdk / targetSdk | 35 | 37 |
+| AGP | 8.7.3 | 9.4.1 |
+| Gradle | 8.11.1 | 9.7.1 |
+| Kotlin | 2.1.0 (plugin `kotlin-android`) | 2.4.20 (Kotlin integrado de AGP 9) |
+| KSP | 2.1.0-1.0.29 | 2.3.12 |
+| Hilt | 2.53.1 | 2.60.1 |
+| Room | 2.6.1 | 2.8.5 |
+| Robolectric | 4.14.1 | 4.17 |
+| CI | SDK 35, build-tools 35.0.0, Gradle 8.11.1 | SDK 37 (`platforms;android-37.0`), build-tools 36.0.0, Gradle 9.7.1 |
 
-## Requisitos del salto (breaking)
+También se subieron core-ktx 1.19.0, lifecycle 2.11.0, activity-compose 1.13.0, navigation-compose 2.10.1, hilt-navigation-compose 1.4.0, coroutines 1.11.0, kotlinx-serialization 1.11.0, androidx.test:core 1.7.0, graphics-shapes 1.1.0 y org.json 20260814.
 
-- **compileSdk 37 + AGP ≥ 9.1.2** (Compose 1.12 siempre compila contra el último SDK).
-- **AGP 9 usa Kotlin integrado**: hay que quitar el plugin `org.jetbrains.kotlin.android` del módulo y del version catalog.
-- **Gradle ≥ 9.3.1** y JDK 17+ (el CI ya usa JDK 17).
-- **CI**: `android.yml` y `release.yml` instalan a mano `platforms;android-35`, `build-tools;35.0.0` y Gradle 8.11.1 → pasar a SDK 37, build-tools 36 y Gradle 9.x.
-- `Modifier.onFirstVisible()` queda deprecado (no se usa en el proyecto).
+## Cómo se verificó
 
-## Qué desbloquea
+- `android.yml` en verde (run 35437775860): tests unitarios con Room + KSP + Robolectric y `assembleDebug`.
+- El APK de depuración contiene `MeshGradientPainter` (clase que recién existe en Compose 1.12) y `SharedTransitionLayout`, lo que confirma que la BOM resolvió a la línea 1.12.
+- Requisito que obligó el salto: el `aar-metadata` de `androidx.compose.ui:ui-android:1.12.1` pide `minCompileSdk=37` y `minAndroidGradlePluginVersion=9.1.0`.
+- Detalle del SDK que costó un intento de CI: desde API 37 el id del paquete lleva el minor (`platforms;android-37.0` es "Android SDK Platform 17"); `platforms;android-37` no existe y el `sdkmanager` falla con `Failed to find package`.
 
-- `MaterialShapes` y `toShape()` de material3 1.4: formas Material listas (Cookie, Clover, Burst, …) en lugar de definir polígonos a mano.
-- `MeshGradientPainter` (nuevo en Compose 1.12): gradientes mesh ideales para los blobs orgánicos.
-- Mejoras de shared elements (transiciones diferidas, herramientas de debug).
-- Material3 1.4 expresivo (componentes y motion nuevos).
+## Qué queda
 
-## Plan de migración sugerido
-
-1. **Toolchain primero, BOM después**: subir AGP 9.2 + Gradle 9.3.1 + Kotlin/KSP/Hilt/Room/Robolectric y migrar a Kotlin integrado, manteniendo el BOM actual; dejar `android.yml` en verde.
-2. Subir el BOM a `2026.08.00` y `compileSdk`/`targetSdk` a 37; ajustar CI (SDK 37, build-tools 36); dejar `android.yml` y `release.yml` en verde.
-3. Adoptar `MaterialShapes` y `MeshGradientPainter` en la capa de motion (`ui/motion/`) en un cambio aparte.
-
-## Verificación
-
-- `android.yml` (tests + APK debug) y `release.yml` (firma + Release) en verde.
-- `gradle :app:testDebugUnitTest` con Robolectric y Room funcionando en SDK 37.
-- Prueba manual del APK: navegación, catálogo, entrenamiento y medidas sin regresiones.
+- Adoptar `MaterialShapes` y `MeshGradientPainter` en la capa de motion (`ui/motion/`), en un cambio aparte.
+- Publicar una release con el toolchain nuevo (tag anotado, `release.yml`) cuando se quiera distribuir el APK.
 
 ## Referencias
 
-- Compose BOM 2026.08.00: https://developer.android.com/develop/ui/compose/bom
+- Compose BOM 2026.09.00: https://developer.android.com/develop/ui/compose/bom
 - Notas del release de agosto 2026: https://developer.android.com/blog/posts/what-s-new-in-the-jetpack-compose-august-26-release
-- AGP 9.1: https://developer.android.com/build/releases/agp-9-1-0-release-notes
+- AGP 9.4: https://developer.android.com/build/releases/gradle-plugin
 - Kotlin integrado en AGP 9: https://developer.android.com/build/migrate-to-built-in-kotlin
