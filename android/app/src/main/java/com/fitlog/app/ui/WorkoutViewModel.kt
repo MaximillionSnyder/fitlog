@@ -26,6 +26,7 @@ data class WorkoutUiState(
     val activeSets: List<WorkoutSet> = emptyList(),
     val history: List<WorkoutSession> = emptyList(),
     val exercises: List<CatalogExercise> = emptyList(),
+    val restTargets: Map<String, Int> = emptyMap(),
 )
 
 @HiltViewModel
@@ -71,6 +72,7 @@ class WorkoutViewModel @Inject constructor(
                         active = active,
                         activeSets = activeSetsOf(active?.id),
                         history = repository.sessions(),
+                        restTargets = repository.restTargets(active?.routineId),
                     )
                 }
             } catch (error: Exception) {

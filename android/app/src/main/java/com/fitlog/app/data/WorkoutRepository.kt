@@ -199,6 +199,19 @@ class WorkoutRepository(
         }
     }
 
+    /**
+     * Descanso objetivo por ejercicio de una rutina (exerciseId -> segundos).
+     *
+     * Lo usa la pantalla de Entrenar para mostrar la cuenta regresiva entre series cuando la sesion
+     * se arranco desde una rutina; sin rutina no hay objetivo y solo se muestra el tiempo pasado.
+     */
+    suspend fun restTargets(routineId: String?): Map<String, Int> {
+        if (routineId == null) return emptyMap()
+        return routinesDao.listRoutineExercises(routineId)
+            .mapNotNull { row -> row.restSeconds?.let { seconds -> row.exerciseId to seconds } }
+            .toMap()
+    }
+
     suspend fun sessionDetail(sessionId: String): SessionDetail {
         val session = dao.findSessionById(sessionId)
             ?: throw WorkoutException(WorkoutErrorCode.SESSION_NOT_FOUND, "La sesión no existe")

@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -88,6 +89,10 @@ fun WorkoutScreen(
             delay(REST_TICK_MS)
         }
     }
+
+    // Descanso en curso: se arma al registrar una serie y se corta al registrar la siguiente.
+    var restStartedAtMs by remember { mutableStateOf<Long?>(null) }
+    var restExerciseName by remember { mutableStateOf<String?>(null) }
 
     var showExercisePicker by remember { mutableStateOf(false) }
     var selectedExercise by remember { mutableStateOf<CatalogExercise?>(null) }
@@ -199,6 +204,8 @@ fun WorkoutScreen(
                                         notes = null,
                                         isWarmup = false,
                                     )
+                                    restStartedAtMs = System.currentTimeMillis()
+                                    restExerciseName = exercise.name
                                 }
                             },
                         ) { Text("Repetir") }
@@ -269,8 +276,20 @@ fun WorkoutScreen(
                             )
                             notes = ""
                             isWarmup = false
+                            restStartedAtMs = System.currentTimeMillis()
+                            restExerciseName = exercise.name
                         }
                     },
+                )
+            }
+
+            restStartedAtMs?.let { startedAt ->
+                RestCard(
+                    exerciseName = restExerciseName ?: exerciseName,
+                    startedAtMs = startedAt,
+                    targetSeconds = selectedExerciseId?.let { state.restTargets[it] },
+                    nowMs = nowMs,
+                    onSkip = { restStartedAtMs = null },
                 )
             }
 
@@ -380,6 +399,59 @@ private fun SummaryCell(label: String, value: String, modifier: Modifier = Modif
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(text = value, style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+/**
+ * Descanso entre series: tiempo pasado desde la ultima serie y, si la sesion viene de una rutina,
+ * cuenta regresiva contra el descanso objetivo de ese ejercicio.
+ */
+@Composable
+private fun RestCard(
+    exerciseName: String,
+    startedAtMs: Long,
+    targetSeconds: Int?,
+    nowMs: Long,
+    onSkip: () -> Unit,
+) {
+    val fitLog = MaterialTheme.fitLogColors
+    val elapsedMs = (nowMs - startedAtMs).coerceAtLeast(0L)
+    val elapsedSeconds = elapsedMs / 1000
+    val done = targetSeconds != null && elapsedSeconds >= targetSeconds
+    val progress = targetSeconds
+        ?.let { (elapsedSeconds.toFloat() / it.toFloat()).coerceIn(0f, 1f) }
+        ?: 0f
+
+    FitLogCard(containerColor = if (done) fitLog.successSoft else MaterialTheme.colorScheme.surfaceContainer) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (done) "Descanso completo" else "Descanso",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (done) fitLog.success else MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = exerciseName + " · " + Format.duration(elapsedMs) +
+                        (targetSeconds?.let { " de ${Format.duration(it * 1000L)}" } ?: ""),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            TextButton(onClick = onSkip) { Text("Saltar") }
+        }
+
+        if (targetSeconds != null) {
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth(),
+                color = if (done) fitLog.success else fitLog.accent,
+                trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            )
+        }
     }
 }
 

@@ -100,6 +100,7 @@ export default function App() {
         <WorkoutView
           workout={workout}
           catalog={catalog}
+          routines={routines}
           onOpenSessionDetail={openSessionDetail}
         />
       )}

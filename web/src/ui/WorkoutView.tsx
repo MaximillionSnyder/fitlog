@@ -8,6 +8,7 @@ import {
   formatVolumeKg,
 } from '@/domain/format';
 import type { CatalogState } from '@/state/useCatalog';
+import type { RoutinesState } from '@/state/useRoutines';
 import type { WorkoutState } from '@/state/useWorkout';
 import {
   IconCalendar,
@@ -49,6 +50,61 @@ interface EditingSet {
   rir: string;
 }
 
+/**
+ * Descanso entre series: tiempo pasado desde la ultima serie y, si la sesion viene de una rutina,
+ * cuenta regresiva contra el descanso objetivo de ese ejercicio.
+ */
+function RestCard({
+  exerciseName,
+  startedAt,
+  targetSeconds,
+  now,
+  onSkip,
+}: {
+  exerciseName: string;
+  startedAt: number;
+  targetSeconds: number | null;
+  now: number;
+  onSkip: () => void;
+}) {
+  const elapsedMs = Math.max(0, now - startedAt);
+  const elapsedSeconds = Math.floor(elapsedMs / 1000);
+  const done = targetSeconds !== null && elapsedSeconds >= targetSeconds;
+  const progress =
+    targetSeconds === null ? 0 : Math.min(100, (elapsedSeconds / targetSeconds) * 100);
+
+  return (
+    <div
+      className={`rounded-card border border-line p-4 ${
+        done ? 'bg-success-soft' : 'bg-surface'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className={`text-sm font-semibold ${done ? 'text-success' : 'text-ink'}`}>
+            {done ? 'Descanso completo' : 'Descanso'}
+          </p>
+          <p className="text-muted fl-num text-xs">
+            {exerciseName} · {formatDuration(elapsedMs)}
+            {targetSeconds === null ? '' : ` de ${formatDuration(targetSeconds * 1000)}`}
+          </p>
+        </div>
+        <Button variant="ghost" onClick={onSkip}>
+          Saltar
+        </Button>
+      </div>
+      {targetSeconds === null ? null : (
+        <div className="bg-surface-high mt-3 h-2 w-full overflow-hidden rounded-full">
+          <div
+            className={`h-full rounded-full ${done ? 'bg-success' : 'bg-accent'}`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function formatDateTime(timestamp: number): string {
   return new Date(timestamp).toLocaleString('es', {
     day: '2-digit',
@@ -66,10 +122,12 @@ function parseNumber(raw: string): number | null {
 export default function WorkoutView({
   workout,
   catalog,
+  routines,
   onOpenSessionDetail,
 }: {
   workout: WorkoutState;
   catalog: CatalogState;
+  routines: RoutinesState;
   onOpenSessionDetail: (sessionId: string) => void;
 }) {
   const [exerciseId, setExerciseId] = useState('');
@@ -81,10 +139,24 @@ export default function WorkoutView({
   const [formError, setFormError] = useState<string | null>(null);
   const [editing, setEditing] = useState<EditingSet | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  // Descanso en curso: se arma al registrar una serie y se corta al registrar la siguiente.
+  const [rest, setRest] = useState<{ startedAt: number; exerciseName: string } | null>(null);
 
   const active = workout.active;
   const exercises = catalog.snapshot.exercises;
   const selectedExerciseId = exerciseId || exercises[0]?.id || '';
+  const selectedExerciseName =
+    exercises.find((exercise) => exercise.id === selectedExerciseId)?.name ?? 'Ejercicio';
+
+  // Descanso objetivo por ejercicio cuando la sesion se arranco desde una rutina.
+  const restTargets = useMemo(() => {
+    const routine = routines.routines.find((item) => item.id === active?.routineId);
+    const targets = new Map<string, number>();
+    for (const exercise of routine?.exercises ?? []) {
+      if (exercise.restSeconds !== null) targets.set(exercise.exerciseId, exercise.restSeconds);
+    }
+    return targets;
+  }, [active?.routineId, routines.routines]);
 
   // Ultima serie del ejercicio elegido: sirve para precargar el formulario y para repetir.
   const lastSet = useMemo(() => {
@@ -294,7 +366,8 @@ export default function WorkoutView({
                   </p>
                   <Button
                     variant="ghost"
-                    onClick={() =>
+                    onClick={() => {
+                      setRest({ startedAt: Date.now(), exerciseName: selectedExerciseName });
                       void workout.add({
                         exerciseId: selectedExerciseId,
                         weightKg: lastSet.weightKg,
@@ -302,8 +375,8 @@ export default function WorkoutView({
                         rir: lastSet.rir,
                         notes: null,
                         isWarmup: false,
-                      })
-                    }
+                      });
+                    }}
                   >
                     Repetir
                   </Button>
@@ -359,6 +432,16 @@ export default function WorkoutView({
               </Button>
             </form>
           </Card>
+
+          {rest ? (
+            <RestCard
+              exerciseName={rest.exerciseName}
+              startedAt={rest.startedAt}
+              targetSeconds={restTargets.get(selectedExerciseId) ?? null}
+              now={now}
+              onSkip={() => setRest(null)}
+            />
+          ) : null}
 
           {workout.activeSets.length === 0 ? (
             <Card className="!p-0">
