@@ -23,5 +23,5 @@
 - [x] 4.2 Validar el cambio con `openspec validate 13-compose-bom-2026-09-00`
 - [x] 4.3 Fusionar el PR a `main` y dejar `android.yml` en verde en `main` (run 35438026997)
 - [ ] 4.4 Instalar el APK de depuración en un dispositivo Android 8 o superior y probar navegación, catálogo, entrenamiento y medidas
-- [ ] 4.5 Publicar la release con el flujo de la convención (tag anotado y `release.yml`)
+- [x] 4.5 Publicar la release con el flujo de la convención: tag anotado `v0.1.10` y `release.yml` en verde (run 35438368718)
 - [ ] 4.6 Archivar el cambio con `openspec archive 13-compose-bom-2026-09-00`
