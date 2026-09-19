@@ -26,7 +26,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,7 +36,6 @@ import com.fitlog.app.domain.CatalogText
 import com.fitlog.app.domain.Formulas
 import com.fitlog.app.domain.Progress
 import com.fitlog.app.ui.motion.EmptyState
-import com.fitlog.app.ui.motion.sharedNavBounds
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -58,7 +56,6 @@ private val presetLabels = mapOf(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ProgressScreen(
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProgressViewModel = hiltViewModel(),
 ) {
@@ -75,24 +72,11 @@ fun ProgressScreen(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column {
-                Text(
-                    text = "Progreso",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.sharedNavBounds("home-progress"),
-                )
-                Text(
-                    text = "Evolución por ejercicio",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            OutlinedButton(onClick = onBack) { Text("Volver") }
+        Column {
+Text(
+            text = "Evolución por ejercicio",
+            style = MaterialTheme.typography.bodySmall,
+        )
         }
 
         state.error?.let { message -> Text(text = message, color = MaterialTheme.colorScheme.error) }

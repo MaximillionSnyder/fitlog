@@ -17,7 +17,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,7 +40,6 @@ import com.fitlog.app.ui.motion.sharedNavElement
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CatalogScreen(
-    onBack: () -> Unit,
     onOpenDetail: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CatalogViewModel = hiltViewModel(),
@@ -62,20 +60,11 @@ fun CatalogScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
-                Text(
-                    text = "Catálogo",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.sharedNavBounds("home-catalog"),
-                )
-                Text(
-                    text = "${state.visible.size} de ${state.exercises.size} ejercicios",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
+            Text(
+                text = "${state.visible.size} de ${state.exercises.size} ejercicios",
+                style = MaterialTheme.typography.bodySmall,
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onBack) { Text("Volver") }
                 Button(onClick = {
                     viewModel.clearFormError()
                     showForm = true

@@ -18,7 +18,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,7 +30,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fitlog.app.domain.Comparisons
 import com.fitlog.app.ui.motion.EmptyState
-import com.fitlog.app.ui.motion.sharedNavBounds
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -40,7 +38,6 @@ import kotlin.math.roundToInt
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ComparisonsScreen(
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ComparisonsViewModel = hiltViewModel(),
 ) {
@@ -54,22 +51,7 @@ fun ComparisonsScreen(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column {
-                Text(
-                    text = "Comparativas",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.sharedNavBounds("home-comparisons"),
-                )
-                Text(text = "PRs, periodos y balance muscular", style = MaterialTheme.typography.bodySmall)
-            }
-            OutlinedButton(onClick = onBack) { Text("Volver") }
-        }
+        Text(text = "PRs, periodos y balance muscular", style = MaterialTheme.typography.bodySmall)
 
         state.error?.let { message -> Text(text = message, color = MaterialTheme.colorScheme.error) }
 

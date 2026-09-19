@@ -15,7 +15,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -40,12 +39,10 @@ import com.fitlog.app.data.RoutinesRepository
 import com.fitlog.app.domain.CatalogExercise
 import com.fitlog.app.domain.CatalogText
 import com.fitlog.app.ui.motion.EmptyState
-import com.fitlog.app.ui.motion.sharedNavBounds
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun RoutinesScreen(
-    onBack: () -> Unit,
     onTrainRoutine: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RoutinesViewModel = hiltViewModel(),
@@ -63,22 +60,7 @@ fun RoutinesScreen(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column {
-                Text(
-                    text = "Rutinas",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.sharedNavBounds("home-routines"),
-                )
-                Text(text = "Plantillas para arrancar a entrenar", style = MaterialTheme.typography.bodySmall)
-            }
-            OutlinedButton(onClick = onBack) { Text("Volver") }
-        }
+        Text(text = "Plantillas para arrancar a entrenar", style = MaterialTheme.typography.bodySmall)
 
         state.error?.let { message -> Text(text = message, color = MaterialTheme.colorScheme.error) }
 

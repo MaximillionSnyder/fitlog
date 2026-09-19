@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -48,7 +47,6 @@ import com.fitlog.app.ui.motion.sharedNavBounds
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun WorkoutScreen(
-    onBack: () -> Unit,
     initialRoutineId: String? = null,
     modifier: Modifier = Modifier,
     viewModel: WorkoutViewModel = hiltViewModel(),
@@ -103,7 +101,6 @@ fun WorkoutScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedButton(onClick = onBack) { Text("Volver") }
                 MorphActionButton(
                     started = state.active != null,
                     onClick = {

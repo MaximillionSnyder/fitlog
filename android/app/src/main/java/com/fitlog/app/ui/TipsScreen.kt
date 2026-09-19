@@ -15,7 +15,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -23,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -33,7 +31,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fitlog.app.domain.Comparisons
 import com.fitlog.app.domain.Insights
 import com.fitlog.app.ui.motion.EmptyState
-import com.fitlog.app.ui.motion.sharedNavBounds
 
 private val severityColors = mapOf(
     Insights.Severity.WARNING to Color(0xFFFBBF24),
@@ -50,7 +47,6 @@ private val severityLabels = mapOf(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TipsScreen(
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TipsViewModel = hiltViewModel(),
 ) {
@@ -67,24 +63,11 @@ fun TipsScreen(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column {
-                Text(
-                    text = "Tips",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.sharedNavBounds("home-tips"),
-                )
-                Text(
-                    text = "Observaciones con reglas fijas",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            OutlinedButton(onClick = onBack) { Text("Volver") }
+        Column {
+Text(
+            text = "Observaciones con reglas fijas",
+            style = MaterialTheme.typography.bodySmall,
+        )
         }
 
         state.error?.let { message -> Text(text = message, color = MaterialTheme.colorScheme.error) }

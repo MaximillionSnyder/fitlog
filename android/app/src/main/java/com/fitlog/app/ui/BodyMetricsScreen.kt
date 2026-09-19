@@ -18,7 +18,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,7 +36,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fitlog.app.domain.Body
 import com.fitlog.app.domain.Progress
 import com.fitlog.app.ui.motion.EmptyState
-import com.fitlog.app.ui.motion.sharedNavBounds
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -45,7 +43,6 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun BodyMetricsScreen(
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BodyMetricsViewModel = hiltViewModel(),
 ) {
@@ -63,22 +60,7 @@ fun BodyMetricsScreen(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column {
-                Text(
-                    text = "Medidas",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.sharedNavBounds("home-body"),
-                )
-                Text(text = "Peso corporal y medidas", style = MaterialTheme.typography.bodySmall)
-            }
-            OutlinedButton(onClick = onBack) { Text("Volver") }
-        }
+        Text(text = "Peso corporal y medidas", style = MaterialTheme.typography.bodySmall)
 
         state.error?.let { message -> Text(text = message, color = MaterialTheme.colorScheme.error) }
 
