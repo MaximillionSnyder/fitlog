@@ -103,10 +103,10 @@ class MainActivity : ComponentActivity() {
     private companion object {
         const val HOME_ROUTE = "home"
         const val CATALOG_ROUTE = "catalog"
+        const val ROUTINE_ARG = "routineId"
         const val WORKOUT_ROUTE = "workout"
         const val WORKOUT_PATTERN = "workout?$ROUTINE_ARG={$ROUTINE_ARG}"
         const val ROUTINES_ROUTE = "routines"
-        const val ROUTINE_ARG = "routineId"
     }
 }
 

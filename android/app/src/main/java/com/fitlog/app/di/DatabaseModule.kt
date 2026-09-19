@@ -49,7 +49,10 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideWorkoutRepository(workoutDao: WorkoutDao): WorkoutRepository = WorkoutRepository(dao = workoutDao)
+    fun provideWorkoutRepository(
+        workoutDao: WorkoutDao,
+        routinesDao: RoutinesDao,
+    ): WorkoutRepository = WorkoutRepository(dao = workoutDao, routinesDao = routinesDao)
 
     @Provides
     @Singleton
