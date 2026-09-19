@@ -57,7 +57,7 @@ gh run list --workflow=android.yml        # ver ejecuciones
 gh run download <run-id> -n fitlog-debug-apk
 ```
 
-Localmente se puede compilar con JDK 17 + Android SDK 35 y Gradle 8.11.1 dentro de `android/`:
+Localmente se puede compilar con JDK 17 + Android SDK 37 y Gradle 9.7.1 dentro de `android/`:
 
 ```bash
 gradle :app:testDebugUnitTest
