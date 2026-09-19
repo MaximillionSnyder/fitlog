@@ -42,6 +42,10 @@ Los tests fijan `@Config(sdk = [34])`, así que Robolectric no necesita el SDK 3
 
 En Termux no hay JDK ni SDK de Android, y publicar aapt2 para linux-arm64 no está soportado, así que el build local es inviable por diseño del proyecto. La migración se verifica en una rama con PR: `android.yml` corre tests unitarios (incluido Robolectric + Room con KSP) y `assembleDebug`. `release.yml` se actualiza con los mismos números pero solo se puede probar publicando un tag, así que se deja idéntico a `android.yml` en toolchain.
 
+### D6. El paquete del SDK de API 37 lleva el minor en el id
+
+Desde API 37 el repositorio del SDK nombra las plataformas con minor (`platforms;android-37.0` es "Android SDK Platform 17", `platforms;android-37.1`, `platforms;android-37.2`); no existe un `platforms;android-37` a secas y el primer intento de CI falló con `Failed to find package 'platforms;android-37'`. `compileSdk = 37` sin `compileSdkMinor` resuelve contra la plataforma `android-37.0`, así que el CI instala `platforms;android-37.0` junto con `build-tools;36.0.0` (el default de AGP 9.4).
+
 ## Risks / Trade-offs
 
 - **AGP 9 DSL nuevo**: el script del módulo usa bloques estándar (`namespace`, `defaultConfig`, `signingConfigs`, `buildTypes`, `compileOptions`, `buildFeatures`, `testOptions`, `sourceSets`), que siguen existiendo; los cambios rotos de AGP 9 afectan a plugins que usan `applicationVariants` o `CommonExtension` parametrizado, que el proyecto no usa.
