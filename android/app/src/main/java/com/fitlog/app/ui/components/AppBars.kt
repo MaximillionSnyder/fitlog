@@ -1,6 +1,10 @@
 package com.fitlog.app.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.size
@@ -19,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -82,6 +87,7 @@ fun FitLogBottomBar(
     currentRoute: String?,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
+    badgedRoute: String? = null,
 ) {
     val colors = MaterialTheme.colorScheme
     val fitLog = MaterialTheme.fitLogColors
@@ -103,11 +109,23 @@ fun FitLogBottomBar(
                     selected = selected,
                     onClick = { onSelect(destination.route) },
                     icon = {
-                        Icon(
-                            imageVector = destination.icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(22.dp),
-                        )
+                        Box {
+                            Icon(
+                                imageVector = destination.icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(22.dp),
+                            )
+                            // Punto de sesion activa: la pestana Entrenar avisa sin abrirla.
+                            if (destination.route == badgedRoute) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .offset(x = 4.dp, y = (-3).dp)
+                                        .size(8.dp)
+                                        .background(fitLog.accent, CircleShape)
+                                )
+                            }
+                        }
                     },
                     label = { Text(text = destination.label) },
                     alwaysShowLabel = true,

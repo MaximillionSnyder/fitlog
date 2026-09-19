@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -40,6 +42,7 @@ import com.fitlog.app.ui.RoutinesScreen
 import com.fitlog.app.ui.SettingsScreen
 import com.fitlog.app.ui.TipsScreen
 import com.fitlog.app.ui.WorkoutScreen
+import com.fitlog.app.ui.WorkoutSessionViewModel
 import com.fitlog.app.ui.components.FitLogBottomBar
 import com.fitlog.app.ui.components.FitLogTopBar
 import com.fitlog.app.ui.destinations.Routes
@@ -80,12 +83,17 @@ class MainActivity : ComponentActivity() {
 private fun FitLogApp(
     appSettings: AppSettings,
     navController: NavHostController = rememberNavController(),
+    sessionViewModel: WorkoutSessionViewModel = hiltViewModel(),
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val topLevelRoute = currentRoute?.substringBefore('?')
     val isTopLevel = topLevelDestinations.any { it.route == topLevelRoute }
     val title = titleForRoute(topLevelRoute)
+    val session by sessionViewModel.state.collectAsStateWithLifecycle()
+
+    // Cada cambio de destino revalida si hay una sesion abierta (el detalle lo arma Entrenar).
+    LaunchedEffect(currentRoute) { sessionViewModel.refresh() }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -97,7 +105,14 @@ private fun FitLogApp(
                     title = title,
                     onBack = if (isTopLevel) null else ({ navController.popBackStack() }),
                     titleModifier = navController.sharedTitleModifier(topLevelRoute),
-                )
+                ) {
+                    if (session.active && topLevelRoute != Routes.WORKOUT) {
+                        TextAction(
+                            label = "Continuar",
+                            onClick = { navController.navigate(Routes.WORKOUT) },
+                        )
+                    }
+                }
             }
         },
         bottomBar = {
@@ -107,6 +122,7 @@ private fun FitLogApp(
                     currentRoute = topLevelRoute,
                     onSelect = { route -> navController.navigateTopLevel(route) },
                     modifier = Modifier.navigationBarsPadding(),
+                    badgedRoute = if (session.active) Routes.WORKOUT else null,
                 )
             }
         },
@@ -237,6 +253,13 @@ private fun FitLogApp(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun TextAction(label: String, onClick: () -> Unit) {
+    androidx.compose.material3.TextButton(onClick = onClick) {
+        Text(text = label, style = MaterialTheme.typography.labelLarge)
     }
 }
 
