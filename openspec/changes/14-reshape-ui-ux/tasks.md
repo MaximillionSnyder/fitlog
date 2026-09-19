@@ -38,3 +38,11 @@
 - [ ] 5.2 Probar en el APK: navegación por las cinco pestañas conservando estado, tema claro/oscuro/dinámico, panel de Inicio con y sin sesión activa, y Ajustes
 - [x] 5.3 Verificar contraste y legibilidad en tema claro y oscuro, y que la app siga usable con animaciones del sistema en cero
 - [ ] 5.4 Archivar el cambio y actualizar `openspec/specs` cuando el reshape esté cerrado
+
+## 6. Seguimiento posterior al cierre
+
+- [x] 6.1 Iniciar el entrenamiento desde el panel de Inicio en un solo toque (autoarranque de la sesión)
+- [x] 6.2 Mostrar la sesión activa en el shell (punto en la pestaña Entrenar y acción Continuar en el encabezado)
+- [x] 6.3 Agregar el resumen de la actividad de hoy al panel, con la medianoche local inyectable y sus tests
+- [x] 6.4 Documentar el sistema de diseño en `docs/diseno.md` y enlazarlo desde el README
+- [ ] 6.5 Revisar el resultado en el APK y en la web con el usuario y ajustar lo que pida
