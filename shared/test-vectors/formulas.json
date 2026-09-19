@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "description": "Casos de prueba compartidos de formulas de dominio FitLog. Todas las implementaciones (Android/JUnit y Web/Vitest) deben producir exactamente estos resultados.",
+  "rules": {
+    "volume": "volumen = peso_kg * reps. Si falta peso o reps, el volumen es null.",
+    "one_rep_max_epley": "1RM = peso_kg * (1 + reps / 30), redondeado a 1 decimal (half-up). Si reps <= 0 o falta el peso, el resultado es null.",
+    "rounding": "Un decimal, half-up, usando representacion decimal del resultado."
+  },
+  "volume": [
+    { "weight_kg": 100, "reps": 8, "expected": 800 },
+    { "weight_kg": 72.5, "reps": 5, "expected": 362.5 },
+    { "weight_kg": 0, "reps": 10, "expected": 0 },
+    { "weight_kg": 100, "reps": 0, "expected": 0 },
+    { "weight_kg": null, "reps": 12, "expected": null },
+    { "weight_kg": 60, "reps": null, "expected": null },
+    { "weight_kg": null, "reps": null, "expected": null }
+  ],
+  "one_rep_max_epley": [
+    { "weight_kg": 100, "reps": 1, "expected": 103.3 },
+    { "weight_kg": 100, "reps": 5, "expected": 116.7 },
+    { "weight_kg": 80, "reps": 10, "expected": 106.7 },
+    { "weight_kg": 60, "reps": 12, "expected": 84 },
+    { "weight_kg": 105, "reps": 2, "expected": 112 },
+    { "weight_kg": 100, "reps": 0, "expected": null },
+    { "weight_kg": 100, "reps": -3, "expected": null },
+    { "weight_kg": null, "reps": 5, "expected": null }
+  ]
+}

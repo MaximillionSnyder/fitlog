@@ -1,0 +1,36 @@
+# Android / Gradle
+.gradle/
+build/
+local.properties
+captures/
+*.apk
+*.aab
+*.keystore
+*.jks
+keystore.properties
+.cxx/
+.externalNativeBuild/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.DS_Store
+
+# Node / Web
+node_modules/
+dist/
+coverage/
+*.local
+.env
+.env.*
+!.env.example
+
+# OpenSpec local
+openspec/.local/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test vectors outputs
+shared/test-vectors/.output/

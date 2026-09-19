@@ -1,0 +1,62 @@
+schema: spec-driven
+
+context: |
+  Language: Spanish
+  All artifacts must be written in Spanish.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+
+  # Proyecto: FitLog
+  App personal de registro de entrenamiento con dos clientes y datos local-first.
+  Monorepo en ~/appsalud:
+    - android/  Kotlin 2.x + Jetpack Compose + Material 3, arquitectura MVVM,
+                 Room (SQLite) para persistencia, Hilt para inyección,
+                 Vico para gráficas, Version Catalog (libs.versions.toml).
+    - web/      React 19 + TypeScript + Vite + Tailwind CSS, Zustand para estado,
+                 persistencia SQLite WASM (@sqlite.org/sqlite-wasm) en Web Worker
+                 con OPFS, acceso vía Drizzle ORM, Recharts para gráficas.
+    - shared/   Fuente de verdad de datos: schema.sql canónico y migraciones
+                 numeradas (shared/schema/migrations/NNN_*.sql), y casos de prueba
+                 compartidos (shared/test-vectors/*.json) que ambas plataformas
+                 deben satisfacer.
+    - openspec/ Specs y cambios (este directorio).
+
+  Reglas de datos y dominio:
+    - IDs de entidad: ULID en texto (26 chars). Nunca autoincrementales.
+    - Timestamps: epoch milliseconds UTC en enteros.
+    - Unidades: kilogramos (kg), centímetros (cm). Sin conversión en v1.
+    - Borrado lógico: columnas updated_at y deleted_at en tablas sincronizables.
+    - Esquema idéntico en Android (Room) y Web (Drizzle) derivado de shared/schema.
+    - Fórmulas del dominio: volumen = peso * reps; 1RM estimado Epley = peso * (1 + reps/30).
+      Se calculan, no se persisten, salvo PRs que se derivan de consultas.
+    - v1 es local-first sin backend; export/import JSON como respaldo.
+
+  Flujo de desarrollo:
+    - Compilación de Android SOLO en GitHub Actions (ubuntu-latest, JDK 17,
+      Gradle cache). El entorno local es Termux (sin JDK ni Android SDK).
+    - La web se compila y testea localmente con Node 24 (npm).
+    - Cada cambio de OpenSpec debe dejar CI en verde: lint, tests y build.
+    - Los casos de shared/test-vectors se ejecutan en JUnit (Android) y Vitest (Web).
+
+  Convenciones de artefactos:
+    - Capability paths en inglés y kebab-case (ej. progress/charts).
+    - Contenido de specs, design y tasks en español.
+    - Cada requirement debe ser verificable con al menos un scenario WHEN/THEN.
+
+# Per-artifact rules (optional)
+rules:
+  proposal:
+    - "Incluir una sección de Non-goals dentro de What Changes o Impact"
+    - "Mantener el proposal por debajo de 2 páginas"
+  tasks:
+    - "Cada tarea debe ser verificable (build, test o validación de OpenSpec)"
+    - "Incluir la tarea de validar y archivar el cambio al final"
+
+# Per-operation guidance (advisory)
+operations:
+  apply:
+    guidance:
+      - "Implementar siguiendo el orden de tasks.md y marcar checkboxes al completar"
+      - "Ejecutar los tests de ambas plataformas antes de dar una tarea por completada"
+  archive:
+    guidance:
+      - "Resumir el resultado del archivado y listar las specs actualizadas"

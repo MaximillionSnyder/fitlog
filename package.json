@@ -1,0 +1,14 @@
+{
+  "name": "fitlog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Monorepo FitLog: app Android (Kotlin) y web (React) de registro de entrenamiento",
+  "scripts": {
+    "schema:build": "node shared/schema/build-schema.mjs",
+    "schema:check": "node shared/schema/build-schema.mjs && git diff --exit-code shared/schema/schema.sql"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
