@@ -42,7 +42,6 @@ import com.fitlog.app.domain.WorkoutSummary
 import com.fitlog.app.ui.motion.EmptyState
 import com.fitlog.app.ui.motion.MorphActionButton
 import com.fitlog.app.ui.motion.MorphingBlob
-import com.fitlog.app.ui.motion.sharedNavBounds
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -82,21 +81,14 @@ fun WorkoutScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column {
-                Text(
-                    text = "Entrenar",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.sharedNavBounds("home-workout"),
-                )
-                Text(
-                    text = state.active?.let { active ->
-                        "Sesión en curso" +
-                            (active.routineName?.let { " · Rutina: $it" } ?: "")
-                    } ?: "Sin sesión activa",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
+            Text(
+                text = state.active?.let { active ->
+                    "Sesión en curso" +
+                        (active.routineName?.let { " · Rutina: $it" } ?: "")
+                } ?: "Sin sesión activa",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
