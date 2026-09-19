@@ -38,7 +38,17 @@ npm run build      # tsc + vite build
 
 ### Android
 
-El build Android se ejecuta **solo en CI** (GitHub Actions), que publica el APK de depuración como artifact:
+La forma más simple de tener la app en el teléfono es descargar el APK de la última Release:
+
+```bash
+gh release download --pattern '*.apk'     # o desde la pestaña Releases en GitHub
+```
+
+Instalación: abrir el APK en el teléfono y aceptar el aviso de "instalar apps de origen desconocido".
+
+> **Firma**: las releases 0.x usan la clave de depuración de CI (sirven para instalar y probar, no para Play Store). Para migrar a un keystore propio hay que generar uno, guardarlo como secreto (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`) y reemplazar `signingConfig` en `android/app/build.gradle.kts`.
+
+El APK de depuración también se publica como artifact de cada push a `main`:
 
 ```bash
 gh run list --workflow=android.yml        # ver ejecuciones
@@ -50,6 +60,12 @@ Localmente se puede compilar con JDK 17 + Android SDK 35 y Gradle 8.11.1 dentro 
 ```bash
 gradle :app:testDebugUnitTest
 gradle :app:assembleDebug
+```
+
+### Publicar una release
+
+```bash
+git tag v0.1 && git push origin v0.1     # dispara release.yml y crea la Release
 ```
 
 ### Esquema canónico
