@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "description": "Casos de prueba compartidos de las series de progreso. Se ejecutan en Android (JUnit) y Web (Vitest).",
+  "rules": {
+    "point": "un punto por sesion, ordenado por started_at_ms ascendente; desempate por session_id",
+    "working_sets": "series con is_warmup = 0; las eliminadas no llegan al dominio (las filtra la consulta)",
+    "max_weight": "mayor weight_kg entre las series efectivas con peso y repeticiones; 0 si no hay",
+    "volume": "suma de weight_kg * reps de las series efectivas con peso y repeticiones",
+    "best_one_rep_max": "mayor 1RM Epley redondeado a 1 decimal entre las series efectivas con peso y repeticiones; 0 si no hay",
+    "range": "limites inclusivos [from_ms, to_ms] sobre started_at_ms; from nulo significa sin limite inferior",
+    "presets": "30d y 90d restan 30 y 90 dias (86400000 ms cada uno) a now_ms; all no filtra"
+  },
+  "range_cases": [
+    {
+      "name": "ultimos 30 dias",
+      "preset": "30d",
+      "now_ms": 1700000000000,
+      "expected": { "from_ms": 1697408000000, "to_ms": 1700000000000 }
+    },
+    {
+      "name": "ultimos 90 dias",
+      "preset": "90d",
+      "now_ms": 1700000000000,
+      "expected": { "from_ms": 1692224000000, "to_ms": 1700000000000 }
+    },
+    { "name": "todo el historial", "preset": "all", "now_ms": 1700000000000, "expected": null }
+  ],
+  "series_cases": [
+    {
+      "name": "progresion en tres sesiones",
+      "sets": [
+        { "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 8, "is_warmup": 0 },
+        { "session_id": "s2", "started_at_ms": 2000, "weight_kg": 105, "reps": 5, "is_warmup": 0 },
+        { "session_id": "s3", "started_at_ms": 3000, "weight_kg": 110, "reps": 3, "is_warmup": 0 }
+      ],
+      "expected": [
+        { "session_id": "s1", "started_at_ms": 1000, "max_weight_kg": 100, "volume_kg": 800, "best_one_rep_max_kg": 126.7, "working_sets": 1 },
+        { "session_id": "s2", "started_at_ms": 2000, "max_weight_kg": 105, "volume_kg": 525, "best_one_rep_max_kg": 122.5, "working_sets": 1 },
+        { "session_id": "s3", "started_at_ms": 3000, "max_weight_kg": 110, "volume_kg": 330, "best_one_rep_max_kg": 121, "working_sets": 1 }
+      ]
+    },
+    {
+      "name": "calentamiento excluido",
+      "sets": [
+        { "session_id": "s1", "started_at_ms": 1000, "weight_kg": 40, "reps": 10, "is_warmup": 1 },
+        { "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 8, "is_warmup": 0 }
+      ],
+      "expected": [
+        { "session_id": "s1", "started_at_ms": 1000, "max_weight_kg": 100, "volume_kg": 800, "best_one_rep_max_kg": 126.7, "working_sets": 1 }
+      ]
+    },
+    {
+      "name": "varias series efectivas en una sesion",
+      "sets": [
+        { "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 8, "is_warmup": 0 },
+        { "session_id": "s1", "started_at_ms": 1000, "weight_kg": 105, "reps": 5, "is_warmup": 0 },
+        { "session_id": "s1", "started_at_ms": 1000, "weight_kg": 90, "reps": 12, "is_warmup": 0 }
+      ],
+      "expected": [
+        { "session_id": "s1", "started_at_ms": 1000, "max_weight_kg": 105, "volume_kg": 2405, "best_one_rep_max_kg": 126.7, "working_sets": 3 }
+      ]
+    },
+    {
+      "name": "series incompletas",
+      "sets": [
+        { "session_id": "s1", "started_at_ms": 1000, "weight_kg": null, "reps": 10, "is_warmup": 0 },
+        { "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": null, "is_warmup": 0 },
+        { "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 5, "is_warmup": 0 }
+      ],
+      "expected": [
+        { "session_id": "s1", "started_at_ms": 1000, "max_weight_kg": 100, "volume_kg": 500, "best_one_rep_max_kg": 116.7, "working_sets": 3 }
+      ]
+    },
+    {
+      "name": "sesion sin series completas",
+      "sets": [
+        { "session_id": "s1", "started_at_ms": 1000, "weight_kg": null, "reps": 10, "is_warmup": 0 },
+        { "session_id": "s1", "started_at_ms": 1000, "weight_kg": 80, "reps": null, "is_warmup": 0 }
+      ],
+      "expected": [
+        { "session_id": "s1", "started_at_ms": 1000, "max_weight_kg": 0, "volume_kg": 0, "best_one_rep_max_kg": 0, "working_sets": 2 }
+      ]
+    },
+    {
+      "name": "dos sesiones el mismo dia",
+      "sets": [
+        { "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 8, "is_warmup": 0 },
+        { "session_id": "s2", "started_at_ms": 1000, "weight_kg": 100, "reps": 6, "is_warmup": 0 }
+      ],
+      "expected": [
+        { "session_id": "s1", "started_at_ms": 1000, "max_weight_kg": 100, "volume_kg": 800, "best_one_rep_max_kg": 126.7, "working_sets": 1 },
+        { "session_id": "s2", "started_at_ms": 1000, "max_weight_kg": 100, "volume_kg": 600, "best_one_rep_max_kg": 120, "working_sets": 1 }
+      ]
+    },
+    {
+      "name": "entrada desordenada",
+      "sets": [
+        { "session_id": "s2", "started_at_ms": 2000, "weight_kg": 90, "reps": 10, "is_warmup": 0 },
+        { "session_id": "s1", "started_at_ms": 1000, "weight_kg": 80, "reps": 10, "is_warmup": 0 }
+      ],
+      "expected": [
+        { "session_id": "s1", "started_at_ms": 1000, "max_weight_kg": 80, "volume_kg": 800, "best_one_rep_max_kg": 106.7, "working_sets": 1 },
+        { "session_id": "s2", "started_at_ms": 2000, "max_weight_kg": 90, "volume_kg": 900, "best_one_rep_max_kg": 120, "working_sets": 1 }
+      ]
+    },
+    {
+      "name": "sin series",
+      "sets": [],
+      "expected": []
+    }
+  ],
+  "filter_cases": [
+    {
+      "name": "rango con dos sesiones",
+      "from_ms": 2000,
+      "to_ms": 3000,
+      "expected": ["s2", "s3"]
+    },
+    {
+      "name": "rango de una sola sesion",
+      "from_ms": 2500,
+      "to_ms": 3000,
+      "expected": ["s3"]
+    },
+    {
+      "name": "limite inferior nulo",
+      "from_ms": null,
+      "to_ms": 2000,
+      "expected": ["s1", "s2"]
+    },
+    {
+      "name": "rango sin datos",
+      "from_ms": 4000,
+      "to_ms": 5000,
+      "expected": []
+    }
+  ],
+  "filter_sets": [
+    { "session_id": "s1", "started_at_ms": 1000, "weight_kg": 100, "reps": 8, "is_warmup": 0 },
+    { "session_id": "s2", "started_at_ms": 2000, "weight_kg": 100, "reps": 8, "is_warmup": 0 },
+    { "session_id": "s3", "started_at_ms": 3000, "weight_kg": 100, "reps": 8, "is_warmup": 0 }
+  ]
+}

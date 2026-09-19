@@ -3,9 +3,11 @@ import { useState } from 'react';
 import { useDatabase } from '@/db/bootstrap';
 import { useDbStatusStore } from '@/state/dbStatus';
 import { useCatalog } from '@/state/useCatalog';
+import { useProgress } from '@/state/useProgress';
 import { useRoutines } from '@/state/useRoutines';
 import { useWorkout } from '@/state/useWorkout';
 import CatalogView from '@/ui/CatalogView';
+import ProgressView from '@/ui/ProgressView';
 import RoutinesView from '@/ui/RoutinesView';
 import WorkoutView from '@/ui/WorkoutView';
 
@@ -16,7 +18,7 @@ const stateLabels: Record<string, string> = {
   error: 'Error al iniciar la base de datos',
 };
 
-type View = 'inicio' | 'catalogo' | 'entrenar' | 'rutinas';
+type View = 'inicio' | 'catalogo' | 'entrenar' | 'rutinas' | 'progreso';
 
 export default function App() {
   const db = useDatabase();
@@ -24,6 +26,7 @@ export default function App() {
   const catalog = useCatalog(db);
   const workout = useWorkout(db);
   const routines = useRoutines(db);
+  const progress = useProgress(db);
   const [view, setView] = useState<View>('inicio');
 
   return (
@@ -39,6 +42,7 @@ export default function App() {
               ['inicio', 'Inicio'],
               ['entrenar', 'Entrenar'],
               ['rutinas', 'Rutinas'],
+              ['progreso', 'Progreso'],
               ['catalogo', 'Catálogo'],
             ] as const
           ).map(([target, label]) => (
@@ -95,6 +99,7 @@ export default function App() {
 
       {view === 'catalogo' && <CatalogView catalog={catalog} />}
       {view === 'entrenar' && <WorkoutView workout={workout} catalog={catalog} />}
+      {view === 'progreso' && <ProgressView progress={progress} catalog={catalog} />}
       {view === 'rutinas' && (
         <RoutinesView routines={routines} catalog={catalog} workout={workout} />
       )}

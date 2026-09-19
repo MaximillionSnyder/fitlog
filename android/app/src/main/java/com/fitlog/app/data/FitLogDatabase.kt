@@ -31,4 +31,5 @@ abstract class FitLogDatabase : RoomDatabase() {
     abstract fun catalogDao(): CatalogDao
     abstract fun workoutDao(): WorkoutDao
     abstract fun routinesDao(): RoutinesDao
+    abstract fun progressDao(): ProgressDao
 }

@@ -32,6 +32,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.fitlog.app.ui.CatalogScreen
+import com.fitlog.app.ui.ProgressScreen
 import com.fitlog.app.ui.RoutinesScreen
 import com.fitlog.app.ui.WorkoutScreen
 import com.fitlog.app.ui.DbStatusUi
@@ -54,6 +55,7 @@ class MainActivity : ComponentActivity() {
                                 onOpenCatalog = { navController.navigate(CATALOG_ROUTE) },
                                 onOpenWorkout = { navController.navigate(WORKOUT_ROUTE) },
                                 onOpenRoutines = { navController.navigate(ROUTINES_ROUTE) },
+                                onOpenProgress = { navController.navigate(PROGRESS_ROUTE) },
                                 modifier = Modifier.padding(padding),
                             )
                         }
@@ -84,6 +86,14 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+                    composable(PROGRESS_ROUTE) {
+                        Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
+                            ProgressScreen(
+                                onBack = { navController.popBackStack() },
+                                modifier = Modifier.padding(padding),
+                            )
+                        }
+                    }
                     composable(ROUTINES_ROUTE) {
                         Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
                             RoutinesScreen(
@@ -107,6 +117,7 @@ class MainActivity : ComponentActivity() {
         const val WORKOUT_ROUTE = "workout"
         const val WORKOUT_PATTERN = "workout?$ROUTINE_ARG={$ROUTINE_ARG}"
         const val ROUTINES_ROUTE = "routines"
+        const val PROGRESS_ROUTE = "progress"
     }
 }
 
@@ -115,6 +126,7 @@ private fun HomeScreen(
     onOpenCatalog: () -> Unit,
     onOpenWorkout: () -> Unit,
     onOpenRoutines: () -> Unit,
+    onOpenProgress: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DbStatusViewModel = hiltViewModel(),
 ) {
@@ -154,6 +166,10 @@ private fun HomeScreen(
 
         Button(onClick = onOpenWorkout, modifier = Modifier.fillMaxWidth()) {
             Text("Entrenar")
+        }
+
+        OutlinedButton(onClick = onOpenProgress, modifier = Modifier.fillMaxWidth()) {
+            Text("Progreso")
         }
 
         OutlinedButton(onClick = onOpenRoutines, modifier = Modifier.fillMaxWidth()) {
