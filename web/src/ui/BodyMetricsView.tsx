@@ -197,6 +197,9 @@ export default function BodyMetricsView({ body }: { body: BodyMetricsState }) {
         <EmptyState
           title="Sin medidas en el periodo"
           message={`No hay medidas de ${kindLabel.toLowerCase()} en el periodo elegido. Registrá una arriba o ampliá el rango.`}
+          {...(body.preset === 'all'
+            ? {}
+            : { actionLabel: 'Ver todo', onAction: () => body.selectPreset('all') })}
         />
       ) : null}
 

@@ -117,11 +117,14 @@ fun ProgressScreen(
 
         if (!state.loading && state.points.isEmpty()) {
             EmptyState(
+                title = "Sin datos en el rango",
                 message = if (selectedExercise != null) {
                     "No hay series registradas de \"${selectedExercise.name}\" en el rango elegido."
                 } else {
                     "Elegí un ejercicio para ver su progreso."
                 },
+                actionLabel = if (state.preset == Progress.RangePreset.ALL) null else "Ver todo",
+                onAction = { viewModel.selectPreset(Progress.RangePreset.ALL) },
             )
         }
 

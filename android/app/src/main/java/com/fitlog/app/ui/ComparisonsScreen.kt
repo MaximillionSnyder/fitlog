@@ -47,6 +47,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ComparisonsScreen(
+    onOpenWorkout: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ComparisonsViewModel = hiltViewModel(),
 ) {
@@ -121,7 +122,12 @@ fun ComparisonsScreen(
         SectionHeader(title = "Marcas personales")
 
         if (!state.loading && state.records.isEmpty()) {
-            EmptyState(message = "Todavía no hay marcas registradas.")
+            EmptyState(
+                title = "Sin marcas todavía",
+                message = "Todavía no hay marcas registradas.",
+                actionLabel = "Ir a entrenar",
+                onAction = onOpenWorkout,
+            )
         }
 
         state.records.forEach { record ->
@@ -153,7 +159,12 @@ fun ComparisonsScreen(
         SectionHeader(title = "Balance muscular del periodo")
 
         if (!state.loading && state.balance.isEmpty()) {
-            EmptyState(message = "No hay volumen registrado en el periodo elegido.")
+            EmptyState(
+                title = "Sin volumen en el periodo",
+                message = "No hay volumen registrado en el periodo elegido.",
+                actionLabel = if (state.preset == Comparisons.Preset.LAST_90_DAYS) null else "Ampliar a 90 días",
+                onAction = { viewModel.selectPreset(Comparisons.Preset.LAST_90_DAYS) },
+            )
         }
 
         state.balance.forEach { entry ->

@@ -246,7 +246,9 @@ private fun FitLogApp(
 
             composable(Routes.COMPARISONS) {
                 NavEntryScopes(this) {
-                    ComparisonsScreen()
+                    ComparisonsScreen(
+                        onOpenWorkout = { navController.navigate(Routes.WORKOUT) },
+                    )
                 }
             }
 

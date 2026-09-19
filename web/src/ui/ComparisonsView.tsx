@@ -36,9 +36,11 @@ function deltaOrNull(delta: number | null): number | null {
 export default function ComparisonsView({
   comparisons,
   catalog,
+  onOpenWorkout,
 }: {
   comparisons: ComparisonsState;
   catalog: CatalogState;
+  onOpenWorkout: () => void;
 }) {
   const exerciseNameById = new Map(
     catalog.snapshot.exercises.map((exercise) => [exercise.id, exercise.name])
@@ -96,6 +98,8 @@ export default function ComparisonsView({
         <EmptyState
           title="Sin marcas todavía"
           message="Todavía no hay marcas registradas: cargá series con peso y reps para verlas acá."
+          actionLabel="Ir a entrenar"
+          onAction={onOpenWorkout}
         />
       ) : null}
 
@@ -140,6 +144,9 @@ export default function ComparisonsView({
         <EmptyState
           title="Sin volumen en el periodo"
           message="No hay volumen registrado en el periodo elegido. Probá con un rango más amplio."
+          {...(comparisons.preset === '90d'
+            ? {}
+            : { actionLabel: 'Ampliar a 90 días', onAction: () => comparisons.selectPreset('90d') })}
         />
       ) : null}
 

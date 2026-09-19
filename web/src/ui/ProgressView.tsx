@@ -118,6 +118,9 @@ export default function ProgressView({
               ? `No hay series registradas de "${selectedExercise.name}" en el rango elegido.`
               : 'Elegí un ejercicio para ver su progreso.'
           }
+          {...(progress.preset === 'all'
+            ? {}
+            : { actionLabel: 'Ver todo', onAction: () => progress.selectPreset('all') })}
         />
       ) : null}
 

@@ -112,6 +112,7 @@ fun RoutinesScreen(
             EmptyState(
                 title = "Todavía no tenés rutinas",
                 message = "Armá tu primera plantilla con el formulario de arriba.",
+                icon = FitLogIcons.Calendar,
             )
         }
 

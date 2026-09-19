@@ -118,7 +118,11 @@ export default function App() {
       {view === 'mas' && <MoreView onNavigate={navigate} />}
       {view === 'catalogo' && <CatalogView catalog={catalog} />}
       {view === 'comparativas' && (
-        <ComparisonsView comparisons={comparisons} catalog={catalog} />
+        <ComparisonsView
+          comparisons={comparisons}
+          catalog={catalog}
+          onOpenWorkout={() => navigate('entrenar')}
+        />
       )}
       {view === 'tips' && <TipsView tips={tips} catalog={catalog} />}
       {view === 'medidas' && <BodyMetricsView body={body} />}

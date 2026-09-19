@@ -186,7 +186,10 @@ fun BodyMetricsScreen(
 
         if (!state.loading && state.series.isEmpty()) {
             EmptyState(
+                title = "Sin medidas en el periodo",
                 message = "No hay medidas de ${Body.label(state.kind).lowercase()} en el periodo elegido.",
+                actionLabel = if (state.preset == Progress.RangePreset.ALL) null else "Ver todo",
+                onAction = { viewModel.selectPreset(Progress.RangePreset.ALL) },
             )
         }
 

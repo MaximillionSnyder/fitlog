@@ -6,6 +6,7 @@ import { HomeView } from '@/ui/HomeView';
 import { MoreView } from '@/ui/MoreView';
 import { SessionDetailView } from '@/ui/SessionDetailView';
 import { SettingsView } from '@/ui/SettingsView';
+import CatalogView from '@/ui/CatalogView';
 import WorkoutView from '@/ui/WorkoutView';
 import type { RoutinesState } from '@/state/useRoutines';
 import type { BodyMetricsState } from '@/state/useBodyMetrics';
@@ -40,6 +41,11 @@ const catalog = {
   create: async () => {},
   remove: async () => {},
   reload: async () => {},
+} as unknown as CatalogState;
+
+const emptyCatalog = {
+  ...catalog,
+  snapshot: { groups: [], exercises: [] },
 } as unknown as CatalogState;
 
 const body = {
@@ -230,6 +236,13 @@ describe('interfaz web', () => {
     expect(html).toContain('Press banca');
     expect(html).toContain('series efectivas');
     expect(html).toContain('CALENTAMIENTO');
+  });
+
+  it('el catálogo sin resultados ofrece limpiar los filtros', () => {
+    const html = renderToStaticMarkup(<CatalogView catalog={emptyCatalog} />);
+
+    expect(html).toContain('Sin resultados');
+    expect(html).toContain('Limpiar filtros');
   });
 
   it('Ajustes ofrece los tres modos de tema y el estado de la base', () => {

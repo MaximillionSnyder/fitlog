@@ -95,6 +95,8 @@ fun TipsScreen(
             EmptyState(
                 title = "Sin observaciones",
                 message = "No hay observaciones para este periodo. Seguí registrando entrenamientos.",
+                actionLabel = if (state.preset == Comparisons.Preset.LAST_90_DAYS) null else "Ampliar a 90 días",
+                onAction = { viewModel.selectPreset(Comparisons.Preset.LAST_90_DAYS) },
             )
         }
 

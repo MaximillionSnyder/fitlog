@@ -236,7 +236,14 @@ export default function CatalogView({ catalog }: { catalog: CatalogState }) {
       {loading ? <LoadingState message="Cargando catálogo…" /> : null}
 
       {!loading && visible.length === 0 ? (
-        <EmptyState title="Sin resultados" message="No hay ejercicios que coincidan con la búsqueda." />
+        <EmptyState
+          title="Sin resultados"
+          message="No hay ejercicios que coincidan con la búsqueda."
+          actionLabel="Limpiar filtros"
+          onAction={() =>
+            setFilters({ query: '', muscleGroupSlug: null, equipment: null, kind: null })
+          }
+        />
       ) : null}
 
       <ul className="flex flex-col gap-3">

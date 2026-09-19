@@ -170,7 +170,12 @@ fun CatalogScreen(
         }
 
         if (!state.loading && state.visible.isEmpty()) {
-            EmptyState(message = "No hay ejercicios que coincidan con la búsqueda.")
+            EmptyState(
+                title = "Sin resultados",
+                message = "No hay ejercicios que coincidan con la búsqueda.",
+                actionLabel = "Limpiar filtros",
+                onAction = { viewModel.clearFilters() },
+            )
         }
 
         state.visible.forEach { exercise ->

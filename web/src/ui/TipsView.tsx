@@ -83,6 +83,9 @@ export default function TipsView({
         <EmptyState
           title="Sin observaciones"
           message="No hay observaciones para este periodo. Seguí registrando entrenamientos."
+          {...(tips.preset === '90d'
+            ? {}
+            : { actionLabel: 'Ampliar a 90 días', onAction: () => tips.selectPreset('90d') })}
         />
       ) : null}
 

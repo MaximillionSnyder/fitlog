@@ -65,6 +65,11 @@ class CatalogViewModel @Inject constructor(
         }
     }
 
+    /** Vuelve a mostrar todo el catalogo: es la salida del estado "sin resultados". */
+    fun clearFilters() {
+        _state.update { it.copy(filters = CatalogFilters()) }
+    }
+
     fun onQueryChange(value: String) {
         _state.update { it.copy(filters = it.filters.copy(query = value)) }
     }

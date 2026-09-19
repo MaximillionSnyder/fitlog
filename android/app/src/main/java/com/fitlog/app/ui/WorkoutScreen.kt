@@ -294,7 +294,10 @@ fun WorkoutScreen(
             }
 
             if (state.activeSets.isEmpty()) {
-                EmptyState(message = "Todavía no hay series en esta sesión.")
+                EmptyState(
+                    title = "Sin series",
+                    message = "Todavía no hay series en esta sesión.",
+                )
             }
 
             state.activeSets.forEach { set ->
@@ -312,7 +315,12 @@ fun WorkoutScreen(
         )
 
         if (state.history.isEmpty() && !state.loading) {
-            EmptyState(message = "Todavía no registraste entrenamientos.")
+            EmptyState(
+                title = "Sin entrenamientos",
+                message = "Todavía no registraste entrenamientos.",
+                actionLabel = if (state.active == null) "Iniciar entrenamiento" else null,
+                onAction = { viewModel.startSession() },
+            )
         }
 
         state.history.forEach { session ->
