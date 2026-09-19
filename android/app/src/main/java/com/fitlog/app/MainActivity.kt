@@ -46,6 +46,7 @@ import com.fitlog.app.ui.destinations.Routes
 import com.fitlog.app.ui.destinations.titleForRoute
 import com.fitlog.app.ui.destinations.topLevelDestinations
 import com.fitlog.app.ui.motion.LocalSharedTransitionScope
+import com.fitlog.app.ui.motion.sharedNavBounds
 import com.fitlog.app.ui.motion.NavEntryScopes
 import com.fitlog.app.ui.theme.FitLogTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -95,6 +96,7 @@ private fun FitLogApp(
                 FitLogTopBar(
                     title = title,
                     onBack = if (isTopLevel) null else ({ navController.popBackStack() }),
+                    titleModifier = navController.sharedTitleModifier(topLevelRoute),
                 )
             }
         },
@@ -237,6 +239,19 @@ private fun FitLogApp(
         }
     }
 }
+
+/**
+ * El titulo del encabezado participa de la transicion cuando la pantalla tiene un acceso en Inicio
+ * (la tarjeta de acceso se transforma en el encabezado del destino).
+ */
+@Composable
+private fun NavHostController.sharedTitleModifier(route: String?): Modifier =
+    when (route) {
+        Routes.ROUTINES -> Modifier.sharedNavBounds("home-routines")
+        Routes.PROGRESS -> Modifier.sharedNavBounds("home-progress")
+        Routes.COMPARISONS -> Modifier.sharedNavBounds("home-comparisons")
+        else -> Modifier
+    }
 
 /**
  * Navegacion entre pestanas: una sola copia por destino, estado propio conservado y sin apilar

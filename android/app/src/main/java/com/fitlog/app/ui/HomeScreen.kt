@@ -157,6 +157,7 @@ fun HomeScreen(
 
             item {
                 NavigationRow(
+                    sharedBoundsKey = "home-routines",
                     title = "Rutinas",
                     description = "Tus días de entrenamiento con series y reps objetivo",
                     icon = FitLogIcons.Calendar,
@@ -165,6 +166,7 @@ fun HomeScreen(
             }
             item {
                 NavigationRow(
+                    sharedBoundsKey = "home-progress",
                     title = "Progreso",
                     description = "Evolución por ejercicio: peso máximo, volumen y 1RM",
                     icon = FitLogIcons.Chart,
@@ -173,6 +175,7 @@ fun HomeScreen(
             }
             item {
                 NavigationRow(
+                    sharedBoundsKey = "home-comparisons",
                     title = "Comparativas",
                     description = "Récords, mes contra mes y balance muscular",
                     icon = FitLogIcons.Trophy,

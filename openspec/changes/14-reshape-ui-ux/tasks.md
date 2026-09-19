@@ -32,7 +32,7 @@
 
 ## 5. Verificación y cierre
 
-- [ ] 5.0 Reconectar las transiciones de elementos compartidos al nuevo Inicio (las claves `home-*` quedaron sin usar al retirar los botones planos)
+- [x] 5.0 Reconectar las transiciones de elementos compartidos al nuevo Inicio (las claves `home-*` quedaron sin usar al retirar los botones planos)
 
 - [ ] 5.1 Dejar `android.yml` en verde (tests y APK) tras el push a `main`
 - [ ] 5.2 Probar en el APK: navegación por las cinco pestañas conservando estado, tema claro/oscuro/dinámico, panel de Inicio con y sin sesión activa, y Ajustes

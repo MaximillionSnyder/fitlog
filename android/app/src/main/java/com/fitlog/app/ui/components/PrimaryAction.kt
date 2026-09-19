@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.fitlog.app.ui.motion.sharedNavBounds
 import com.fitlog.app.ui.theme.Spacing
 
 /** Accion primaria: rellena con el acento de marca, con icono a la izquierda. */
@@ -89,8 +90,11 @@ fun NavigationRow(
     modifier: Modifier = Modifier,
     description: String? = null,
     badge: String? = null,
+    sharedBoundsKey: String? = null,
 ) {
-    FitLogCard(modifier = modifier, onClick = onClick) {
+    val cardModifier = if (sharedBoundsKey == null) modifier else modifier.sharedNavBounds(sharedBoundsKey)
+
+    FitLogCard(modifier = cardModifier, onClick = onClick) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(Spacing.md),
