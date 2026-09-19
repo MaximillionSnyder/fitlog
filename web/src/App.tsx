@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { useDatabase } from '@/db/bootstrap';
 import { useDbStatusStore } from '@/state/dbStatus';
 import { useCatalog } from '@/state/useCatalog';
+import { useWorkout } from '@/state/useWorkout';
 import CatalogView from '@/ui/CatalogView';
+import WorkoutView from '@/ui/WorkoutView';
 
 const stateLabels: Record<string, string> = {
   iniciando: 'Iniciando…',
@@ -12,12 +14,13 @@ const stateLabels: Record<string, string> = {
   error: 'Error al iniciar la base de datos',
 };
 
-type View = 'inicio' | 'catalogo';
+type View = 'inicio' | 'catalogo' | 'entrenar';
 
 export default function App() {
   const db = useDatabase();
   const status = useDbStatusStore((state) => state.status);
   const catalog = useCatalog(db);
+  const workout = useWorkout(db);
   const [view, setView] = useState<View>('inicio');
 
   return (
@@ -28,24 +31,24 @@ export default function App() {
           <p className="text-sm text-slate-400">Registro de entrenamiento local-first</p>
         </div>
         <nav className="flex gap-2 text-sm">
-          <button
-            type="button"
-            onClick={() => setView('inicio')}
-            className={`rounded-lg px-3 py-1.5 ${
-              view === 'inicio' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Inicio
-          </button>
-          <button
-            type="button"
-            onClick={() => setView('catalogo')}
-            className={`rounded-lg px-3 py-1.5 ${
-              view === 'catalogo' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Catálogo
-          </button>
+          {(
+            [
+              ['inicio', 'Inicio'],
+              ['entrenar', 'Entrenar'],
+              ['catalogo', 'Catálogo'],
+            ] as const
+          ).map(([target, label]) => (
+            <button
+              key={target}
+              type="button"
+              onClick={() => setView(target)}
+              className={`rounded-lg px-3 py-1.5 ${
+                view === target ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </nav>
       </header>
 
@@ -87,6 +90,7 @@ export default function App() {
       )}
 
       {view === 'catalogo' && <CatalogView catalog={catalog} />}
+      {view === 'entrenar' && <WorkoutView workout={workout} catalog={catalog} />}
     </main>
   );
 }

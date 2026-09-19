@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "description": "Casos de prueba compartidos del resumen de sesion de entrenamiento. Se ejecutan en Android (JUnit) y Web (Vitest).",
+  "rules": {
+    "total_sets": "cantidad de series registradas, incluidas las de calentamiento",
+    "working_sets": "series con is_warmup = 0",
+    "volume": "solo las series efectivas aportan volumen; una serie aporta peso_kg * reps si ambos valores no son nulos",
+    "volume_by_exercise": "volumen efectivo acumulado por exercise_id; no aparecen ejercicios sin volumen"
+  },
+  "cases": [
+    {
+      "name": "calentamiento excluido del volumen",
+      "sets": [
+        { "exercise_id": "ex-a", "weight_kg": 100, "reps": 8, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "weight_kg": 100, "reps": 6, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "weight_kg": 40, "reps": 10, "is_warmup": 1 }
+      ],
+      "expected": {
+        "total_sets": 3,
+        "working_sets": 2,
+        "total_volume_kg": 1400,
+        "volume_by_exercise": { "ex-a": 1400 }
+      }
+    },
+    {
+      "name": "dos ejercicios",
+      "sets": [
+        { "exercise_id": "ex-a", "weight_kg": 80, "reps": 10, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "weight_kg": 80, "reps": 8, "is_warmup": 0 },
+        { "exercise_id": "ex-b", "weight_kg": 60, "reps": 12, "is_warmup": 0 }
+      ],
+      "expected": {
+        "total_sets": 3,
+        "working_sets": 3,
+        "total_volume_kg": 2160,
+        "volume_by_exercise": { "ex-a": 1440, "ex-b": 720 }
+      }
+    },
+    {
+      "name": "series incompletas no aportan volumen",
+      "sets": [
+        { "exercise_id": "ex-a", "weight_kg": null, "reps": 10, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "weight_kg": 100, "reps": null, "is_warmup": 0 },
+        { "exercise_id": "ex-a", "weight_kg": 100, "reps": 5, "is_warmup": 0 }
+      ],
+      "expected": {
+        "total_sets": 3,
+        "working_sets": 3,
+        "total_volume_kg": 500,
+        "volume_by_exercise": { "ex-a": 500 }
+      }
+    },
+    {
+      "name": "sesion sin series",
+      "sets": [],
+      "expected": {
+        "total_sets": 0,
+        "working_sets": 0,
+        "total_volume_kg": 0,
+        "volume_by_exercise": {}
+      }
+    },
+    {
+      "name": "solo calentamientos",
+      "sets": [
+        { "exercise_id": "ex-a", "weight_kg": 20, "reps": 15, "is_warmup": 1 },
+        { "exercise_id": "ex-a", "weight_kg": 40, "reps": 10, "is_warmup": 1 }
+      ],
+      "expected": {
+        "total_sets": 2,
+        "working_sets": 0,
+        "total_volume_kg": 0,
+        "volume_by_exercise": {}
+      }
+    },
+    {
+      "name": "volumen decimal",
+      "sets": [
+        { "exercise_id": "ex-a", "weight_kg": 72.5, "reps": 5, "is_warmup": 0 },
+        { "exercise_id": "ex-b", "weight_kg": 32.5, "reps": 8, "is_warmup": 0 }
+      ],
+      "expected": {
+        "total_sets": 2,
+        "working_sets": 2,
+        "total_volume_kg": 622.5,
+        "volume_by_exercise": { "ex-a": 362.5, "ex-b": 260 }
+      }
+    }
+  ]
+}

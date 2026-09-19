@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +30,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.fitlog.app.ui.CatalogScreen
+import com.fitlog.app.ui.WorkoutScreen
 import com.fitlog.app.ui.DbStatusUi
 import com.fitlog.app.ui.DbStatusViewModel
 import com.fitlog.app.ui.theme.FitLogTheme
@@ -47,6 +49,7 @@ class MainActivity : ComponentActivity() {
                         Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
                             HomeScreen(
                                 onOpenCatalog = { navController.navigate(CATALOG_ROUTE) },
+                                onOpenWorkout = { navController.navigate(WORKOUT_ROUTE) },
                                 modifier = Modifier.padding(padding),
                             )
                         }
@@ -54,6 +57,14 @@ class MainActivity : ComponentActivity() {
                     composable(CATALOG_ROUTE) {
                         Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
                             CatalogScreen(
+                                onBack = { navController.popBackStack() },
+                                modifier = Modifier.padding(padding),
+                            )
+                        }
+                    }
+                    composable(WORKOUT_ROUTE) {
+                        Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
+                            WorkoutScreen(
                                 onBack = { navController.popBackStack() },
                                 modifier = Modifier.padding(padding),
                             )
@@ -67,12 +78,14 @@ class MainActivity : ComponentActivity() {
     private companion object {
         const val HOME_ROUTE = "home"
         const val CATALOG_ROUTE = "catalog"
+        const val WORKOUT_ROUTE = "workout"
     }
 }
 
 @Composable
 private fun HomeScreen(
     onOpenCatalog: () -> Unit,
+    onOpenWorkout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DbStatusViewModel = hiltViewModel(),
 ) {
@@ -110,7 +123,11 @@ private fun HomeScreen(
             }
         }
 
-        Button(onClick = onOpenCatalog, modifier = Modifier.fillMaxWidth()) {
+        Button(onClick = onOpenWorkout, modifier = Modifier.fillMaxWidth()) {
+            Text("Entrenar")
+        }
+
+        OutlinedButton(onClick = onOpenCatalog, modifier = Modifier.fillMaxWidth()) {
             Text("Abrir catálogo")
         }
     }

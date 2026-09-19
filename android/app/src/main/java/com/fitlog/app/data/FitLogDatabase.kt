@@ -29,4 +29,5 @@ interface MetaDao {
 abstract class FitLogDatabase : RoomDatabase() {
     abstract fun metaDao(): MetaDao
     abstract fun catalogDao(): CatalogDao
+    abstract fun workoutDao(): WorkoutDao
 }
