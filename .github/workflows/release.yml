@@ -105,7 +105,7 @@ jobs:
           TAG: ${{ github.event.inputs.tag || github.ref_name }}
           FINGERPRINT: ${{ steps.fingerprint.outputs.sha256 }}
         run: |
-          NOTES="$(cat <<'EOF'
+          NOTES="$(cat <<EOF
           APK de FitLog para instalar en Android 8 o superior, firmado con el keystore propio del proyecto.
 
           **Firma**: clave `fitlog` (RSA 4096). Huella SHA-256: `${FINGERPRINT}`
@@ -114,6 +114,7 @@ jobs:
           )"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "${{ steps.apk.outputs.path }}" --clobber
+            gh release edit "$TAG" --notes "$NOTES"
           else
             gh release create "$TAG" "${{ steps.apk.outputs.path }}" \
               --title "FitLog $TAG" \
