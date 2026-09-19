@@ -2,12 +2,14 @@ import { useState } from 'react';
 
 import { useDatabase } from '@/db/bootstrap';
 import { useDbStatusStore } from '@/state/dbStatus';
+import { useBodyMetrics } from '@/state/useBodyMetrics';
 import { useCatalog } from '@/state/useCatalog';
 import { useComparisons } from '@/state/useComparisons';
 import { useTips } from '@/state/useTips';
 import { useProgress } from '@/state/useProgress';
 import { useRoutines } from '@/state/useRoutines';
 import { useWorkout } from '@/state/useWorkout';
+import BodyMetricsView from '@/ui/BodyMetricsView';
 import CatalogView from '@/ui/CatalogView';
 import ComparisonsView from '@/ui/ComparisonsView';
 import TipsView from '@/ui/TipsView';
@@ -29,7 +31,8 @@ type View =
   | 'rutinas'
   | 'progreso'
   | 'comparativas'
-  | 'tips';
+  | 'tips'
+  | 'medidas';
 
 export default function App() {
   const db = useDatabase();
@@ -40,6 +43,7 @@ export default function App() {
   const progress = useProgress(db);
   const comparisons = useComparisons(db);
   const tips = useTips(db);
+  const body = useBodyMetrics(db);
   const [view, setView] = useState<View>('inicio');
 
   return (
@@ -58,6 +62,7 @@ export default function App() {
               ['progreso', 'Progreso'],
               ['comparativas', 'Comparativas'],
               ['tips', 'Tips'],
+              ['medidas', 'Medidas'],
               ['catalogo', 'Catálogo'],
             ] as const
           ).map(([target, label]) => (
@@ -116,6 +121,7 @@ export default function App() {
       {view === 'entrenar' && <WorkoutView workout={workout} catalog={catalog} />}
       {view === 'progreso' && <ProgressView progress={progress} catalog={catalog} />}
       {view === 'tips' && <TipsView tips={tips} catalog={catalog} />}
+      {view === 'medidas' && <BodyMetricsView body={body} />}
       {view === 'comparativas' && (
         <ComparisonsView comparisons={comparisons} catalog={catalog} />
       )}

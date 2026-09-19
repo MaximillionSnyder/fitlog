@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "description": "Casos de prueba compartidos de medidas corporales: unidades por tipo, validaciones, series y estadisticas. Se ejecutan en Android (JUnit) y Web (Vitest).",
+  "rules": {
+    "unit": "body_weight -> kg; body_fat -> %; el resto -> cm",
+    "validation": "valor finito y > 0; body_fat ademas <= 100; tipo desconocido invalido",
+    "series": "filtra por tipo y rango [from_ms, to_ms] inclusivo, ordena por measured_at_ms ascendente con desempate por id",
+    "stats": "primera, ultima, minimo y maximo del periodo; variacion = ultima - primera; porcentual = variacion / primera * 100 redondeada a 1 decimal",
+    "single": "con una sola medicion la variacion es 0 y min = max",
+    "empty": "sin mediciones todas las estadisticas son nulas"
+  },
+  "unit_cases": [
+    { "kind": "body_weight", "expected": "kg" },
+    { "kind": "body_fat", "expected": "%" },
+    { "kind": "waist", "expected": "cm" },
+    { "kind": "chest", "expected": "cm" },
+    { "kind": "arm", "expected": "cm" },
+    { "kind": "thigh", "expected": "cm" },
+    { "kind": "hip", "expected": "cm" },
+    { "kind": "neck", "expected": "cm" },
+    { "kind": "other", "expected": "cm" }
+  ],
+  "validation_cases": [
+    { "name": "peso valido", "kind": "body_weight", "value": 78.5, "valid": true },
+    { "name": "grasa valida", "kind": "body_fat", "value": 18.4, "valid": true },
+    { "name": "cero invalido", "kind": "body_weight", "value": 0, "valid": false },
+    { "name": "negativo invalido", "kind": "waist", "value": -5, "valid": false },
+    { "name": "grasa fuera de rango", "kind": "body_fat", "value": 120, "valid": false },
+    { "name": "tipo desconocido", "kind": "altura", "value": 180, "valid": false }
+  ],
+  "series_cases": [
+    {
+      "name": "ordena por fecha ascendente",
+      "kind": "body_weight",
+      "metrics": [
+        { "id": "m3", "kind": "body_weight", "measured_at_ms": 3000, "value": 78 },
+        { "id": "m1", "kind": "body_weight", "measured_at_ms": 1000, "value": 80 },
+        { "id": "m2", "kind": "body_weight", "measured_at_ms": 2000, "value": 79 },
+        { "id": "m4", "kind": "waist", "measured_at_ms": 2500, "value": 84 }
+      ],
+      "expected": ["m1", "m2", "m3"]
+    },
+    {
+      "name": "filtra por rango",
+      "kind": "body_weight",
+      "from_ms": 2000,
+      "to_ms": 3000,
+      "metrics": [
+        { "id": "m1", "kind": "body_weight", "measured_at_ms": 1000, "value": 80 },
+        { "id": "m2", "kind": "body_weight", "measured_at_ms": 2000, "value": 79 },
+        { "id": "m3", "kind": "body_weight", "measured_at_ms": 3000, "value": 78 }
+      ],
+      "expected": ["m2", "m3"]
+    },
+    {
+      "name": "sin mediciones del tipo",
+      "kind": "body_fat",
+      "metrics": [
+        { "id": "m1", "kind": "body_weight", "measured_at_ms": 1000, "value": 80 }
+      ],
+      "expected": []
+    }
+  ],
+  "stats_cases": [
+    {
+      "name": "tres mediciones en descenso",
+      "values": [80, 79, 78],
+      "expected": {
+        "count": 3,
+        "first": 80,
+        "latest": 78,
+        "min": 78,
+        "max": 80,
+        "delta_abs": -2,
+        "delta_pct": -2.5
+      }
+    },
+    {
+      "name": "medicion unica",
+      "values": [78.5],
+      "expected": {
+        "count": 1,
+        "first": 78.5,
+        "latest": 78.5,
+        "min": 78.5,
+        "max": 78.5,
+        "delta_abs": 0,
+        "delta_pct": 0
+      }
+    },
+    {
+      "name": "sin mediciones",
+      "values": [],
+      "expected": {
+        "count": 0,
+        "first": null,
+        "latest": null,
+        "min": null,
+        "max": null,
+        "delta_abs": null,
+        "delta_pct": null
+      }
+    },
+    {
+      "name": "variacion porcentual con decimales",
+      "values": [84.5, 82],
+      "expected": {
+        "count": 2,
+        "first": 84.5,
+        "latest": 82,
+        "min": 82,
+        "max": 84.5,
+        "delta_abs": -2.5,
+        "delta_pct": -3
+      }
+    }
+  ]
+}
