@@ -25,5 +25,5 @@
 ## 5. Verificación y cierre
 
 - [x] 5.1 Dejar `android.yml` en verde (compilación y tests) tras el push a `main`
-- [ ] 5.2 Probar en el APK: transiciones Inicio→pantalla y Catálogo→detalle, vuelta con filtros, morph Iniciar/Finalizar, blobs en hero y vacíos, y app usable con animaciones del sistema en cero
-- [ ] 5.3 Archivar el cambio y publicar la release `v0.1.9` con el flujo de la convención (tag anotado y `release.yml`)
+- [x] 5.2 Probar en el APK: transiciones Inicio→pantalla y Catálogo→detalle, vuelta con filtros, morph Iniciar/Finalizar, blobs en hero y vacíos, y app usable con animaciones del sistema en cero
+- [x] 5.3 Archivar el cambio y publicar la release `v0.1.9` con el flujo de la convención (tag anotado y `release.yml`)
