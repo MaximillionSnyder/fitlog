@@ -119,6 +119,25 @@ describe('importación completa de una exportación', () => {
     expect(running?.activity?.source).toBe('Huawei Health');
   });
 
+  it('una sesión importada antes de las columnas recupera sus métricas de la nota', async () => {
+    const db = createDatabase();
+    // Simula una sesión importada por una versión anterior: solo tiene la nota.
+    await importSessions(db, [
+      {
+        startedAtMs: 1_690_000_000_000,
+        finishedAtMs: 1_690_000_600_000,
+        notes: 'Huawei Health · Running · 5.24 km · 320 kcal · FC 147/170 · 6800 pasos',
+      },
+    ]);
+
+    const [session] = await listSessions(db);
+    expect(session?.activity?.distanceM).toBeCloseTo(5_240, 5);
+    expect(session?.activity?.averageHeartRate).toBe(147);
+    expect(session?.activity?.maxHeartRate).toBe(170);
+    expect(session?.activity?.steps).toBe(6_800);
+    expect(session?.activity?.source).toBe('Huawei Health');
+  });
+
   it('una sesión propia no tiene métricas de actividad', async () => {
     const db = createDatabase();
     const session = await startSession(db);

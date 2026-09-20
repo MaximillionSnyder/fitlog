@@ -173,6 +173,27 @@ class WorkoutRepositoryTest {
     }
 
     @Test
+    fun `una sesion importada antes de las columnas recupera sus metricas de la nota`() = runTest {
+        // Simula una sesion importada por una version anterior: solo tiene la nota.
+        repository.importSessions(
+            listOf(
+                WorkoutRepository.ImportedSession(
+                    startedAtMs = 1_690_000_000_000,
+                    finishedAtMs = 1_690_000_600_000,
+                    notes = "Huawei Health · Running · 5.24 km · 320 kcal · FC 147/170 · 6800 pasos",
+                )
+            )
+        )
+
+        val activity = repository.sessions().first().activity
+        assertEquals(5_240.0, activity?.distanceM ?: 0.0, 0.001)
+        assertEquals(147.0, activity?.averageHeartRate ?: 0.0, 0.001)
+        assertEquals(170.0, activity?.maxHeartRate ?: 0.0, 0.001)
+        assertEquals(6_800, activity?.steps)
+        assertEquals("Huawei Health", activity?.source)
+    }
+
+    @Test
     fun `una sesion propia no tiene metricas de actividad`() = runTest {
         val session = repository.startSession()
         repository.finishSession(session.id)

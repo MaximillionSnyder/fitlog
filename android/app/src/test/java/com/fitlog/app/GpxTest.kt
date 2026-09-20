@@ -86,6 +86,40 @@ class GpxTest {
     }
 
     @Test
+    fun `recupera las metricas de la nota de una sesion ya importada`() {
+        // Las sesiones importadas antes de las columnas propias solo tienen la nota.
+        val parsed = ImportedWorkoutNotes.parseActivity(
+            "Huawei Health · Running · 5.24 km · 320 kcal · FC 147/170 · desnivel 12 m · 6800 pasos"
+        )
+
+        assertEquals("Huawei Health", parsed?.source)
+        assertEquals(5_240.0, parsed?.distanceM ?: 0.0, 0.001)
+        assertEquals(320.0, parsed?.calories ?: 0.0, 0.001)
+        assertEquals(147.0, parsed?.averageHeartRate ?: 0.0, 0.001)
+        assertEquals(170.0, parsed?.maxHeartRate ?: 0.0, 0.001)
+        assertEquals(12.0, parsed?.elevationGainM ?: 0.0, 0.001)
+        assertEquals(6_800, parsed?.steps)
+    }
+
+    @Test
+    fun `la nota de ida y vuelta conserva las metricas`() {
+        val workout = Gpx.parse(gpx()).first()
+        val parsed = ImportedWorkoutNotes.parseActivity(ImportedWorkoutNotes.noteFor(workout))
+
+        // La nota es un resumen redondeado: la distancia puede diferir en metros.
+        assertTrue(kotlin.math.abs((parsed?.distanceM ?: 0.0) - (workout.distanceM ?: 0.0)) < 10.0)
+        assertEquals(workout.averageHeartRate ?: 0.0, parsed?.averageHeartRate ?: 0.0, 0.5)
+        assertEquals(workout.maxHeartRate ?: 0.0, parsed?.maxHeartRate ?: 0.0, 0.5)
+        assertEquals(workout.elevationGainM ?: 0.0, parsed?.elevationGainM ?: 0.0, 0.5)
+    }
+
+    @Test
+    fun `una nota que no es de importacion no tiene metricas`() {
+        assertEquals(null, ImportedWorkoutNotes.parseActivity("Entrenamiento libre"))
+        assertEquals(null, ImportedWorkoutNotes.parseActivity(null))
+    }
+
+    @Test
     fun `sin creador conocido la nota dice GPX`() {
         val sinCreador = gpx().replace(""" creator="Huawei Health"""", "")
         val note = ImportedWorkoutNotes.noteFor(Gpx.parse(sinCreador).first())

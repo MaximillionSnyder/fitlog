@@ -3,6 +3,7 @@ import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { FitLogDb } from '@/db/client';
 import { exercise, routine, session, setEntry } from '@/db/schema';
 import { generateUlid } from '@/domain/ulid';
+import { parseImportedNote } from '@/domain/importedWorkout';
 import { summarizeSession, type SessionSummary } from '@/domain/workout';
 
 export type WorkoutErrorCode =
@@ -472,8 +473,14 @@ export async function importSessions(
   return { imported, skipped };
 }
 
-/** Metricas de actividad de una fila de sesion, o `null` si no tiene ninguna. */
+/**
+ * Metricas de actividad de una fila de sesion, o `null` si no tiene ninguna.
+ *
+ * Las sesiones importadas antes de que existieran las columnas propias solo tienen la nota, asi que
+ * se recuperan de ahi.
+ */
 function toActivity(row: {
+  notes?: string | null;
   distanceM?: number | null;
   calories?: number | null;
   avgHeartRate?: number | null;
@@ -498,7 +505,19 @@ function toActivity(row: {
     activity.maxHeartRate === null &&
     activity.steps === null &&
     activity.elevationGainM === null;
-  return empty ? null : activity;
+  if (!empty) return activity;
+
+  const parsed = parseImportedNote(row.notes);
+  if (parsed === null) return null;
+  return {
+    distanceM: parsed.distanceM,
+    calories: parsed.calories,
+    averageHeartRate: parsed.averageHeartRate,
+    maxHeartRate: parsed.maxHeartRate,
+    steps: parsed.steps,
+    elevationGainM: parsed.elevationGainM,
+    source: parsed.source,
+  };
 }
 
 export async function listSessions(db: FitLogDb): Promise<WorkoutSession[]> {

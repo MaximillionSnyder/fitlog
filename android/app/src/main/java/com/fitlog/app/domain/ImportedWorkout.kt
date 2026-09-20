@@ -40,6 +40,74 @@ object ImportedWorkoutNotes {
     fun isImported(notes: String?): Boolean =
         notes != null && SOURCES.any { notes.startsWith(it) }
 
+    /** Metricas recuperadas de la nota de una sesion importada. */
+    data class ParsedActivity(
+        val source: String,
+        val distanceM: Double?,
+        val calories: Double?,
+        val averageHeartRate: Double?,
+        val maxHeartRate: Double?,
+        val steps: Int?,
+        val elevationGainM: Double?,
+    )
+
+    /**
+     * Lee las metricas de la nota de una sesion importada.
+     *
+     * Las sesiones importadas antes de que existieran las columnas propias solo tienen la nota; este
+     * lector recupera sus datos para que se sigan viendo en el detalle y en los graficos.
+     */
+    fun parseActivity(notes: String?): ParsedActivity? {
+        if (notes == null) return null
+        val source = SOURCES.firstOrNull { notes.startsWith(it) } ?: return null
+        val parts = notes.split(" · ").map { it.trim() }.filter { it.isNotEmpty() }
+
+        var distanceM: Double? = null
+        var calories: Double? = null
+        var averageHeartRate: Double? = null
+        var maxHeartRate: Double? = null
+        var steps: Int? = null
+        var elevationGainM: Double? = null
+
+        for (part in parts.drop(1)) {
+            when {
+                part.endsWith(" km") -> {
+                    distanceM = part.removeSuffix(" km").replace(',', '.').toDoubleOrNull()
+                        ?.let { it * 1000 }
+                }
+                part.endsWith(" m") && !part.startsWith("desnivel") -> {
+                    distanceM = part.removeSuffix(" m").replace(',', '.').toDoubleOrNull()
+                }
+                part.endsWith(" kcal") -> {
+                    calories = part.removeSuffix(" kcal").replace(',', '.').toDoubleOrNull()
+                }
+                part.endsWith(" pasos") -> {
+                    steps = part.removeSuffix(" pasos").trim().toIntOrNull()
+                }
+                part.startsWith("desnivel ") -> {
+                    elevationGainM = part.removePrefix("desnivel ").removeSuffix(" m")
+                        .trim().replace(',', '.').toDoubleOrNull()
+                }
+                part.startsWith("FC ") -> {
+                    val value = part.removePrefix("FC ").removePrefix("media ").trim()
+                    val pair = value.split('/')
+                    averageHeartRate = pair.firstOrNull()?.toDoubleOrNull()
+                    maxHeartRate = pair.getOrNull(1)?.toDoubleOrNull()
+                }
+            }
+        }
+
+        return ParsedActivity(
+            source = source,
+            distanceM = distanceM,
+            calories = calories,
+            averageHeartRate = averageHeartRate,
+            maxHeartRate = maxHeartRate,
+            steps = steps,
+            elevationGainM = elevationGainM,
+        )
+    }
+
     /**
      * Parte de la nota sin el origen: los datos que registro la app de origen.
      *

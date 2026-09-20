@@ -1,5 +1,6 @@
 package com.fitlog.app.data
 
+import com.fitlog.app.domain.ImportedWorkoutNotes
 import com.fitlog.app.domain.SessionSetInput
 import com.fitlog.app.domain.SessionSummary
 import com.fitlog.app.domain.Ulid
@@ -320,6 +321,28 @@ class WorkoutRepository(
     private suspend fun routineNameOf(routineId: String?): String? =
         routineId?.let { routinesDao.findRoutineById(it)?.name }
 
+    /** Metricas guardadas en las columnas propias, o `null` si la sesion no tiene ninguna. */
+    private fun SessionEntity.storedActivity(): ImportedActivity? = ImportedActivity(
+        distanceM = distanceM,
+        calories = calories,
+        averageHeartRate = avgHeartRate,
+        maxHeartRate = maxHeartRate,
+        steps = steps,
+        elevationGainM = elevationGainM,
+        source = source,
+    ).takeIf { !it.isEmpty }
+
+    /** Metricas recuperadas de la nota, para las sesiones importadas antes de las columnas. */
+    private fun ImportedWorkoutNotes.ParsedActivity.toActivity(): ImportedActivity = ImportedActivity(
+        distanceM = distanceM,
+        calories = calories,
+        averageHeartRate = averageHeartRate,
+        maxHeartRate = maxHeartRate,
+        steps = steps,
+        elevationGainM = elevationGainM,
+        source = source,
+    )
+
     private fun SessionEntity.toDomain(
         sets: List<WorkoutSetRow>,
         routineName: String? = null,
@@ -340,15 +363,7 @@ class WorkoutRepository(
                 )
             }
         ),
-        activity = ImportedActivity(
-            distanceM = distanceM,
-            calories = calories,
-            averageHeartRate = avgHeartRate,
-            maxHeartRate = maxHeartRate,
-            steps = steps,
-            elevationGainM = elevationGainM,
-            source = source,
-        ).takeIf { !it.isEmpty },
+        activity = storedActivity() ?: ImportedWorkoutNotes.parseActivity(notes)?.toActivity(),
     )
 
     private fun WorkoutSetRow.toDomain(exerciseName: String = this.exerciseName) = WorkoutSet(

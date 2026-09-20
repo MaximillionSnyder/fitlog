@@ -36,6 +36,69 @@ export function isImportedNote(notes: string | null | undefined): boolean {
   return typeof notes === 'string' && SOURCES.some((source) => notes.startsWith(source));
 }
 
+/** Métricas recuperadas de la nota de una sesión importada. */
+export interface ParsedActivity {
+  readonly source: string;
+  readonly distanceM: number | null;
+  readonly calories: number | null;
+  readonly averageHeartRate: number | null;
+  readonly maxHeartRate: number | null;
+  readonly steps: number | null;
+  readonly elevationGainM: number | null;
+}
+
+/**
+ * Lee las métricas de la nota de una sesión importada.
+ *
+ * Las sesiones importadas antes de que existieran las columnas propias solo tienen la nota; este
+ * lector recupera sus datos para que se sigan viendo en el detalle y en los gráficos.
+ */
+export function parseImportedNote(notes: string | null | undefined): ParsedActivity | null {
+  if (typeof notes !== 'string') return null;
+  const source = SOURCES.find((candidate) => notes.startsWith(candidate));
+  if (source === undefined) return null;
+
+  const parts = notes
+    .split(' · ')
+    .map((part) => part.trim())
+    .filter((part) => part !== '');
+
+  let distanceM: number | null = null;
+  let calories: number | null = null;
+  let averageHeartRate: number | null = null;
+  let maxHeartRate: number | null = null;
+  let steps: number | null = null;
+  let elevationGainM: number | null = null;
+
+  for (const part of parts.slice(1)) {
+    const number = (value: string) => {
+      const parsed = Number(value.replace(',', '.'));
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
+    if (part.endsWith(' km')) {
+      const km = number(part.slice(0, -3));
+      if (km !== null) distanceM = km * 1000;
+    } else if (part.endsWith(' m') && !part.startsWith('desnivel')) {
+      distanceM = number(part.slice(0, -2));
+    } else if (part.endsWith(' kcal')) {
+      calories = number(part.slice(0, -5));
+    } else if (part.endsWith(' pasos')) {
+      const value = Number(part.slice(0, -6).trim());
+      if (Number.isFinite(value)) steps = Math.round(value);
+    } else if (part.startsWith('desnivel ')) {
+      elevationGainM = number(part.slice('desnivel '.length).replace(/ m$/, '').trim());
+    } else if (part.startsWith('FC ')) {
+      const value = part.slice(3).replace(/^media /, '').trim();
+      const [average, max] = value.split('/');
+      averageHeartRate = average === undefined ? null : number(average);
+      maxHeartRate = max === undefined ? null : number(max);
+    }
+  }
+
+  return { source, distanceM, calories, averageHeartRate, maxHeartRate, steps, elevationGainM };
+}
+
 /**
  * Parte de la nota sin el origen: los datos que registró la app de origen.
  *
