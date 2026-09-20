@@ -25,11 +25,11 @@ class FormatTest {
 
     @Test
     fun `los numeros se muestran con separador de miles y sin ceros de relleno`() {
-        assertEquals("1 234", Format.integer(1234))
+        assertEquals("1\u2009234", Format.integer(1234))
         assertEquals("60", Format.kg(60.0))
         assertEquals("62.5", Format.kg(62.5))
         assertEquals("—", Format.kg(null))
-        assertEquals("1 250", Format.volumeKg(1250.0))
+        assertEquals("1\u2009250", Format.volumeKg(1250.0))
         assertEquals("12.5", Format.volumeKg(12.5))
     }
 

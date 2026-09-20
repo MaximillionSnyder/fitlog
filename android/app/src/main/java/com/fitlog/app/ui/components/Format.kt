@@ -55,8 +55,8 @@ object Format {
         val seconds = totalSeconds % 60
         return when {
             hours > 0 -> "$hours h ${pad(minutes)} m"
-            minutes > 0 -> "$minutes" + "m"
-            else -> "$seconds" + "s"
+            minutes > 0 -> "$minutes m"
+            else -> "$seconds s"
         }
     }
 
