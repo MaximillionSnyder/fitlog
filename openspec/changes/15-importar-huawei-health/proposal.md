@@ -7,10 +7,11 @@ El usuario pidió además que, si hace falta, se arme una ventana nueva para hac
 ## What Changes
 
 - **Nueva pantalla "Importar entrenamientos"** (Android y web), dentro de "Más": se elige la carpeta o los archivos JSON de la exportación de Huawei Health, la app los lee, muestra una **vista previa** de lo que encontró (cuántos entrenamientos, rango de fechas, tipos y cuántos ya están en FitLog) y recién entonces importa, con un resumen del resultado.
+- **También acepta GPX**: además de la exportación de Huawei Health, la pantalla lee archivos GPX (los que exporta el reloj), de los que saca inicio, fin, duración, distancia, frecuencia cardíaca y desnivel. Se pueden importar los dos formatos juntos.
 - **Lector tolerante de la exportación**: interpreta los registros de actividad de Huawei Health (`recordId`, `startTime`, `endTime`, `sportType`, `totalTime`, `totalCalories`, `totalDistance`, `totalSteps`, `avgHeartRate`/`maxHeartRate`), con las escalas que usa la exportación, sin depender del nombre del archivo ni del idioma de la carpeta. Los archivos que no son de entrenamientos se ignoran sin error.
 - **Los entrenamientos entran como sesiones**: cada registro se convierte en una sesión de FitLog con su fecha, duración real y una nota con el tipo de actividad, la distancia, las calorías y la frecuencia cardíaca cuando existen. Huawei Health no exporta series con peso y reps, así que esas sesiones quedan sin series y se pueden completar después.
 - **Importación idempotente**: se saltea todo entrenamiento cuya fecha de inicio ya exista en FitLog, así repetir la importación (o importar un export más nuevo) no duplica nada.
-- **Non-goals**: no se importan series con peso/reps (la exportación no las trae), no se importan rutas GPS ni mapas, no se tocan sueño, pasos, estrés ni peso corporal (queda para otra etapa), no se agregan dependencias nuevas, no se cambia el esquema de datos ni el formato de respaldo.
+- **Non-goals**: no se importan series con peso/reps (ninguna de las fuentes las trae), no se guardan las rutas GPS ni mapas, no se tocan sueño, pasos, estrés ni peso corporal (queda para otra etapa), no se agregan dependencias nuevas, no se cambia el esquema de datos ni el formato de respaldo.
 
 ## Capabilities
 

@@ -28,9 +28,17 @@
 - [x] 3c.2 Un archivo por minuto con calorías pero sin duración ya no se confunde con una sesión
 - [x] 3c.3 Marca `IMPORTADO` en el historial de las sesiones que vinieron de una importación
 
+## 3d. Archivos GPX
+
+- [x] 3d.1 Modelo compartido `ImportedWorkout` para las dos fuentes, con la nota de origen
+- [x] 3d.2 Lector de GPX propio: inicio, fin, duración, distancia por semiverseno, frecuencia cardíaca y desnivel
+- [x] 3d.3 Tipo de deporte desde `<type>`, `<name>` o el nombre del archivo; origen Huawei si el `creator` lo dice
+- [x] 3d.4 La pantalla acepta carpeta, ZIP o GPX, y se pueden mezclar en una misma importación
+- [x] 3d.5 Tests del lector, de la nota y de los casos sin tiempos o sin frecuencia cardíaca
+
 ## 4. Verificación y cierre
 
 - [x] 4.1 Dejar `android.yml` y `web.yml` en verde (tests y build)
-- [ ] 4.2 Probar en el APK con una exportación real: elegir la carpeta, ver la vista previa, importar y comprobar el historial
+- [ ] 4.2 Probar en el APK con los archivos reales del usuario (ZIP de Huawei Health y GPX)
 - [ ] 4.3 Verificar que una segunda importación del mismo archivo no duplique sesiones
 - [ ] 4.4 Archivar el cambio y actualizar `openspec/specs`

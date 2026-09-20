@@ -89,3 +89,41 @@ La app SHALL informar al terminar cuántas sesiones se agregaron y cuántas se s
 
 - **WHEN** el usuario vuelve al historial después de importar
 - **THEN** las sesiones importadas aparecen con su fecha y su nota de origen
+
+### Requirement: Lectura de archivos GPX
+
+La app SHALL leer archivos GPX además de la exportación de Huawei Health, y SHALL obtener de ellos la fecha de inicio, la fecha de fin, la duración, la distancia recorrida, la frecuencia cardíaca y el desnivel cuando estén presentes.
+
+#### Scenario: GPX con puntos y tiempos
+
+- **WHEN** el usuario elige un GPX con puntos que tienen fecha
+- **THEN** la app reconoce un entrenamiento con su inicio, su fin y su duración
+
+#### Scenario: GPX sin frecuencia cardíaca
+
+- **WHEN** el GPX no trae lecturas de frecuencia cardíaca
+- **THEN** el entrenamiento se importa igual y la nota omite ese dato
+
+#### Scenario: GPX sin tiempos por punto
+
+- **WHEN** el GPX no tiene al menos dos puntos con fecha
+- **THEN** la app lo descarta y sigue con el resto
+
+#### Scenario: Formatos mezclados
+
+- **WHEN** el usuario elige una carpeta con la exportación de Huawei Health y archivos GPX
+- **THEN** la app lee los dos formatos y los suma a la misma vista previa
+
+### Requirement: Origen de cada sesión importada
+
+La nota de una sesión importada SHALL empezar con el origen del dato, y el historial SHALL marcar esas sesiones como importadas.
+
+#### Scenario: Origen Huawei Health
+
+- **WHEN** se importa un entrenamiento de la exportación de Huawei Health
+- **THEN** su nota empieza con "Huawei Health" y la sesión se marca como importada en el historial
+
+#### Scenario: Origen GPX
+
+- **WHEN** se importa un entrenamiento de un GPX cuyo creador no es Huawei
+- **THEN** su nota empieza con "GPX" y la sesión se marca como importada en el historial
