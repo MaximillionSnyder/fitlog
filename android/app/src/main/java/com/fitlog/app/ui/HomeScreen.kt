@@ -38,6 +38,7 @@ import com.fitlog.app.domain.Activity
 import com.fitlog.app.domain.Home
 import com.fitlog.app.ui.components.FitLogCard
 import com.fitlog.app.ui.components.FitLogIcons
+import com.fitlog.app.ui.components.ImportedBadge
 import com.fitlog.app.ui.components.Format
 import com.fitlog.app.ui.components.NavigationRow
 import com.fitlog.app.ui.components.PrimaryAction

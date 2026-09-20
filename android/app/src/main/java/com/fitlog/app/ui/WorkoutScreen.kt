@@ -49,6 +49,7 @@ import com.fitlog.app.domain.WorkoutSummary
 import com.fitlog.app.ui.components.FitLogCard
 import com.fitlog.app.ui.components.FitLogIcons
 import com.fitlog.app.ui.components.Format
+import com.fitlog.app.ui.components.ImportedBadge
 import com.fitlog.app.ui.components.PrimaryAction
 import com.fitlog.app.ui.components.SecondaryAction
 import com.fitlog.app.ui.components.SectionHeader
@@ -577,23 +578,6 @@ private fun SetRow(set: WorkoutSet, onEdit: () -> Unit, onDelete: () -> Unit) {
                 }
             }
         }
-    }
-}
-
-/** Marca de una sesion que vino de una importacion (Huawei Health). */
-@Composable
-private fun ImportedBadge() {
-    val fitLog = MaterialTheme.fitLogColors
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = fitLog.dataSoft,
-        contentColor = fitLog.data,
-    ) {
-        Text(
-            text = "IMPORTADO",
-            style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(horizontal = Spacing.sm, vertical = 2.dp),
-        )
     }
 }
 

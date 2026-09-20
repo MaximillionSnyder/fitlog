@@ -9,11 +9,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import com.fitlog.app.ui.theme.fitLogColors
 import com.fitlog.app.ui.theme.Spacing
 
 /**
@@ -115,6 +118,23 @@ fun LabeledValue(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+/** Marca de una sesion que vino de una importacion (Huawei Health o GPX). */
+@Composable
+fun ImportedBadge() {
+    val fitLog = MaterialTheme.fitLogColors
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = fitLog.dataSoft,
+        contentColor = fitLog.data,
+    ) {
+        Text(
+            text = "IMPORTADO",
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(horizontal = Spacing.sm, vertical = 2.dp),
         )
     }
 }
