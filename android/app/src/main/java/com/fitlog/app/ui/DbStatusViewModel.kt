@@ -21,6 +21,12 @@ sealed interface DbStatusUi {
         val schemaVersion: Int,
         val databaseName: String,
         val muscleGroupCount: Int,
+        /** Resumen de los entrenamientos guardados, para comprobar que se importaron. */
+        val sessions: Int,
+        val importedSessions: Int,
+        val sessionsWithMetrics: Int,
+        val firstSessionAtMs: Long?,
+        val lastSessionAtMs: Long?,
     ) : DbStatusUi
 
     data class Error(val message: String) : DbStatusUi
@@ -51,10 +57,26 @@ class DbStatusViewModel @Inject constructor(
             schemaVersion = queryScalar("PRAGMA user_version").toIntOrNull() ?: -1,
             databaseName = database.openHelper.databaseName ?: DatabaseModule.DATABASE_NAME,
             muscleGroupCount = database.metaDao().muscleGroupCount(),
+            sessions = countOf("SELECT COUNT(*) FROM session WHERE deleted_at IS NULL"),
+            importedSessions = countOf(
+                "SELECT COUNT(*) FROM session WHERE deleted_at IS NULL " +
+                    "AND (notes LIKE 'Huawei Health%' OR notes LIKE 'GPX%')"
+            ),
+            sessionsWithMetrics = countOf(
+                "SELECT COUNT(*) FROM session WHERE deleted_at IS NULL " +
+                    "AND (distance_m IS NOT NULL OR avg_heart_rate IS NOT NULL " +
+                    "OR calories IS NOT NULL OR steps IS NOT NULL)"
+            ),
+            firstSessionAtMs = timestampOf("SELECT MIN(started_at) FROM session WHERE deleted_at IS NULL"),
+            lastSessionAtMs = timestampOf("SELECT MAX(started_at) FROM session WHERE deleted_at IS NULL"),
         )
     } catch (error: Exception) {
         DbStatusUi.Error(error.message ?: "Error desconocido")
     }
+
+    private fun countOf(sql: String): Int = queryScalar(sql).toIntOrNull() ?: 0
+
+    private fun timestampOf(sql: String): Long? = queryScalar(sql).toLongOrNull()
 
     private fun queryScalar(sql: String): String {
         val cursor = database.openHelper.readableDatabase.query(sql)

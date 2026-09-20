@@ -25,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fitlog.app.data.AppSettings
 import com.fitlog.app.ui.components.FitLogCard
 import com.fitlog.app.ui.components.FitLogIcons
+import com.fitlog.app.ui.components.Format
 import com.fitlog.app.ui.components.LabeledValue
 import com.fitlog.app.ui.components.SectionHeader
 import com.fitlog.app.ui.motion.ErrorState
@@ -125,10 +126,26 @@ fun SettingsScreen(
                 LabeledValue("SQLite", current.sqliteVersion)
                 LabeledValue("Archivo", current.databaseName)
                 LabeledValue("Grupos musculares", current.muscleGroupCount.toString())
+                LabeledValue("Entrenamientos", Format.integer(current.sessions))
+                LabeledValue("Importados", Format.integer(current.importedSessions))
+                LabeledValue("Con métricas", Format.integer(current.sessionsWithMetrics))
+                LabeledValue(
+                    "Primero",
+                    current.firstSessionAtMs?.let { formatSettingsDate(it) } ?: "—",
+                )
+                LabeledValue(
+                    "Último",
+                    current.lastSessionAtMs?.let { formatSettingsDate(it) } ?: "—",
+                )
             }
         }
     }
 }
+
+/** Fecha corta del resumen de datos: `14/11/2023`. */
+private fun formatSettingsDate(timestampMs: Long): String =
+    java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+        .format(java.util.Date(timestampMs))
 
 private fun shortLabel(mode: ThemeMode): String = when (mode) {
     ThemeMode.SYSTEM -> "Auto"

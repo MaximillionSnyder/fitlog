@@ -355,11 +355,17 @@ describe('interfaz web', () => {
   });
 
   it('Ajustes ofrece los tres modos de tema y el estado de la base', () => {
-    const html = renderToStaticMarkup(<SettingsView choice="system" onChoice={() => {}} />);
+    const html = renderToStaticMarkup(
+      <SettingsView choice="system" onChoice={() => {}} workout={importedWorkout} />
+    );
 
     for (const label of ['Auto', 'Claro', 'Oscuro']) {
       expect(html).toContain(label);
     }
     expect(html).toContain('Base de datos');
+    // El resumen de datos deja comprobar que los entrenamientos se guardaron.
+    expect(html).toContain('Entrenamientos');
+    expect(html).toContain('Importados');
+    expect(html).toContain('Con métricas');
   });
 });

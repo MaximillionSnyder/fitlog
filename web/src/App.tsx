@@ -133,7 +133,9 @@ export default function App() {
       {view === 'importar' && (
         <ImportView importer={importer} onOpenHistory={() => navigate('entrenar')} />
       )}
-      {view === 'ajustes' && <SettingsView choice={choice} onChoice={setChoice} />}
+      {view === 'ajustes' && (
+        <SettingsView choice={choice} onChoice={setChoice} workout={workout} />
+      )}
     </AppShell>
   );
 }
