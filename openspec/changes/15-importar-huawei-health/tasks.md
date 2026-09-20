@@ -61,6 +61,11 @@
 - [x] 3h.2 Progreso suma la sección "Actividad importada": chips de métrica, tiles de totales, gráfico y detalle
 - [x] 3h.3 Replicar la sección en la web
 
+## 3i. Compatibilidad con lo ya importado
+
+- [x] 3i.1 Leer las métricas desde la nota cuando las columnas están vacías (Android y web)
+- [x] 3i.2 Tests de ida y vuelta nota → métricas y del caso de una sesión importada por una versión anterior
+
 ## 4. Verificación y cierre
 
 - [x] 4.1 Dejar `android.yml` y `web.yml` en verde (tests y build)
