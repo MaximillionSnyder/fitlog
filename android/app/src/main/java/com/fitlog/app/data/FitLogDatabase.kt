@@ -23,7 +23,7 @@ interface MetaDao {
         BodyMetricEntity::class,
         AppSettingEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class FitLogDatabase : RoomDatabase() {

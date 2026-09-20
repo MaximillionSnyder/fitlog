@@ -99,6 +99,66 @@ fun SessionDetailScreen(
                 )
             }
 
+            session.activity?.let { activity ->
+                item {
+                    SectionHeader(title = "Actividad")
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                        activity.distanceM?.let { meters ->
+                            StatTile(
+                                label = "Distancia",
+                                value = if (meters >= 1000) {
+                                    Format.decimal(meters / 1000.0, 2)
+                                } else {
+                                    Format.integer(meters)
+                                },
+                                unit = if (meters >= 1000) "km" else "m",
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        activity.calories?.let { calories ->
+                            StatTile(
+                                label = "Calorías",
+                                value = Format.integer(calories),
+                                unit = "kcal",
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                        activity.averageHeartRate?.let { average ->
+                            StatTile(
+                                label = "FC media",
+                                value = Format.integer(average),
+                                deltaLabel = activity.maxHeartRate?.let { max ->
+                                    "máxima ${Format.integer(max)}"
+                                },
+                                accent = MaterialTheme.fitLogColors.danger,
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        activity.steps?.let { steps ->
+                            StatTile(
+                                label = "Pasos",
+                                value = Format.integer(steps),
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+                activity.elevationGainM?.let { gain ->
+                    item {
+                        StatTile(
+                            label = "Desnivel",
+                            value = Format.integer(gain),
+                            unit = "m",
+                            deltaLabel = activity.source,
+                        )
+                    }
+                }
+            }
+
             if (pace.workingSets > 0) {
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {

@@ -142,6 +142,45 @@ class WorkoutRepositoryTest {
     }
 
     @Test
+    fun `la sesion importada guarda sus metricas de actividad`() = runTest {
+        repository.importSessions(
+            listOf(
+                WorkoutRepository.ImportedSession(
+                    startedAtMs = 1_690_000_000_000,
+                    finishedAtMs = 1_690_000_600_000,
+                    notes = "Huawei Health · Running · 5.24 km",
+                    activity = WorkoutRepository.ImportedActivity(
+                        distanceM = 5_240.0,
+                        calories = 320.0,
+                        averageHeartRate = 147.0,
+                        maxHeartRate = 170.0,
+                        steps = 6_800,
+                        elevationGainM = 12.0,
+                        source = "Huawei Health",
+                    ),
+                )
+            )
+        )
+
+        val activity = repository.sessions().first().activity
+        assertEquals(5_240.0, activity?.distanceM ?: 0.0, 0.001)
+        assertEquals(320.0, activity?.calories ?: 0.0, 0.001)
+        assertEquals(147.0, activity?.averageHeartRate ?: 0.0, 0.001)
+        assertEquals(170.0, activity?.maxHeartRate ?: 0.0, 0.001)
+        assertEquals(6_800, activity?.steps)
+        assertEquals(12.0, activity?.elevationGainM ?: 0.0, 0.001)
+        assertEquals("Huawei Health", activity?.source)
+    }
+
+    @Test
+    fun `una sesion propia no tiene metricas de actividad`() = runTest {
+        val session = repository.startSession()
+        repository.finishSession(session.id)
+
+        assertNull(repository.sessions().first().activity)
+    }
+
+    @Test
     fun `importa solo lo nuevo de una exportacion posterior`() = runTest {
         val viejo = WorkoutRepository.ImportedSession(1_690_000_000_000, 1_690_000_600_000, "viejo")
         repository.importSessions(listOf(viejo))

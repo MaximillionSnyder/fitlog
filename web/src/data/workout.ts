@@ -47,6 +47,8 @@ export interface WorkoutSession {
   readonly routineId: string | null;
   readonly routineName: string | null;
   readonly summary: SessionSummary;
+  /** Metricas de una sesion importada; en una sesion propia queda en `null`. */
+  readonly activity: ImportedActivity | null;
 }
 
 export interface SessionDetail {
@@ -144,6 +146,13 @@ function toSession(
     finishedAt: number | null;
     notes: string | null;
     routineId: string | null;
+    distanceM?: number | null;
+    calories?: number | null;
+    avgHeartRate?: number | null;
+    maxHeartRate?: number | null;
+    steps?: number | null;
+    elevationGainM?: number | null;
+    source?: string | null;
   },
   sets: readonly SetRow[],
   routineName: string | null = null
@@ -155,6 +164,7 @@ function toSession(
     notes: row.notes,
     routineId: row.routineId,
     routineName,
+    activity: toActivity(row),
     summary: summarizeSession(
       sets.map((set) => ({
         exerciseId: set.exerciseId,
@@ -386,11 +396,23 @@ export async function deleteSet(db: FitLogDb, setId: string, now: () => number =
     .where(eq(setEntry.id, setId));
 }
 
-/** Entrenamiento a importar desde otra app: fechas y nota ya resueltas. */
+/** Metricas que trae una sesion importada de otra app (Huawei Health o GPX). */
+export interface ImportedActivity {
+  readonly distanceM: number | null;
+  readonly calories: number | null;
+  readonly averageHeartRate: number | null;
+  readonly maxHeartRate: number | null;
+  readonly steps: number | null;
+  readonly elevationGainM: number | null;
+  readonly source: string | null;
+}
+
+/** Entrenamiento a importar desde otra app: fechas, nota y metricas ya resueltas. */
 export interface ImportedSession {
   readonly startedAtMs: number;
   readonly finishedAtMs: number | null;
   readonly notes: string | null;
+  readonly activity?: ImportedActivity | null;
 }
 
 export interface ImportSessionsResult {
@@ -433,6 +455,13 @@ export async function importSessions(
       startedAt: draft.startedAtMs,
       finishedAt: draft.finishedAtMs,
       notes: draft.notes,
+      distanceM: draft.activity?.distanceM ?? null,
+      calories: draft.activity?.calories ?? null,
+      avgHeartRate: draft.activity?.averageHeartRate ?? null,
+      maxHeartRate: draft.activity?.maxHeartRate ?? null,
+      steps: draft.activity?.steps ?? null,
+      elevationGainM: draft.activity?.elevationGainM ?? null,
+      source: draft.activity?.source ?? null,
       createdAt: timestamp,
       updatedAt: timestamp,
       deletedAt: null,
@@ -441,6 +470,35 @@ export async function importSessions(
   }
 
   return { imported, skipped };
+}
+
+/** Metricas de actividad de una fila de sesion, o `null` si no tiene ninguna. */
+function toActivity(row: {
+  distanceM?: number | null;
+  calories?: number | null;
+  avgHeartRate?: number | null;
+  maxHeartRate?: number | null;
+  steps?: number | null;
+  elevationGainM?: number | null;
+  source?: string | null;
+}): ImportedActivity | null {
+  const activity: ImportedActivity = {
+    distanceM: row.distanceM ?? null,
+    calories: row.calories ?? null,
+    averageHeartRate: row.avgHeartRate ?? null,
+    maxHeartRate: row.maxHeartRate ?? null,
+    steps: row.steps ?? null,
+    elevationGainM: row.elevationGainM ?? null,
+    source: row.source ?? null,
+  };
+  const empty =
+    activity.distanceM === null &&
+    activity.calories === null &&
+    activity.averageHeartRate === null &&
+    activity.maxHeartRate === null &&
+    activity.steps === null &&
+    activity.elevationGainM === null;
+  return empty ? null : activity;
 }
 
 export async function listSessions(db: FitLogDb): Promise<WorkoutSession[]> {

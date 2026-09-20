@@ -105,6 +105,15 @@ export function useImport(db: FitLogDb | undefined): ImportState {
           startedAtMs: workout.startedAtMs,
           finishedAtMs: workout.finishedAtMs,
           notes: importedWorkoutNote(workout),
+          activity: {
+            distanceM: workout.distanceM,
+            calories: workout.calories,
+            averageHeartRate: workout.averageHeartRate,
+            maxHeartRate: workout.maxHeartRate,
+            steps: workout.steps,
+            elevationGainM: workout.elevationGainM,
+            source: workout.source,
+          },
         }))
       );
       setResult(imported);

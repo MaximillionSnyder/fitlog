@@ -653,6 +653,14 @@ private fun HistoryCard(session: WorkoutSession, onOpenDetail: () -> Unit) {
                     text = if (imported) {
                         listOfNotNull(
                             WorkoutSummary.formatDuration(session.startedAt, session.finishedAt),
+                            session.activity?.distanceM?.takeIf { it > 0 }?.let { meters ->
+                                if (meters >= 1000) {
+                                    "${Format.decimal(meters / 1000.0, 2)} km"
+                                } else {
+                                    "${Format.integer(meters)} m"
+                                }
+                            },
+                            session.activity?.averageHeartRate?.let { "FC ${Format.integer(it)}" },
                             ImportedWorkoutNotes.dataSummary(session.notes),
                         ).joinToString(" · ")
                     } else {

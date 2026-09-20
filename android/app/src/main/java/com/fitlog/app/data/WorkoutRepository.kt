@@ -42,7 +42,24 @@ data class WorkoutSession(
     val routineId: String?,
     val routineName: String?,
     val summary: SessionSummary,
+    /** Metricas de una sesion importada; en una sesion propia quedan en `null`. */
+    val activity: ImportedActivity? = null,
 )
+
+/** Metricas que trae una sesion importada de otra app (Huawei Health o GPX). */
+data class ImportedActivity(
+    val distanceM: Double?,
+    val calories: Double?,
+    val averageHeartRate: Double?,
+    val maxHeartRate: Double?,
+    val steps: Int?,
+    val elevationGainM: Double?,
+    val source: String?,
+) {
+    val isEmpty: Boolean
+        get() = distanceM == null && calories == null && averageHeartRate == null &&
+            maxHeartRate == null && steps == null && elevationGainM == null
+}
 
 data class SessionDetail(
     val session: WorkoutSession,
@@ -81,11 +98,12 @@ class WorkoutRepository(
         )
     }
 
-    /** Entrenamiento a importar desde otra app: fechas y nota ya resueltas. */
+    /** Entrenamiento a importar desde otra app: fechas, nota y metricas ya resueltas. */
     data class ImportedSession(
         val startedAtMs: Long,
         val finishedAtMs: Long?,
         val notes: String?,
+        val activity: ImportedActivity? = null,
     )
 
     data class ImportResult(
@@ -119,6 +137,13 @@ class WorkoutRepository(
                     startedAt = session.startedAtMs,
                     finishedAt = session.finishedAtMs,
                     notes = session.notes,
+                    distanceM = session.activity?.distanceM,
+                    calories = session.activity?.calories,
+                    avgHeartRate = session.activity?.averageHeartRate,
+                    maxHeartRate = session.activity?.maxHeartRate,
+                    steps = session.activity?.steps,
+                    elevationGainM = session.activity?.elevationGainM,
+                    source = session.activity?.source,
                     createdAt = timestamp,
                     updatedAt = timestamp,
                     deletedAt = null,
@@ -315,6 +340,15 @@ class WorkoutRepository(
                 )
             }
         ),
+        activity = ImportedActivity(
+            distanceM = distanceM,
+            calories = calories,
+            averageHeartRate = avgHeartRate,
+            maxHeartRate = maxHeartRate,
+            steps = steps,
+            elevationGainM = elevationGainM,
+            source = source,
+        ).takeIf { !it.isEmpty },
     )
 
     private fun WorkoutSetRow.toDomain(exerciseName: String = this.exerciseName) = WorkoutSet(

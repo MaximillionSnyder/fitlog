@@ -4,7 +4,7 @@ import { createFitLogDb } from '@/db/client';
 import { applyMigrations } from '@/db/migrate';
 import { migrations } from '@/db/migrations';
 import { seedCatalog } from '@/data/catalogSeed';
-import { importSessions, listSessions } from '@/data/workout';
+import { finishSession, importSessions, listSessions, startSession } from '@/data/workout';
 import { huaweiNote, parseHuaweiExport } from '@/domain/huaweiHealth';
 import catalogSeed from '@shared/seed/catalog.json';
 
@@ -71,6 +71,15 @@ async function importExport(db: Db): Promise<{ imported: number; skipped: number
       startedAtMs: workout.startedAtMs,
       finishedAtMs: workout.finishedAtMs,
       notes: huaweiNote(workout),
+      activity: {
+        distanceM: workout.distanceM,
+        calories: workout.calories,
+        averageHeartRate: workout.averageHeartRate,
+        maxHeartRate: workout.maxHeartRate,
+        steps: workout.steps,
+        elevationGainM: workout.elevationGainM,
+        source: workout.source,
+      },
     }))
   );
 }
@@ -93,6 +102,30 @@ describe('importación completa de una exportación', () => {
     // Una sesión importada no tiene series: Huawei no exporta peso ni reps.
     expect(sessions[2]!.summary.workingSets).toBe(0);
     expect(sessions[2]!.summary.totalVolumeKg).toBe(0);
+  });
+
+  it('guarda las métricas de actividad de la sesión importada', async () => {
+    const db = createDatabase();
+    await importExport(db);
+
+    const running = (await listSessions(db)).find((session) =>
+      session.notes?.includes('Running')
+    );
+    expect(running?.activity?.distanceM).toBe(5_240);
+    expect(running?.activity?.calories).toBe(320);
+    expect(running?.activity?.averageHeartRate).toBeCloseTo(146.67, 1);
+    expect(running?.activity?.maxHeartRate).toBe(170);
+    expect(running?.activity?.steps).toBe(4_200);
+    expect(running?.activity?.source).toBe('Huawei Health');
+  });
+
+  it('una sesión propia no tiene métricas de actividad', async () => {
+    const db = createDatabase();
+    const session = await startSession(db);
+    await finishSession(db, session.id);
+
+    const [created] = await listSessions(db);
+    expect(created?.activity).toBeNull();
   });
 
   it('reimportar la misma exportación no agrega nada', async () => {

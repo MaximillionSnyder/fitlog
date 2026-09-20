@@ -40,8 +40,8 @@ describe('applyMigrations con el esquema real', () => {
     const { runner, db } = createRunner();
     const version = applyMigrations(runner, migrations);
 
-    expect(version).toBe(1);
-    expect(migrationCount(db)).toBe(1);
+    expect(version).toBe(2);
+    expect(migrationCount(db)).toBe(2);
     expect(tableNames(db)).toEqual([
       'app_setting',
       'body_metric',
@@ -60,8 +60,8 @@ describe('applyMigrations con el esquema real', () => {
     applyMigrations(runner, migrations);
     const version = applyMigrations(runner, migrations);
 
-    expect(version).toBe(1);
-    expect(migrationCount(db)).toBe(1);
+    expect(version).toBe(2);
+    expect(migrationCount(db)).toBe(2);
   });
 });
 

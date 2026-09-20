@@ -101,6 +101,54 @@ export function SessionDetailView({ workout }: { workout: WorkoutState }) {
         </div>
       ) : null}
 
+      {session.activity ? (
+        <>
+          <SectionHeader title="Actividad" />
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {session.activity.distanceM === null ? null : (
+              <StatTile
+                label="Distancia"
+                value={
+                  session.activity.distanceM >= 1000
+                    ? formatDecimal(session.activity.distanceM / 1000, 2)
+                    : formatInteger(session.activity.distanceM)
+                }
+                unit={session.activity.distanceM >= 1000 ? 'km' : 'm'}
+              />
+            )}
+            {session.activity.calories === null ? null : (
+              <StatTile
+                label="Calorías"
+                value={formatInteger(session.activity.calories)}
+                unit="kcal"
+              />
+            )}
+            {session.activity.averageHeartRate === null ? null : (
+              <StatTile
+                label="FC media"
+                value={formatInteger(session.activity.averageHeartRate)}
+                hint={
+                  session.activity.maxHeartRate === null
+                    ? undefined
+                    : `máxima ${formatInteger(session.activity.maxHeartRate)}`
+                }
+              />
+            )}
+            {session.activity.steps === null ? null : (
+              <StatTile label="Pasos" value={formatInteger(session.activity.steps)} />
+            )}
+            {session.activity.elevationGainM === null ? null : (
+              <StatTile
+                label="Desnivel"
+                value={formatInteger(session.activity.elevationGainM)}
+                unit="m"
+                hint={session.activity.source ?? undefined}
+              />
+            )}
+          </div>
+        </>
+      ) : null}
+
       {session.notes ? (
         <Card className="!p-4">
           <LabeledValue label="Notas" value={session.notes} />

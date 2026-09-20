@@ -53,10 +53,10 @@ object ImportedWorkoutNotes {
     }
 
     /**
-     * Nota de la sesion importada: origen y los datos que la fuente si registro.
+     * Nota de la sesion importada: origen y un resumen legible de lo que trajo.
      *
-     * Es lo unico que queda del entrenamiento ademas de las fechas, porque ninguna de las fuentes
-     * exporta series con peso y reps.
+     * Los numeros tambien quedan en columnas propias (distancia, calorias, frecuencia cardiaca), asi
+     * que la nota es el resumen humano y el detalle se muestra en la ficha de la sesion.
      */
     fun noteFor(workout: ImportedWorkout): String {
         val parts = mutableListOf(workout.source, workout.sportName)
