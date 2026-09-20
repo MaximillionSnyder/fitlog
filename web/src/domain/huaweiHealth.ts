@@ -107,22 +107,37 @@ export function parseHuaweiFile(content: string): HuaweiWorkout[] {
   const trimmed = content.trim();
   if (trimmed === '') return [];
 
-  const workouts: HuaweiWorkout[] = [];
+  // Camino rápido: el archivo entero es JSON válido (una lista o un objeto).
+  const direct: HuaweiWorkout[] = [];
   try {
-    collect(JSON.parse(trimmed), workouts);
+    collect(JSON.parse(trimmed), direct);
   } catch {
     // Un archivo con varios objetos seguidos no es JSON válido entero: se recorre abajo.
   }
-  if (workouts.length > 0) return workouts;
 
-  for (const candidate of balancedObjects(repairAttributeQuotes(trimmed))) {
+  const candidates = balancedObjects(trimmed);
+  if (direct.length > 0 && candidates.length <= 1) return direct;
+
+  // Varios objetos seguidos (o JSON roto por una comilla suelta): se leen uno por uno.
+  const scanned: HuaweiWorkout[] = [];
+  for (const candidate of candidates) {
+    let parsed: unknown;
     try {
-      collect(JSON.parse(candidate), workouts);
+      parsed = JSON.parse(candidate);
     } catch {
-      // Un fragmento que no es JSON no aporta nada.
+      try {
+        parsed = JSON.parse(repairAttributeQuotes(candidate));
+      } catch {
+        continue;
+      }
     }
+    collect(parsed, scanned);
   }
-  return workouts;
+
+  const result = scanned.length > 0 ? scanned : direct;
+  const unique = new Map<string, HuaweiWorkout>();
+  for (const workout of result) unique.set(workoutKey(workout), workout);
+  return [...unique.values()];
 }
 
 /**

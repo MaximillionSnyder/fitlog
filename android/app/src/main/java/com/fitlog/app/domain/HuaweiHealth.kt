@@ -105,20 +105,28 @@ object HuaweiHealth {
         val trimmed = content.trim()
         if (trimmed.isEmpty()) return emptyList()
 
-        val workouts = mutableListOf<Workout>()
+        // Camino rapido: el archivo entero es JSON valido (una lista o un objeto).
         val root = runCatching { JSONTokener(trimmed).nextValue() }.getOrNull()
-
+        val direct = mutableListOf<Workout>()
         when (root) {
-            is JSONArray -> collect(root, workouts)
-            is JSONObject -> collect(root, workouts)
+            is JSONArray -> collect(root, direct)
+            is JSONObject -> collect(root, direct)
         }
-        if (workouts.isNotEmpty()) return workouts
 
-        for (candidate in balancedObjects(repairAttributeQuotes(trimmed))) {
-            val parsed = runCatching { JSONObject(candidate) }.getOrNull() ?: continue
-            collect(parsed, workouts)
+        val candidates = balancedObjects(trimmed)
+        if (direct.isNotEmpty() && candidates.size <= 1) return direct
+
+        // Varios objetos seguidos (o JSON roto por una comilla suelta): se leen uno por uno.
+        val scanned = mutableListOf<Workout>()
+        for (candidate in candidates) {
+            val parsed = runCatching { JSONObject(candidate) }.getOrNull()
+                ?: runCatching { JSONObject(repairAttributeQuotes(candidate)) }.getOrNull()
+                ?: continue
+            collect(parsed, scanned)
         }
-        return workouts
+
+        val result = if (scanned.isNotEmpty()) scanned else direct
+        return result.distinctBy { it.key }
     }
 
     /**
