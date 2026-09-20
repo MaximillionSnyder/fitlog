@@ -71,6 +71,11 @@
 - [x] 3j.1 El panel muestra la tendencia de actividad (distancia o duración) cuando no hay volumen que graficar
 - [x] 3j.2 Humo de UI en la web del panel con historia importada
 
+## 3k. Coherencia visual
+
+- [x] 3k.1 La marca IMPORTADO vive en los componentes compartidos (la usan el panel y el historial)
+- [x] 3k.2 El panel muestra los entrenamientos importados con su deporte, distancia y pulso
+
 ## 4. Verificación y cierre
 
 - [x] 4.1 Dejar `android.yml` y `web.yml` en verde (tests y build)
