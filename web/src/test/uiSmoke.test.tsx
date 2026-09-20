@@ -281,7 +281,9 @@ describe('interfaz web', () => {
   });
 
   it('la importación muestra la vista previa antes de escribir', () => {
-    const html = renderToStaticMarkup(<ImportView importer={importer} />);
+    const html = renderToStaticMarkup(
+      <ImportView importer={importer} onOpenHistory={() => {}} />
+    );
 
     expect(html).toContain('Qué se encontró');
     expect(html).toContain('Entrenamientos');

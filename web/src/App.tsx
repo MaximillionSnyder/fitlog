@@ -130,7 +130,9 @@ export default function App() {
       {view === 'tips' && <TipsView tips={tips} catalog={catalog} />}
       {view === 'medidas' && <BodyMetricsView body={body} />}
       {view === 'respaldo' && <BackupView backup={backup} />}
-      {view === 'importar' && <ImportView importer={importer} />}
+      {view === 'importar' && (
+        <ImportView importer={importer} onOpenHistory={() => navigate('entrenar')} />
+      )}
       {view === 'ajustes' && <SettingsView choice={choice} onChoice={setChoice} />}
     </AppShell>
   );

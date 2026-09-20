@@ -41,6 +41,7 @@ import java.util.Locale
  */
 @Composable
 fun ImportScreen(
+    onOpenHistory: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ImportViewModel = hiltViewModel(),
 ) {
@@ -156,6 +157,12 @@ fun ImportScreen(
                                 label = "Archivos leídos",
                                 value = Format.integer(state.filesRead),
                             )
+                            if (state.filesSkipped > 0) {
+                                LabeledValue(
+                                    label = "Archivos descartados",
+                                    value = Format.integer(state.filesSkipped),
+                                )
+                            }
                         }
                     }
 
@@ -225,6 +232,13 @@ fun ImportScreen(
                             "peso ni reps. Podés abrirlas desde Entrenar y completarlas.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                item {
+                    PrimaryAction(
+                        label = "Ver el historial",
+                        icon = FitLogIcons.Calendar,
+                        onClick = onOpenHistory,
                     )
                 }
                 item {

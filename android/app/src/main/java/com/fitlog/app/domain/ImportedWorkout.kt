@@ -41,6 +41,18 @@ object ImportedWorkoutNotes {
         notes != null && SOURCES.any { notes.startsWith(it) }
 
     /**
+     * Parte de la nota sin el origen: los datos que registro la app de origen.
+     *
+     * La usa el historial para mostrar lo que si tiene una sesion importada (deporte, distancia,
+     * frecuencia cardiaca) en lugar de "0 series · 0 kg".
+     */
+    fun dataSummary(notes: String?): String? {
+        if (notes == null) return null
+        val source = SOURCES.firstOrNull { notes.startsWith(it) } ?: return null
+        return notes.removePrefix(source).removePrefix(" · ").trim().ifEmpty { null }
+    }
+
+    /**
      * Nota de la sesion importada: origen y los datos que la fuente si registro.
      *
      * Es lo unico que queda del entrenamiento ademas de las fechas, porque ninguna de las fuentes

@@ -25,6 +25,7 @@ data class ImportUiState(
     val importing: Boolean = false,
     val error: String? = null,
     val filesRead: Int = 0,
+    val filesSkipped: Int = 0,
     val workouts: List<ImportedWorkout> = emptyList(),
     val alreadyImported: Int = 0,
     val result: WorkoutRepository.ImportResult? = null,
@@ -81,6 +82,7 @@ class ImportViewModel @Inject constructor(
                         reading = false,
                         step = ImportUiState.Step.PREVIEW,
                         filesRead = parsed.filesRead,
+                        filesSkipped = parsed.filesSkipped,
                         workouts = parsed.workouts,
                         alreadyImported = parsed.workouts.count { workout ->
                             existing.contains(workout.startedAtMs)

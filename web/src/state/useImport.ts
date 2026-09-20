@@ -18,6 +18,7 @@ export interface ImportState {
   readonly importing: boolean;
   readonly error: string | null;
   readonly filesRead: number;
+  readonly filesSkipped: number;
   readonly workouts: readonly ImportedWorkout[];
   readonly alreadyImported: number;
   readonly result: ImportSessionsResult | null;
@@ -43,6 +44,7 @@ export function useImport(db: FitLogDb | undefined): ImportState {
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filesRead, setFilesRead] = useState(0);
+  const [filesSkipped, setFilesSkipped] = useState(0);
   const [workouts, setWorkouts] = useState<readonly ImportedWorkout[]>([]);
   const [alreadyImported, setAlreadyImported] = useState(0);
   const [result, setResult] = useState<ImportSessionsResult | null>(null);
@@ -73,6 +75,7 @@ export function useImport(db: FitLogDb | undefined): ImportState {
           for (const session of await listSessions(db)) existing.add(String(session.startedAt));
         }
         setFilesRead(parsed.filesRead + gpx.length);
+        setFilesSkipped(parsed.filesSkipped);
         setWorkouts(workouts);
         setAlreadyImported(
           workouts.filter((workout) => existing.has(String(workout.startedAtMs))).length
@@ -119,6 +122,7 @@ export function useImport(db: FitLogDb | undefined): ImportState {
     setImporting(false);
     setError(null);
     setFilesRead(0);
+    setFilesSkipped(0);
     setWorkouts([]);
     setAlreadyImported(0);
     setResult(null);
@@ -149,6 +153,7 @@ export function useImport(db: FitLogDb | undefined): ImportState {
     importing,
     error,
     filesRead,
+    filesSkipped,
     workouts,
     alreadyImported,
     result,

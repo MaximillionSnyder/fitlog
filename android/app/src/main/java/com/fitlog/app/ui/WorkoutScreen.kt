@@ -647,14 +647,23 @@ private fun HistoryCard(session: WorkoutSession, onOpenDetail: () -> Unit) {
                         }
                     }
                 }
+                val imported = ImportedWorkoutNotes.isImported(session.notes)
                 Text(
-                    text = (WorkoutSummary.formatDuration(session.startedAt, session.finishedAt) ?: "—") +
-                        " · ${Format.integer(session.summary.workingSets)} series · " +
-                        "${Format.volumeKg(session.summary.totalVolumeKg)} kg",
+                    // Una sesion importada no tiene series: se muestran los datos que si trae.
+                    text = if (imported) {
+                        listOfNotNull(
+                            WorkoutSummary.formatDuration(session.startedAt, session.finishedAt),
+                            ImportedWorkoutNotes.dataSummary(session.notes),
+                        ).joinToString(" · ")
+                    } else {
+                        (WorkoutSummary.formatDuration(session.startedAt, session.finishedAt) ?: "—") +
+                            " · ${Format.integer(session.summary.workingSets)} series · " +
+                            "${Format.volumeKg(session.summary.totalVolumeKg)} kg"
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                if (ImportedWorkoutNotes.isImported(session.notes)) {
+                if (imported) {
                     ImportedBadge()
                 }
             }

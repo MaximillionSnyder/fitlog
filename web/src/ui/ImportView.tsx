@@ -1,7 +1,7 @@
 import { useRef, type ChangeEvent } from 'react';
 
 import type { ImportState } from '@/state/useImport';
-import { IconArrowDown, IconCheck, IconDumbbell, IconPlus } from '@/ui/icons';
+import { IconArrowDown, IconCalendar, IconCheck, IconDumbbell, IconPlus } from '@/ui/icons';
 import {
   Button,
   Card,
@@ -18,7 +18,13 @@ import {
  * Se elige la carpeta de la exportación, la app la lee y muestra qué encontró antes de escribir
  * nada: cantidad, rango de fechas, tipos y cuántos ya están en FitLog.
  */
-export function ImportView({ importer }: { importer: ImportState }) {
+export function ImportView({
+  importer,
+  onOpenHistory,
+}: {
+  importer: ImportState;
+  onOpenHistory: () => void;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function onFolderSelected(event: ChangeEvent<HTMLInputElement>) {
@@ -103,6 +109,12 @@ export function ImportView({ importer }: { importer: ImportState }) {
                     value={importer.lastAtMs === null ? '—' : formatImportDate(importer.lastAtMs)}
                   />
                   <LabeledValue label="Archivos leídos" value={String(importer.filesRead)} />
+                  {importer.filesSkipped > 0 ? (
+                    <LabeledValue
+                      label="Archivos descartados"
+                      value={String(importer.filesSkipped)}
+                    />
+                  ) : null}
                 </div>
               </Card>
 
@@ -154,6 +166,13 @@ export function ImportView({ importer }: { importer: ImportState }) {
             Las sesiones importadas no tienen series: Huawei Health no exporta peso ni reps. Podés
             abrirlas desde Entrenar y completarlas.
           </p>
+          <Button
+            icon={<IconCalendar className="size-4" />}
+            onClick={onOpenHistory}
+            className="self-start"
+          >
+            Ver el historial
+          </Button>
           <Button variant="secondary" onClick={importer.reset} className="self-start">
             Importar otra exportación
           </Button>

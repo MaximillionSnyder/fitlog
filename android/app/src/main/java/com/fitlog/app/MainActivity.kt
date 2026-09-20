@@ -267,7 +267,11 @@ private fun FitLogApp(
 
             composable(Routes.IMPORT) {
                 NavEntryScopes(this) {
-                    ImportScreen()
+                    ImportScreen(
+                        onOpenHistory = {
+                            navController.navigate(Routes.WORKOUT) { launchSingleTop = true }
+                        },
+                    )
                 }
             }
 

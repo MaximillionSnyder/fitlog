@@ -37,6 +37,20 @@ export function isImportedNote(notes: string | null | undefined): boolean {
 }
 
 /**
+ * Parte de la nota sin el origen: los datos que registró la app de origen.
+ *
+ * La usa el historial para mostrar lo que sí tiene una sesión importada (deporte, distancia,
+ * frecuencia cardíaca) en lugar de "0 series · 0 kg".
+ */
+export function importedDataSummary(notes: string | null | undefined): string | null {
+  if (typeof notes !== 'string') return null;
+  const source = SOURCES.find((candidate) => notes.startsWith(candidate));
+  if (source === undefined) return null;
+  const rest = notes.slice(source.length).replace(/^ · /, '').trim();
+  return rest === '' ? null : rest;
+}
+
+/**
  * Nota de la sesión importada: origen y los datos que la fuente sí registró.
  *
  * Es lo único que queda del entrenamiento además de las fechas, porque ninguna de las fuentes

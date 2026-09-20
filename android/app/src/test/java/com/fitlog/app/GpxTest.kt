@@ -75,6 +75,17 @@ class GpxTest {
     }
 
     @Test
+    fun `el resumen sin origen sirve para el historial`() {
+        val note = ImportedWorkoutNotes.noteFor(Gpx.parse(gpx()).first())
+        val summary = ImportedWorkoutNotes.dataSummary(note)
+
+        assertTrue(summary?.startsWith("Running") == true)
+        assertTrue(summary?.contains("FC 145/170") == true)
+        // Una sesion sin nota de importacion no tiene resumen.
+        assertEquals(null, ImportedWorkoutNotes.dataSummary("Entrenamiento libre"))
+    }
+
+    @Test
     fun `sin creador conocido la nota dice GPX`() {
         val sinCreador = gpx().replace(""" creator="Huawei Health"""", "")
         val note = ImportedWorkoutNotes.noteFor(Gpx.parse(sinCreador).first())
