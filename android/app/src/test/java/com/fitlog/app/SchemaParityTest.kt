@@ -116,8 +116,24 @@ class SchemaParityTest {
             }
             result[tableName] = columns
         }
+
+        // El esquema canonico es la concatenacion de las migraciones: despues de los CREATE TABLE
+        // vienen los ALTER TABLE que agregan columnas.
+        for (match in ALTER_REGEX.findAll(sql)) {
+            val tableName = match.groupValues[1]
+            val columnName = match.groupValues[2]
+            val type = match.groupValues[3].uppercase()
+            val columns = result[tableName]?.toMutableMap() ?: continue
+            columns[columnName] = Column(type = type, notNull = false, primaryKey = false)
+            result[tableName] = columns
+        }
         return result
     }
+
+    private val ALTER_REGEX = Regex(
+        "ALTER TABLE (\\w+) ADD COLUMN (\\w+) (\\w+)",
+        RegexOption.IGNORE_CASE,
+    )
 
     private fun splitTopLevel(body: String): List<String> {
         val parts = mutableListOf<String>()
