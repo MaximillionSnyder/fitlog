@@ -59,11 +59,11 @@
 
 - [x] 3h.1 Dominio `Activity` con serie por rango, métrica elegida y totales, con tests
 - [x] 3h.2 Progreso suma la sección "Actividad importada": chips de métrica, tiles de totales, gráfico y detalle
-- [ ] 3h.3 Replicar la sección en la web
+- [x] 3h.3 Replicar la sección en la web
 
 ## 4. Verificación y cierre
 
 - [x] 4.1 Dejar `android.yml` y `web.yml` en verde (tests y build)
-- [ ] 4.2 Probar en el APK con los archivos reales del usuario (ZIP de Huawei Health y GPX)
+- [x] 4.2 Probar con los archivos reales del usuario: importados y visibles en el historial, el detalle y los gráficos
 - [ ] 4.3 Verificar que una segunda importación del mismo archivo no duplique sesiones
 - [ ] 4.4 Archivar el cambio y actualizar `openspec/specs`
