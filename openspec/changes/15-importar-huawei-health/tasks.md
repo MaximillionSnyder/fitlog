@@ -66,6 +66,11 @@
 - [x] 3i.1 Leer las métricas desde la nota cuando las columnas están vacías (Android y web)
 - [x] 3i.2 Tests de ida y vuelta nota → métricas y del caso de una sesión importada por una versión anterior
 
+## 3j. Panel con historia importada
+
+- [x] 3j.1 El panel muestra la tendencia de actividad (distancia o duración) cuando no hay volumen que graficar
+- [x] 3j.2 Humo de UI en la web del panel con historia importada
+
 ## 4. Verificación y cierre
 
 - [x] 4.1 Dejar `android.yml` y `web.yml` en verde (tests y build)
