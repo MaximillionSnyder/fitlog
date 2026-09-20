@@ -76,6 +76,10 @@
 - [x] 3k.1 La marca IMPORTADO vive en los componentes compartidos (la usan el panel y el historial)
 - [x] 3k.2 El panel muestra los entrenamientos importados con su deporte, distancia y pulso
 
+## 3l. Comprobar lo importado
+
+- [x] 3l.1 Ajustes muestra cuántos entrenamientos hay, cuántos son importados, cuántos tienen métricas y el rango de fechas (Android y web)
+
 ## 4. Verificación y cierre
 
 - [x] 4.1 Dejar `android.yml` y `web.yml` en verde (tests y build)
