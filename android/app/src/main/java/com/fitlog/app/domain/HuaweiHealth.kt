@@ -93,7 +93,14 @@ object HuaweiHealth {
         )
     }
 
-    /** Lee un archivo: lista, objeto con la lista adentro, o un JSON por linea. */
+    /**
+     * Lee un archivo de la exportacion.
+     *
+     * Primero intenta el camino normal (lista u objeto). Si no encuentra entrenamientos, recorre el
+     * texto buscando objetos balanceados: asi entran los archivos con varios objetos concatenados
+     * (la exportacion los parte con marcadores de resincronizacion) y los que traen una comilla
+     * suelta dentro del blob de sensores, que rompe el JSON.
+     */
     fun parseFile(content: String): List<Workout> {
         val trimmed = content.trim()
         if (trimmed.isEmpty()) return emptyList()
@@ -105,19 +112,100 @@ object HuaweiHealth {
             is JSONArray -> collect(root, workouts)
             is JSONObject -> collect(root, workouts)
         }
+        if (workouts.isNotEmpty()) return workouts
 
-        // La exportacion tambien tiene archivos con un objeto por linea: se suman a lo anterior y
-        // la deduplicacion por registro se encarga de que no queden repetidos.
-        if (trimmed.lineSequence().count { it.trimStart().startsWith("{") } > 1) {
-            trimmed.lineSequence()
-                .filter { it.trimStart().startsWith("{") }
-                .forEach { line ->
-                    runCatching { JSONObject(line) }.getOrNull()?.let { collect(it, workouts) }
-                }
+        for (candidate in balancedObjects(repairAttributeQuotes(trimmed))) {
+            val parsed = runCatching { JSONObject(candidate) }.getOrNull() ?: continue
+            collect(parsed, workouts)
         }
-
         return workouts
     }
+
+    /**
+     * Objetos JSON balanceados del texto, respetando los literales de texto.
+     *
+     * Cubre archivos con varios objetos seguidos, con o sin saltos de linea, y listas: en todos los
+     * casos los objetos se recortan por profundidad de llaves.
+     */
+    private fun balancedObjects(text: String): List<String> {
+        val objects = mutableListOf<String>()
+        var depth = 0
+        var start = -1
+        var inString = false
+        var escaped = false
+
+        for (index in text.indices) {
+            val char = text[index]
+            if (inString) {
+                when {
+                    escaped -> escaped = false
+                    char == '\\' -> escaped = true
+                    char == '"' -> inString = false
+                }
+                continue
+            }
+            when (char) {
+                '"' -> inString = true
+                '{' -> {
+                    if (depth == 0) start = index
+                    depth += 1
+                }
+                '}' -> {
+                    depth -= 1
+                    if (depth <= 0 && start >= 0) {
+                        objects += text.substring(start, index + 1)
+                        start = -1
+                        depth = 0
+                    }
+                }
+            }
+        }
+        return objects
+    }
+
+    /**
+     * Quita las comillas sueltas dentro del campo `attribute`.
+     *
+     * La exportacion guarda ahi la telemetria como texto y a veces aparece una comilla sin escapar,
+     * que invalida el archivo entero. El valor real termina en la comilla seguida de coma o cierre.
+     */
+    fun repairAttributeQuotes(text: String): String {
+        if (!text.contains(ATTRIBUTE_FIELD)) return text
+
+        val builder = StringBuilder()
+        var index = 0
+        while (index < text.length) {
+            val match = ATTRIBUTE_FIELD.find(text, index) ?: break
+            val valueStart = match.range.last + 1
+            builder.append(text, index, valueStart)
+
+            var cursor = valueStart
+            var end = -1
+            while (cursor < text.length) {
+                if (text[cursor] == '"') {
+                    var probe = cursor + 1
+                    while (probe < text.length && text[probe].isWhitespace()) probe += 1
+                    val closes = probe >= text.length ||
+                        text[probe] == ',' || text[probe] == '}' || text[probe] == ']'
+                    if (closes) {
+                        end = cursor
+                        break
+                    }
+                }
+                cursor += 1
+            }
+            if (end < 0) {
+                index = valueStart
+                continue
+            }
+            builder.append(text.substring(valueStart, end).replace("\"", ""))
+            index = end
+        }
+        builder.append(text, index, text.length)
+        return builder.toString()
+    }
+
+    private val ATTRIBUTE_FIELD = Regex("\"attribute\"\\s*:\\s*\"", RegexOption.IGNORE_CASE)
 
     private fun collect(node: Any?, out: MutableList<Workout>) {
         when (node) {

@@ -190,6 +190,30 @@ class HuaweiHealthTest {
     }
 
     @Test
+    fun `lee objetos concatenados sin saltos de linea`() {
+        // La exportacion parte los archivos con marcadores de resincronizacion y puede quedar todo
+        // pegado: el escaneo por llaves balanceadas los recupera.
+        val content = activity(recordId = "a").replace("\n", "") +
+            activity(recordId = "b", startTime = start + 86_400_000).replace("\n", "")
+
+        val result = HuaweiHealth.parse(listOf(content))
+
+        assertEquals(2, result.workouts.size)
+    }
+
+    @Test
+    fun `lee un archivo con una comilla suelta en el blob de sensores`() {
+        // La telemetria a veces trae una comilla sin escapar que invalida el JSON entero.
+        val content = """{"recordId": "q", "startTime": $start, "totalTime": 600000, """ +
+            """"sportType": 4, "attribute": "tp=lbs;k=1;lat=1.0;"x";lon=2.0;"}"""
+
+        val result = HuaweiHealth.parse(listOf(content))
+
+        assertEquals(1, result.workouts.size)
+        assertEquals("q", result.workouts.first().recordId)
+    }
+
+    @Test
     fun `la nota resume el origen y los datos disponibles`() {
         val workout = HuaweiHealth.parse(listOf(activity())).workouts.first()
         val note = HuaweiHealth.noteFor(workout)

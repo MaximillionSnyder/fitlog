@@ -95,7 +95,14 @@ export function workoutKey(workout: HuaweiWorkout): string {
   return workout.recordId ?? `${workout.startedAtMs}-${workout.sportName}`;
 }
 
-/** Lee un archivo: lista, objeto con la lista adentro, o un JSON por linea. */
+/**
+ * Lee un archivo de la exportación.
+ *
+ * Primero intenta el camino normal (lista u objeto). Si no encuentra entrenamientos, recorre el
+ * texto buscando objetos balanceados: así entran los archivos con varios objetos concatenados (la
+ * exportación los parte con marcadores de resincronización) y los que traen una comilla suelta
+ * dentro del blob de sensores, que rompe el JSON.
+ */
 export function parseHuaweiFile(content: string): HuaweiWorkout[] {
   const trimmed = content.trim();
   if (trimmed === '') return [];
@@ -104,24 +111,108 @@ export function parseHuaweiFile(content: string): HuaweiWorkout[] {
   try {
     collect(JSON.parse(trimmed), workouts);
   } catch {
-    // Un archivo con un objeto por linea no es JSON valido entero: se lee linea por linea abajo.
+    // Un archivo con varios objetos seguidos no es JSON válido entero: se recorre abajo.
   }
+  if (workouts.length > 0) return workouts;
 
-  // La exportacion tiene archivos con un objeto por linea; la deduplicacion por registro se
-  // encarga de que no queden repetidos si ademas parseo la raiz.
-  const lines = trimmed.split('\n').filter((line) => line.trimStart().startsWith('{'));
-  if (lines.length > 1) {
-    for (const line of lines) {
-      try {
-        collect(JSON.parse(line), workouts);
-      } catch {
-        // Una linea que no es JSON no aporta nada.
+  for (const candidate of balancedObjects(repairAttributeQuotes(trimmed))) {
+    try {
+      collect(JSON.parse(candidate), workouts);
+    } catch {
+      // Un fragmento que no es JSON no aporta nada.
+    }
+  }
+  return workouts;
+}
+
+/**
+ * Objetos JSON balanceados del texto, respetando los literales de texto.
+ *
+ * Cubre archivos con varios objetos seguidos, con o sin saltos de línea, y listas: en todos los
+ * casos los objetos se recortan por profundidad de llaves.
+ */
+export function balancedObjects(text: string): string[] {
+  const objects: string[] = [];
+  let depth = 0;
+  let start = -1;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+    if (char === '{') {
+      if (depth === 0) start = index;
+      depth += 1;
+      continue;
+    }
+    if (char === '}') {
+      depth -= 1;
+      if (depth <= 0 && start >= 0) {
+        objects.push(text.slice(start, index + 1));
+        start = -1;
+        depth = 0;
       }
     }
   }
-
-  return workouts;
+  return objects;
 }
+
+/**
+ * Quita las comillas sueltas dentro del campo `attribute`.
+ *
+ * La exportación guarda ahí la telemetría como texto y a veces aparece una comilla sin escapar, que
+ * invalida el archivo entero. El valor real termina en la comilla seguida de coma o cierre.
+ */
+export function repairAttributeQuotes(text: string): string {
+  if (!ATTRIBUTE_FIELD.test(text)) return text;
+  ATTRIBUTE_FIELD.lastIndex = 0;
+
+  let result = '';
+  let index = 0;
+  while (index < text.length) {
+    ATTRIBUTE_FIELD.lastIndex = index;
+    const match = ATTRIBUTE_FIELD.exec(text);
+    if (match === null) break;
+
+    const valueStart = match.index + match[0].length;
+    result += text.slice(index, valueStart);
+
+    let cursor = valueStart;
+    let end = -1;
+    while (cursor < text.length) {
+      if (text[cursor] === '"') {
+        let probe = cursor + 1;
+        while (probe < text.length && /\s/.test(text[probe] ?? '')) probe += 1;
+        const next = text[probe];
+        if (next === undefined || next === ',' || next === '}' || next === ']') {
+          end = cursor;
+          break;
+        }
+      }
+      cursor += 1;
+    }
+    if (end < 0) {
+      index = valueStart;
+      continue;
+    }
+    result += text.slice(valueStart, end).replaceAll('"', '');
+    index = end;
+  }
+  result += text.slice(index);
+  return result;
+}
+
+const ATTRIBUTE_FIELD = /"attribute"\s*:\s*"/gi;
 
 function collect(node: unknown, out: HuaweiWorkout[]): void {
   if (Array.isArray(node)) {

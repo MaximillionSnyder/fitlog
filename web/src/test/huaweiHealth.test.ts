@@ -169,6 +169,28 @@ describe('parseHuaweiExport', () => {
     expect(huaweiNote(workout)).toContain('20 km');
   });
 
+  it('lee objetos concatenados sin saltos de línea', () => {
+    // La exportación parte los archivos con marcadores de resincronización y puede quedar todo
+    // pegado: el escaneo por llaves balanceadas los recupera.
+    const content =
+      compact('a', start).replaceAll('\n', '') +
+      compact('b', start + 86_400_000).replaceAll('\n', '');
+
+    expect(parseHuaweiExport([content]).workouts).toHaveLength(2);
+  });
+
+  it('lee un archivo con una comilla suelta en el blob de sensores', () => {
+    // La telemetría a veces trae una comilla sin escapar que invalida el JSON entero.
+    const content =
+      `{"recordId": "q", "startTime": ${start}, "totalTime": 600000, ` +
+      `"sportType": 4, "attribute": "tp=lbs;k=1;lat=1.0;"x";lon=2.0;"}`;
+
+    const result = parseHuaweiExport([content]);
+
+    expect(result.workouts).toHaveLength(1);
+    expect(result.workouts[0]!.recordId).toBe('q');
+  });
+
   it('la nota resume el origen y los datos disponibles', () => {
     const note = huaweiNote(first([activity()]));
 
