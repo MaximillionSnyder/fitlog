@@ -56,6 +56,15 @@ fun ImportScreen(
         viewModel.readFiles(contents)
     }
 
+    // La exportacion llega como ZIP: se puede elegir el archivo sin descomprimir.
+    val pickZip = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val contents = ImportFiles.readZipFile(context, uri)
+        viewModel.readFiles(contents)
+    }
+
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(
@@ -77,6 +86,14 @@ fun ImportScreen(
                 },
                 icon = FitLogIcons.Plus,
                 onClick = { pickFolder.launch(null) },
+            )
+        }
+
+        item {
+            SecondaryAction(
+                label = "Elegir el ZIP sin descomprimir",
+                icon = FitLogIcons.ArrowDown,
+                onClick = { pickZip.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) },
             )
         }
 
@@ -230,8 +247,8 @@ private fun ImportIntro() {
         )
         Text(
             text = "En Huawei Health pedí la exportación de tus datos (privacidad → solicitar tus " +
-                "datos), descomprimí el archivo y elegí acá la carpeta de entrenamientos. Nada se " +
-                "escribe hasta que confirmes.",
+                "datos) y elegí acá el ZIP que te llegue, o la carpeta de entrenamientos si ya lo " +
+                "descomprimiste. Nada se escribe hasta que confirmes.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

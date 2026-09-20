@@ -4,6 +4,8 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.provider.DocumentsContract
+import java.io.BufferedInputStream
+import java.util.zip.ZipInputStream
 
 /**
  * Lee los archivos JSON de la carpeta elegida en la exportacion de Huawei Health.
@@ -13,6 +15,27 @@ import android.provider.DocumentsContract
  * una carpeta enorme no bloquee la lectura.
  */
 object ImportFiles {
+
+    /** Lee los `.json` de un ZIP sin descomprimir (la exportacion llega como ZIP). */
+    fun readZipFile(context: Context, uri: Uri): List<String> {
+        val contents = mutableListOf<String>()
+        runCatching {
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                ZipInputStream(BufferedInputStream(stream)).use { zip ->
+                    while (contents.size < MAX_FILES) {
+                        val entry = zip.nextEntry ?: break
+                        if (entry.isDirectory || !entry.name.endsWith(".json", ignoreCase = true)) {
+                            zip.closeEntry()
+                            continue
+                        }
+                        contents += zip.readBytes().toString(Charsets.UTF_8)
+                        zip.closeEntry()
+                    }
+                }
+            }
+        }
+        return contents
+    }
 
     /** Lee todos los `.json` del arbol elegido, en cualquier subcarpeta. */
     fun readJsonFiles(context: Context, treeUri: Uri): List<String> {
