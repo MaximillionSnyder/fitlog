@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fitlog.app.data.CatalogRepository
 import com.fitlog.app.data.ProgressRepository
+import com.fitlog.app.data.WorkoutRepository
+import com.fitlog.app.domain.Activity
 import com.fitlog.app.domain.CatalogExercise
 import com.fitlog.app.domain.Progress
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,12 +25,22 @@ data class ProgressUiState(
     val preset: Progress.RangePreset = Progress.RangePreset.LAST_90_DAYS,
     val points: List<Progress.Point> = emptyList(),
     val refreshing: Boolean = false,
-)
+    /** Actividad importada (Huawei Health o GPX) del rango elegido. */
+    val activityPoints: List<Activity.Point> = emptyList(),
+    val activityMetric: Activity.Metric = Activity.Metric.DISTANCE,
+) {
+    val activityValues: List<Double>
+        get() = Activity.values(activityPoints, activityMetric)
+
+    val activityTotals: Activity.Totals
+        get() = Activity.totals(activityPoints)
+}
 
 @HiltViewModel
 class ProgressViewModel @Inject constructor(
     private val repository: ProgressRepository,
     private val catalogRepository: CatalogRepository,
+    private val workoutRepository: WorkoutRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ProgressUiState())
@@ -46,6 +58,7 @@ class ProgressViewModel @Inject constructor(
                     )
                 }
                 refreshSeries()
+                refreshActivity()
             } catch (error: Exception) {
                 _state.update {
                     it.copy(loading = false, error = error.message ?: "Error al cargar el progreso")
@@ -63,9 +76,40 @@ class ProgressViewModel @Inject constructor(
         _state.update { it.copy(metric = metric) }
     }
 
+    fun selectActivityMetric(metric: Activity.Metric) {
+        _state.update { it.copy(activityMetric = metric) }
+    }
+
     fun selectPreset(preset: Progress.RangePreset) {
         _state.update { it.copy(preset = preset) }
         refreshSeries()
+        refreshActivity()
+    }
+
+    /** Serie de actividad importada del rango elegido. */
+    private fun refreshActivity() {
+        val preset = _state.value.preset
+        viewModelScope.launch {
+            try {
+                val sessions = workoutRepository.sessions()
+                val points = Activity.series(
+                    sessions.map { session ->
+                        Activity.Input(
+                            startedAtMs = session.startedAt,
+                            finishedAtMs = session.finishedAt,
+                            distanceM = session.activity?.distanceM,
+                            averageHeartRate = session.activity?.averageHeartRate,
+                        )
+                    },
+                    Progress.rangeFor(preset, System.currentTimeMillis()),
+                )
+                _state.update { it.copy(activityPoints = points) }
+            } catch (error: Exception) {
+                _state.update {
+                    it.copy(error = error.message ?: "Error al calcular la actividad")
+                }
+            }
+        }
     }
 
     fun refreshSeries() {

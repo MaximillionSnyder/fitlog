@@ -31,6 +31,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fitlog.app.domain.CatalogExercise
 import com.fitlog.app.domain.CatalogText
 import com.fitlog.app.domain.Formulas
+import com.fitlog.app.domain.Activity
 import com.fitlog.app.domain.Progress
 import com.fitlog.app.ui.components.FitLogCard
 import com.fitlog.app.ui.components.FitLogIcons
@@ -171,6 +172,10 @@ fun ProgressScreen(
         }
     }
 
+    if (state.activityPoints.isNotEmpty()) {
+        ActivitySection(state = state, onSelectMetric = viewModel::selectActivityMetric)
+    }
+
     if (showPicker) {
         ProgressExercisePickerDialog(
             exercises = state.exercises,
@@ -234,6 +239,99 @@ private fun formatMetric(value: Double, metric: Progress.Metric): String =
     } else {
         "${Formulas.roundToTenth(value)} kg"
     }
+
+/**
+ * Actividad importada: distancia, duracion o pulso por entrenamiento.
+ *
+ * Es la unica forma de ver los entrenamientos que vinieron de Huawei Health o de un GPX, porque no
+ * tienen series con peso y reps.
+ */
+@Composable
+private fun ActivitySection(
+    state: ProgressUiState,
+    onSelectMetric: (Activity.Metric) -> Unit,
+) {
+    val values = state.activityValues
+    val totals = state.activityTotals
+
+    SectionHeader(
+        title = "Actividad importada",
+        trailing = "${Format.integer(totals.sessions)} entrenamientos",
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            Activity.Metric.entries.forEach { metric ->
+                FilterChip(
+                    selected = state.activityMetric == metric,
+                    onClick = { onSelectMetric(metric) },
+                    label = { Text(metric.label) },
+                )
+            }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            StatTile(
+                label = "Distancia",
+                value = Format.decimal(totals.distanceM / 1000.0, 2),
+                unit = "km",
+                icon = FitLogIcons.Scale,
+                accent = MaterialTheme.fitLogColors.data,
+                modifier = Modifier.weight(1f),
+            )
+            StatTile(
+                label = "Tiempo",
+                value = Format.duration(totals.durationMs),
+                icon = FitLogIcons.Calendar,
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        val labelled = state.activityPoints.filter { Activity.value(it, state.activityMetric) != null }
+        if (values.size < 2) {
+            FitLogCard {
+                Text(
+                    text = "Hacen falta al menos dos entrenamientos con " +
+                        "${state.activityMetric.label.lowercase()} para dibujar la evolución.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else {
+            FitLogCard {
+                FitLogLineChart(
+                    values = values,
+                    labels = labelled.map { formatDay(it.startedAtMs) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    valueFormatter = { formatActivityValue(it, state.activityMetric) },
+                )
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            state.activityPoints.reversed().forEach { point ->
+                val value = Activity.value(point, state.activityMetric)
+                LabeledValue(
+                    label = formatDay(point.startedAtMs),
+                    value = if (value == null) {
+                        "sin ${state.activityMetric.label.lowercase()}"
+                    } else {
+                        formatActivityValue(value, state.activityMetric)
+                    },
+                )
+            }
+        }
+    }
+}
+
+/** Valor de la metrica de actividad ya formateado. */
+private fun formatActivityValue(value: Double, metric: Activity.Metric): String = when (metric) {
+    Activity.Metric.DISTANCE -> "${Format.decimal(value / 1000.0, 2)} km"
+    Activity.Metric.DURATION -> Format.duration(value.toLong())
+    Activity.Metric.HEART_RATE -> "${Format.integer(value)} ppm"
+}
 
 private fun formatDay(timestampMs: Long): String =
     SimpleDateFormat("dd/MM", Locale.getDefault()).format(Date(timestampMs))
