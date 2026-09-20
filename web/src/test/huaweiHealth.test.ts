@@ -101,6 +101,60 @@ describe('parseHuaweiExport', () => {
     expect(result.filesRead + result.filesSkipped).toBe(3);
   });
 
+  it('deriva la frecuencia cardíaca del blob de sensores', () => {
+    // La exportación documenta avgHeartRate, pero en la práctica viene vacío: el dato real está en
+    // los segmentos tp=h-r;k=<minuto>;v=<pulsaciones>; del blob.
+    const attribute =
+      'tp=lbs;k=1;lat=-34.6;lon=-58.3;alt=25.0;t=1.0;' +
+      'tp=h-r;k=0;v=98;k=1;v=120;k=2;v=140;k=3;v=165;' +
+      'tp=rs;k=0;v=25;';
+
+    const workout = first([
+      JSON.stringify({
+        recordId: 'con-track',
+        startTime: start,
+        totalTime: 1_800_000,
+        sportType: 4,
+        attribute,
+      }),
+    ]);
+
+    expect(workout.averageHeartRate).toBeCloseTo(130.75, 5);
+    expect(workout.maxHeartRate).toBe(165);
+  });
+
+  it('sin lecturas de frecuencia cardíaca no inventa el dato', () => {
+    const workout = first([
+      JSON.stringify({
+        recordId: 'sin-fc',
+        startTime: start,
+        totalTime: 600_000,
+        sportType: 5,
+        attribute: 'tp=lbs;k=1;lat=1.0;lon=2.0;',
+      }),
+    ]);
+
+    expect(workout.averageHeartRate).toBeNull();
+    expect(workout.maxHeartRate).toBeNull();
+  });
+
+  it('la frecuencia cardíaca de resumen gana sobre la del blob', () => {
+    const workout = first([
+      JSON.stringify({
+        recordId: 'resumen',
+        startTime: start,
+        totalTime: 600_000,
+        sportType: 4,
+        avgHeartRate: 150,
+        maxHeartRate: 180,
+        attribute: 'tp=h-r;k=0;v=90;',
+      }),
+    ]);
+
+    expect(workout.averageHeartRate).toBe(150);
+    expect(workout.maxHeartRate).toBe(180);
+  });
+
   it('la nota resume el origen y los datos disponibles', () => {
     const note = huaweiNote(first([activity()]));
 

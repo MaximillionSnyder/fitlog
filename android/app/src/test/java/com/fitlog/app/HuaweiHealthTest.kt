@@ -117,6 +117,60 @@ class HuaweiHealthTest {
     }
 
     @Test
+    fun `deriva la frecuencia cardiaca del blob de sensores`() {
+        // La exportacion documenta avgHeartRate, pero en la practica viene vacio: el dato real
+        // esta en los segmentos tp=h-r;k=<minuto>;v=<pulsaciones>; del blob.
+        val attribute = "tp=lbs;k=1;lat=-34.6;lon=-58.3;alt=25.0;t=1.0;" +
+            "tp=h-r;k=0;v=98;k=1;v=120;k=2;v=140;k=3;v=165;" +
+            "tp=rs;k=0;v=25;"
+
+        val result = HuaweiHealth.parse(
+            listOf(
+                """
+                {
+                  "recordId": "con-track",
+                  "startTime": $start,
+                  "totalTime": 1800000,
+                  "sportType": 4,
+                  "attribute": "$attribute"
+                }
+                """.trimIndent()
+            )
+        )
+
+        val workout = result.workouts.first()
+        assertEquals(130.75, workout.averageHeartRate ?: 0.0, 0.001)
+        assertEquals(165.0, workout.maxHeartRate ?: 0.0, 0.001)
+    }
+
+    @Test
+    fun `sin lecturas de frecuencia cardiaca no inventa el dato`() {
+        val result = HuaweiHealth.parse(
+            listOf(
+                """{"recordId": "sin-fc", "startTime": $start, "totalTime": 600000, "sportType": 5, """ +
+                    """"attribute": "tp=lbs;k=1;lat=1.0;lon=2.0;"}"""
+            )
+        )
+
+        assertNull(result.workouts.first().averageHeartRate)
+        assertNull(result.workouts.first().maxHeartRate)
+    }
+
+    @Test
+    fun `la frecuencia cardiaca de resumen gana sobre la del blob`() {
+        val result = HuaweiHealth.parse(
+            listOf(
+                """{"recordId": "resumen", "startTime": $start, "totalTime": 600000, "sportType": 4, """ +
+                    """"avgHeartRate": 150, "maxHeartRate": 180, "attribute": "tp=h-r;k=0;v=90;"}"""
+            )
+        )
+
+        val workout = result.workouts.first()
+        assertEquals(150.0, workout.averageHeartRate ?: 0.0, 0.001)
+        assertEquals(180.0, workout.maxHeartRate ?: 0.0, 0.001)
+    }
+
+    @Test
     fun `la nota resume el origen y los datos disponibles`() {
         val workout = HuaweiHealth.parse(listOf(activity())).workouts.first()
         val note = HuaweiHealth.noteFor(workout)

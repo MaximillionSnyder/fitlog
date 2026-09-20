@@ -147,6 +147,10 @@ object HuaweiHealth {
         val finishedAt = readTimestamp(node, "endTime", "end_time", "finishTime", "end")
             ?: durationMs?.let { startedAt + it }
 
+        val attribute = readString(node, "attribute", "attributes")
+        val summaryHeartRate = readDouble(node, "avgHeartRate", "averageHeartRate", "avg_heart_rate")
+        val track = if (summaryHeartRate == null) trackHeartRate(attribute) else null
+
         val sportType = readInt(node, "sportType", "sport_type", "activityType", "exerciseType")
         val sportName = readString(node, "sportName", "activityName", "name")
             ?: sportType?.let { SPORT_NAMES[it] }
@@ -163,10 +167,43 @@ object HuaweiHealth {
             calories = readDouble(node, "totalCalories", "calories", "total_calories")
                 ?.let { it / CALORIE_SCALE },
             steps = readInt(node, "totalSteps", "steps"),
-            averageHeartRate = readDouble(node, "avgHeartRate", "averageHeartRate", "avg_heart_rate"),
-            maxHeartRate = readDouble(node, "maxHeartRate", "max_heart_rate"),
+            averageHeartRate = summaryHeartRate ?: track?.first,
+            maxHeartRate = readDouble(node, "maxHeartRate", "max_heart_rate") ?: track?.second,
         )
     }
+
+    /**
+     * Frecuencia cardiaca derivada del blob de sensores (`attribute`).
+     *
+     * La exportacion documenta `avgHeartRate` y `maxHeartRate`, pero en la practica vienen vacios:
+     * el dato real esta en los segmentos `tp=h-r;k=<minuto>;v=<pulsaciones>;` del blob. Devuelve
+     * (promedio, maximo), o `null` si no hay lecturas.
+     */
+    fun trackHeartRate(attribute: String?): Pair<Double, Double>? {
+        if (attribute.isNullOrBlank()) return null
+
+        val readings = mutableListOf<Double>()
+        var index = 0
+        while (index < attribute.length) {
+            val segmentStart = attribute.indexOf(HR_TAG, index, ignoreCase = true)
+            if (segmentStart < 0) break
+            val contentStart = segmentStart + HR_TAG.length
+            val nextSegment = attribute.indexOf("tp=", contentStart, ignoreCase = true)
+            val end = if (nextSegment < 0) attribute.length else nextSegment
+            HEART_RATE_PAIR.findAll(attribute.substring(contentStart, end)).forEach { match ->
+                match.groupValues[2].toDoubleOrNull()?.let { readings += it }
+            }
+            index = end
+        }
+
+        if (readings.isEmpty()) return null
+        return readings.average() to readings.max()
+    }
+
+    private const val HR_TAG = "tp=h-r;"
+
+    /** Lectura de frecuencia cardiaca dentro de un segmento `h-r`: `k=<minuto>;v=<pulsaciones>;`. */
+    private val HEART_RATE_PAIR = Regex("k=([-\\d.]+);v=([-\\d.]+);", RegexOption.IGNORE_CASE)
 
     /** Senales de que el objeto es un entrenamiento y no otra serie de datos de la exportacion. */
     private fun looksLikeWorkout(node: JSONObject): Boolean {

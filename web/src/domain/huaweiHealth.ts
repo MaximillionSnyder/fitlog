@@ -146,6 +146,10 @@ function toWorkout(node: Record<string, unknown>): HuaweiWorkout | null {
     readTimestamp(node, ['endTime', 'end_time', 'finishTime', 'end']) ??
     (durationMs === null ? null : startedAt + durationMs);
 
+  const attribute = readString(node, ['attribute', 'attributes']);
+  const summaryHeartRate = readNumber(node, ['avgHeartRate', 'averageHeartRate', 'avg_heart_rate']);
+  const track = summaryHeartRate === null ? trackHeartRate(attribute) : null;
+
   const sportType = readNumber(node, ['sportType', 'sport_type', 'activityType', 'exerciseType']);
   const explicitName = readString(node, ['sportName', 'activityName', 'name']);
   const sportName =
@@ -162,14 +166,48 @@ function toWorkout(node: Record<string, unknown>): HuaweiWorkout | null {
     distanceM: readNumber(node, ['totalDistance', 'distance', 'total_distance']),
     calories: calories === null ? null : calories / CALORIE_SCALE,
     steps: readNumber(node, ['totalSteps', 'steps']),
-    averageHeartRate: readNumber(node, [
-      'avgHeartRate',
-      'averageHeartRate',
-      'avg_heart_rate',
-    ]),
-    maxHeartRate: readNumber(node, ['maxHeartRate', 'max_heart_rate']),
+    averageHeartRate: summaryHeartRate ?? track?.average ?? null,
+    maxHeartRate: readNumber(node, ['maxHeartRate', 'max_heart_rate']) ?? track?.max ?? null,
   };
 }
+
+/**
+ * Frecuencia cardiaca derivada del blob de sensores (`attribute`).
+ *
+ * La exportacion documenta `avgHeartRate` y `maxHeartRate`, pero en la practica vienen vacios: el
+ * dato real esta en los segmentos `tp=h-r;k=<minuto>;v=<pulsaciones>;` del blob.
+ */
+export function trackHeartRate(
+  attribute: string | null
+): { average: number; max: number } | null {
+  if (attribute === null || attribute.trim() === '') return null;
+
+  const readings: number[] = [];
+  const lower = attribute.toLowerCase();
+  const tag = 'tp=h-r;';
+  let index = 0;
+
+  while (index < attribute.length) {
+    const segmentStart = lower.indexOf(tag, index);
+    if (segmentStart < 0) break;
+    const contentStart = segmentStart + tag.length;
+    const nextSegment = lower.indexOf('tp=', contentStart);
+    const end = nextSegment < 0 ? attribute.length : nextSegment;
+
+    for (const match of attribute.slice(contentStart, end).matchAll(HEART_RATE_PAIR)) {
+      const value = Number(match[2]);
+      if (Number.isFinite(value)) readings.push(value);
+    }
+    index = end;
+  }
+
+  if (readings.length === 0) return null;
+  const total = readings.reduce((sum, value) => sum + value, 0);
+  return { average: total / readings.length, max: Math.max(...readings) };
+}
+
+/** Lectura de frecuencia cardiaca dentro de un segmento `h-r`: `k=<minuto>;v=<pulsaciones>;`. */
+const HEART_RATE_PAIR = /k=([-\d.]+);v=([-\d.]+);/gi;
 
 /** Senales de que el objeto es un entrenamiento y no otra serie de datos de la exportacion. */
 function looksLikeWorkout(node: Record<string, unknown>): boolean {
