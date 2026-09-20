@@ -42,6 +42,12 @@
 - [x] 3e.2 Importar un GPX sin tiempos por punto usando la fecha del metadata, sin duración
 - [x] 3e.3 Un GPX con una sola marca de tiempo tampoco alcanza: se usa el metadata o se descarta
 
+## 3f. Cerrar el circuito
+
+- [x] 3f.1 El historial muestra los datos de la nota en las sesiones importadas (sin "0 series · 0 kg")
+- [x] 3f.2 La vista previa informa los archivos descartados, para diagnosticar un export inesperado
+- [x] 3f.3 Acción "Ver el historial" al terminar la importación
+
 ## 4. Verificación y cierre
 
 - [x] 4.1 Dejar `android.yml` y `web.yml` en verde (tests y build)
