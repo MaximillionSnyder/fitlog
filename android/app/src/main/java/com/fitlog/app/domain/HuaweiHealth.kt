@@ -64,8 +64,7 @@ object HuaweiHealth {
         282 to "Senderismo",
     )
 
-    /** Escalas de la exportacion: la duracion y las calorias vienen multiplicadas. */
-    private const val TIME_SCALE = 1000.0
+    /** Escala de la exportacion: las calorias vienen multiplicadas por mil. */
     private const val CALORIE_SCALE = 1000.0
 
     /** Lee varios archivos y devuelve los entrenamientos reconocidos, sin repetidos. */
@@ -104,18 +103,17 @@ object HuaweiHealth {
 
         when (root) {
             is JSONArray -> collect(root, workouts)
-            is JSONObject -> {
-                collect(root, workouts)
-                // La exportacion tambien tiene archivos con un objeto por linea.
-                if (workouts.isEmpty()) {
-                    trimmed.lineSequence()
-                        .filter { it.trimStart().startsWith("{") }
-                        .forEach { line ->
-                            runCatching { JSONObject(line) }.getOrNull()?.let { collect(it, workouts) }
-                        }
+            is JSONObject -> collect(root, workouts)
+        }
+
+        // La exportacion tambien tiene archivos con un objeto por linea: se suman a lo anterior y
+        // la deduplicacion por registro se encarga de que no queden repetidos.
+        if (trimmed.lineSequence().count { it.trimStart().startsWith("{") } > 1) {
+            trimmed.lineSequence()
+                .filter { it.trimStart().startsWith("{") }
+                .forEach { line ->
+                    runCatching { JSONObject(line) }.getOrNull()?.let { collect(it, workouts) }
                 }
-            }
-            else -> return emptyList()
         }
 
         return workouts
@@ -123,7 +121,7 @@ object HuaweiHealth {
 
     private fun collect(node: Any?, out: MutableList<Workout>) {
         when (node) {
-            is JSONArray -> node.forEach { collect(it, out) }
+            is JSONArray -> for (index in 0 until node.length()) collect(node.opt(index), out)
             is JSONObject -> {
                 toWorkout(node)?.let { out += it }
                 node.keys().forEach { key ->
@@ -209,11 +207,18 @@ object HuaweiHealth {
         return null
     }
 
-    /** Duracion en milisegundos: `totalTime` viene escalado, `duration` suele venir en segundos. */
+    /**
+     * Duracion en milisegundos.
+     *
+     * `totalTime` ya viene en milisegundos (la exportacion divide por 1000 para obtener segundos);
+     * las claves alternativas (`duration`, `exerciseTime`) suelen venir en segundos, asi que se
+     * distinguen por magnitud: menos de un dia se interpreta como segundos.
+     */
     private fun readDuration(node: JSONObject): Long? {
-        readDouble(node, "totalTime", "total_time")?.let { return (it / TIME_SCALE).toLong() }
-        readDouble(node, "duration", "durationMs", "exerciseTime")?.let { raw ->
-            return if (raw > MAX_SECONDS_EPOCH) raw.toLong() else (raw * 1000).toLong()
+        readDouble(node, "totalTime", "total_time")?.let { return it.toLong() }
+        readDouble(node, "durationMs", "duration_ms")?.let { return it.toLong() }
+        readDouble(node, "duration", "exerciseTime")?.let { raw ->
+            return if (raw < SECONDS_PER_DAY) (raw * 1000).toLong() else raw.toLong()
         }
         return null
     }
@@ -243,6 +248,9 @@ object HuaweiHealth {
 
     /** Epoch en segundos del siglo XXI: por debajo de este valor se asume segundos, no milisegundos. */
     private const val MAX_SECONDS_EPOCH = 4_102_444_800L
+
+    /** Segundos de un dia: separa una duracion en segundos de una en milisegundos. */
+    private const val SECONDS_PER_DAY = 86_400.0
 
     /**
      * Nota de la sesion importada: origen y los datos que Huawei si registro.
