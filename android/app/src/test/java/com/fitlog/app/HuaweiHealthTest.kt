@@ -83,6 +83,13 @@ class HuaweiHealthTest {
     }
 
     @Test
+    fun `un archivo con BOM se lee igual`() {
+        val result = HuaweiHealth.parse(listOf("\uFEFF" + activity()))
+
+        assertEquals(1, result.workouts.size)
+    }
+
+    @Test
     fun `un registro sin fecha se descarta`() {
         val result = HuaweiHealth.parse(listOf("""{"recordId": "x", "sportType": 4}"""))
 

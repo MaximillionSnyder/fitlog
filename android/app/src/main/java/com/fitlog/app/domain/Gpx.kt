@@ -18,23 +18,25 @@ object Gpx {
 
     /** `true` si el texto parece un GPX y no un JSON de Huawei Health. */
     fun looksLikeGpx(text: String): Boolean {
-        val head = text.take(HEAD_LENGTH)
+        val head = text.trimStart().removePrefix(BOM).take(HEAD_LENGTH)
         return head.contains("<gpx", ignoreCase = true) || head.trimStart().startsWith("<?xml")
     }
 
     /** Lee un archivo GPX; devuelve como mucho un entrenamiento. */
     fun parse(content: String, fileName: String? = null): List<ImportedWorkout> {
-        if (!looksLikeGpx(content)) return emptyList()
+        val text = content.trim().removePrefix(BOM)
+        if (!looksLikeGpx(text)) return emptyList()
 
-        val track = readTrack(content) ?: return emptyList()
+        val track = readTrack(text) ?: return emptyList()
         if (track.points.isEmpty()) return emptyList()
 
-        // Hacen falta al menos dos marcas de tiempo: sin fin no es un entrenamiento terminado y
-        // la sesion quedaria como "en curso" en el historial.
+        // Con dos marcas de tiempo hay entrenamiento completo. Si el archivo no las trae (o trae
+        // una sola, que no alcanza para medir nada) pero si una fecha en el metadata, se importa con
+        // esa fecha y sin duracion: es mejor que perderlo.
         val times = track.points.mapNotNull { it.timeMs }.sorted()
-        if (times.size < 2) return emptyList()
-        val startedAt = times.first()
-        val finishedAt = times.last()
+        val complete = times.size >= 2
+        val startedAt = if (complete) times.first() else track.metadataTimeMs ?: return emptyList()
+        val finishedAt = if (complete) times.last() else startedAt
         val heartRates = track.points.mapNotNull { it.heartRate }
 
         return listOf(
@@ -58,6 +60,9 @@ object Gpx {
 
     private const val HEAD_LENGTH = 2048
 
+    /** Marca de orden de bytes: algunos GPX la traen al principio. */
+    private const val BOM = "\uFEFF"
+
     private data class Point(
         val latitude: Double?,
         val longitude: Double?,
@@ -70,6 +75,7 @@ object Gpx {
         val points: List<Point>,
         val sportName: String?,
         val creator: String?,
+        val metadataTimeMs: Long?,
     ) {
         val source: String
             get() = if (creator?.contains("huawei", ignoreCase = true) == true) {
@@ -132,6 +138,8 @@ object Gpx {
         var current: Point? = null
         var sportName: String? = null
         var creator: String? = null
+        var metadataTime: Long? = null
+        var inMetadata = false
         var textTarget: String? = null
         var buffer = StringBuilder()
         var sawTrack = false
@@ -176,9 +184,14 @@ object Gpx {
                         "trkpt" -> current?.let { points += it }
                         "time" -> if (textTarget == "time" && text.isNotEmpty()) {
                             parseTime(text)?.let { parsed ->
-                                current = current?.copy(timeMs = parsed)
+                                if (current != null) {
+                                    current = current?.copy(timeMs = parsed)
+                                } else if (inMetadata) {
+                                    metadataTime = parsed
+                                }
                             }
                         }
+                        "metadata" -> inMetadata = false
                         "ele" -> if (textTarget == "ele" && text.isNotEmpty()) {
                             current = current?.copy(elevation = text.toDoubleOrNull())
                         }
@@ -201,6 +214,7 @@ object Gpx {
                         creator = attributes["creator"]
                         sawTrack = sawTrack || false
                     }
+                    if (localName == "metadata") inMetadata = true
                     if (localName == "trkpt") {
                         sawTrack = true
                         current = Point(
@@ -229,7 +243,12 @@ object Gpx {
         }
 
         if (!sawTrack && points.isEmpty()) return null
-        return Track(points = points, sportName = sportName, creator = creator)
+        return Track(
+            points = points,
+            sportName = sportName,
+            creator = creator,
+            metadataTimeMs = metadataTime,
+        )
     }
 
     private fun readAttributes(body: String): Map<String, String> {

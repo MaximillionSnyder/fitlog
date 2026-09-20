@@ -84,8 +84,27 @@ describe('parseGpx', () => {
     expect(note.startsWith('GPX · Running')).toBe(true);
   });
 
-  it('un gpx sin tiempos no se importa', () => {
-    expect(parseGpx(gpx({ withTime: false }))).toHaveLength(0);
+  it('sin tiempos por punto usa la fecha del metadata, sin duración', () => {
+    // Un GPX sin marcas de tiempo en los puntos pero con fecha en el metadata: se importa con esa
+    // fecha y sin duración, en lugar de perderlo.
+    const workout = first(gpx({ withTime: false }));
+
+    expect(workout.startedAtMs).toBe(start);
+    expect(workout.finishedAtMs).toBe(start);
+    expect(workout.durationMs).toBe(0);
+  });
+
+  it('un gpx con BOM se lee igual', () => {
+    const conBom = `\uFEFF${gpx()}`;
+
+    expect(looksLikeGpx(conBom)).toBe(true);
+    expect(parseGpx(conBom)).toHaveLength(1);
+  });
+
+  it('un gpx sin ninguna fecha no se importa', () => {
+    const sinFechas = gpx({ withTime: false }).replace('<time>2023-11-14T22:13:20Z</time>', '');
+
+    expect(parseGpx(sinFechas)).toHaveLength(0);
   });
 
   it('un gpx con una sola marca de tiempo no se importa', () => {

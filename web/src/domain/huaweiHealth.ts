@@ -16,11 +16,15 @@ import {
   type ImportedWorkout,
 } from '@/domain/importedWorkout';
 
+/** Marca de orden de bytes al inicio de un archivo. */
+const BOM = '\uFEFF';
+
 /** Marca de origen en la nota de una sesión importada de Huawei Health. */
 export const HUAWEI_NOTE_PREFIX = HUAWEI_SOURCE;
 
 /** `true` si la sesión vino de una importación. */
 export { isImportedNote as isHuaweiNote } from '@/domain/importedWorkout';
+
 
 /** Nota de la sesión importada, con el origen y los datos disponibles. */
 export const huaweiNote = importedWorkoutNote;
@@ -93,7 +97,8 @@ export function parseHuaweiExport(contents: readonly string[]): HuaweiParseResul
  * dentro del blob de sensores, que rompe el JSON.
  */
 export function parseHuaweiFile(content: string): ImportedWorkout[] {
-  const trimmed = content.trim();
+  // Algunas exportaciones traen marca de orden de bytes: rompe el lector de JSON si no se quita.
+  const trimmed = content.trim().replace(BOM, '');
   if (trimmed === '') return [];
 
   // Camino rápido: el archivo entero es JSON válido (una lista o un objeto).

@@ -83,12 +83,14 @@ class GpxTest {
     }
 
     @Test
-    fun `un gpx sin tiempos no se importa`() {
-        assertTrue(Gpx.parse(gpx(withTime = false)).isEmpty())
+    fun `un gpx sin ninguna fecha no se importa`() {
+        val sinFechas = gpx(withTime = false).replace("<time>2023-11-14T22:13:20Z</time>", "")
+
+        assertTrue(Gpx.parse(sinFechas).isEmpty())
     }
 
     @Test
-    fun `un gpx con una sola marca de tiempo no se importa`() {
+    fun `un gpx con una sola marca de tiempo y sin metadata no se importa`() {
         val unPunto = """
             <gpx version="1.1"><trk><trkseg>
               <trkpt lat="-34.6" lon="-58.3"><time>2023-11-14T22:13:20Z</time></trkpt>
@@ -96,6 +98,37 @@ class GpxTest {
         """.trimIndent()
 
         assertTrue(Gpx.parse(unPunto).isEmpty())
+    }
+
+    @Test
+    fun `un gpx con una sola marca de tiempo usa la del metadata`() {
+        val unPunto = gpx(withTime = false).replace(
+            "<trkpt lat=\"-34.6037\" lon=\"-58.3816\">",
+            "<trkpt lat=\"-34.6037\" lon=\"-58.3816\"><time>2023-11-14T22:13:20Z</time>",
+        ).replace("<trkpt lat=\"-34.6047\" lon=\"-58.3826\">", "<trkpt lat=\"-34.6047\" lon=\"-58.3826\">")
+
+        val workout = Gpx.parse(unPunto).first()
+        assertEquals(1_700_000_000_000L, workout.startedAtMs)
+        assertEquals(0L, workout.durationMs)
+    }
+
+    @Test
+    fun `sin tiempos por punto usa la fecha del metadata, sin duracion`() {
+        // Un GPX sin marcas de tiempo en los puntos pero con fecha en el metadata: se importa con
+        // esa fecha y sin duracion, en lugar de perderlo.
+        val workout = Gpx.parse(gpx(withTime = false)).first()
+
+        assertEquals(1_700_000_000_000L, workout.startedAtMs)
+        assertEquals(1_700_000_000_000L, workout.finishedAtMs)
+        assertEquals(0L, workout.durationMs)
+    }
+
+    @Test
+    fun `un gpx con BOM se lee igual`() {
+        val conBom = "\uFEFF" + gpx()
+
+        assertTrue(Gpx.looksLikeGpx(conBom))
+        assertEquals(1, Gpx.parse(conBom).size)
     }
 
     @Test

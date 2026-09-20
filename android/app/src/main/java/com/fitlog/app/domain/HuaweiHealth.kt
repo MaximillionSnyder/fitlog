@@ -84,7 +84,7 @@ object HuaweiHealth {
      * suelta dentro del blob de sensores, que rompe el JSON.
      */
     fun parseFile(content: String): List<ImportedWorkout> {
-        val trimmed = content.trim()
+        val trimmed = content.trim().removePrefix(BOM)
         if (trimmed.isEmpty()) return emptyList()
 
         // Camino rapido: el archivo entero es JSON valido (una lista o un objeto).
@@ -381,6 +381,9 @@ object HuaweiHealth {
         }
         return null
     }
+
+    /** Marca de orden de bytes: algunas exportaciones la traen y rompe el lector de JSON. */
+    private const val BOM = "\uFEFF"
 
     /** Epoch en segundos del siglo XXI: por debajo de este valor se asume segundos, no milisegundos. */
     private const val MAX_SECONDS_EPOCH = 4_102_444_800L

@@ -14,6 +14,8 @@ import {
  */
 
 const HEAD_LENGTH = 2048;
+/** Marca de orden de bytes: algunos GPX la traen al principio. */
+const BOM = '\uFEFF';
 const ELEVATION_NOISE_M = 2;
 const EARTH_RADIUS_M = 6_371_000;
 
@@ -29,31 +31,34 @@ interface Track {
   readonly points: readonly Point[];
   readonly sportName: string | null;
   readonly creator: string | null;
+  readonly metadataTimeMs: number | null;
 }
 
 /** `true` si el texto parece un GPX y no un JSON de Huawei Health. */
 export function looksLikeGpx(text: string): boolean {
-  const head = text.slice(0, HEAD_LENGTH);
+  const head = text.trimStart().replace(BOM, '').slice(0, HEAD_LENGTH);
   return /<gpx/i.test(head) || head.trimStart().startsWith('<?xml');
 }
 
 /** Lee un archivo GPX; devuelve como mucho un entrenamiento. */
 export function parseGpx(content: string, fileName?: string): ImportedWorkout[] {
-  if (!looksLikeGpx(content)) return [];
+  const text = content.trim().replace(BOM, '');
+  if (!looksLikeGpx(text)) return [];
 
-  const track = readTrack(content);
+  const track = readTrack(text);
   if (track === null || track.points.length === 0) return [];
 
-  // Hacen falta al menos dos marcas de tiempo: sin fin no es un entrenamiento terminado y la sesión
-  // quedaría como "en curso" en el historial.
+  // Con dos marcas de tiempo hay entrenamiento completo. Si el archivo no las trae (o trae una sola,
+  // que no alcanza para medir nada) pero sí una fecha en el metadata, se importa con esa fecha y sin
+  // duración: es mejor que perderlo.
   const times = track.points
     .map((point) => point.timeMs)
     .filter((time): time is number => time !== null)
     .sort((a, b) => a - b);
-  if (times.length < 2) return [];
-
-  const startedAt = times[0]!;
-  const finishedAt = times[times.length - 1]!;
+  const complete = times.length >= 2;
+  const startedAt = complete ? times[0]! : track.metadataTimeMs;
+  if (startedAt === null || startedAt === undefined) return [];
+  const finishedAt = complete ? times[times.length - 1]! : startedAt;
   const heartRates = track.points
     .map((point) => point.heartRate)
     .filter((rate): rate is number => rate !== null);
@@ -99,6 +104,8 @@ function readTrack(content: string): Track | null {
   let textTarget: string | null = null;
   let buffer = '';
   let sawTrack = false;
+  let metadataTimeMs: number | null = null;
+  let inMetadata = false;
 
   let index = 0;
   while (index < content.length) {
@@ -138,9 +145,10 @@ function readTrack(content: string): Track | null {
       const point: Point | null = current;
       if (localName === 'trkpt' && point !== null) {
         points.push(point);
-      } else if (localName === 'time' && textTarget === 'time' && text !== '' && point !== null) {
+      } else if (localName === 'time' && textTarget === 'time' && text !== '') {
         const parsed = parseTime(text);
-        if (parsed !== null) current = withPoint(point, { timeMs: parsed });
+        if (parsed !== null && point !== null) current = withPoint(point, { timeMs: parsed });
+        else if (parsed !== null && inMetadata) metadataTimeMs = parsed;
       } else if (localName === 'ele' && textTarget === 'ele' && text !== '' && point !== null) {
         const value = Number(text);
         if (Number.isFinite(value)) current = withPoint(point, { elevation: value });
@@ -151,6 +159,8 @@ function readTrack(content: string): Track | null {
         sportName = text;
       } else if (localName === 'type' && textTarget === 'type' && text !== '') {
         sportName = sportLabel(text) ?? sportName;
+      } else if (localName === 'metadata') {
+        inMetadata = false;
       }
       if (textTarget === localName) textTarget = null;
       buffer = '';
@@ -158,6 +168,7 @@ function readTrack(content: string): Track | null {
     }
 
     if (localName === 'gpx') creator = attributes.get('creator') ?? null;
+    if (localName === 'metadata') inMetadata = true;
     if (localName === 'trkpt') {
       sawTrack = true;
       current = {
@@ -182,7 +193,7 @@ function readTrack(content: string): Track | null {
   }
 
   if (!sawTrack && points.length === 0) return null;
-  return { points, sportName, creator };
+  return { points, sportName, creator, metadataTimeMs };
 }
 
 /** Copia de un punto con los campos indicados cambiados. */

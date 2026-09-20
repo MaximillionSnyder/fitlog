@@ -74,6 +74,10 @@ describe('parseHuaweiExport', () => {
     expect(parseHuaweiExport([content]).workouts).toHaveLength(2);
   });
 
+  it('un archivo con BOM se lee igual', () => {
+    expect(parseHuaweiExport([`\uFEFF${activity()}`]).workouts).toHaveLength(1);
+  });
+
   it('un registro sin fecha se descarta', () => {
     expect(parseHuaweiExport(['{"recordId": "x", "sportType": 4}']).workouts).toHaveLength(0);
   });
