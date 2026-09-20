@@ -70,6 +70,23 @@ object Format {
         }
     }
 
+    /**
+     * Ajusta un valor decimal escrito a mano (peso) sumando [delta], sin bajar de [min].
+     *
+     * Es lo que usan los botones de la fila rapida de registro: si el campo esta vacio o no es un
+     * numero, se parte de cero en lugar de fallar.
+     */
+    fun stepDecimal(raw: String, delta: Double, min: Double = 0.0): String {
+        val current = raw.trim().replace(',', '.').toDoubleOrNull() ?: 0.0
+        return decimal((current + delta).coerceAtLeast(min), 2)
+    }
+
+    /** Ajusta un entero escrito a mano (reps), sin bajar de [min]. */
+    fun stepInteger(raw: String, delta: Int, min: Int = 1): String {
+        val current = raw.trim().toIntOrNull() ?: 0
+        return (current + delta).coerceAtLeast(min).toString()
+    }
+
     private fun groupThousands(value: String): String {
         val negative = value.startsWith('-')
         val digits = if (negative) value.substring(1) else value

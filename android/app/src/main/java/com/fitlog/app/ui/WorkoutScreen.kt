@@ -9,11 +9,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -29,7 +31,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
@@ -94,6 +99,7 @@ fun WorkoutScreen(
     var restStartedAtMs by remember { mutableStateOf<Long?>(null) }
     var restExerciseName by remember { mutableStateOf<String?>(null) }
 
+    var showDetails by remember { mutableStateOf(false) }
     var showExercisePicker by remember { mutableStateOf(false) }
     var selectedExercise by remember { mutableStateOf<CatalogExercise?>(null) }
     var editingSet by remember { mutableStateOf<WorkoutSet?>(null) }
@@ -213,43 +219,54 @@ fun WorkoutScreen(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    OutlinedTextField(
+                    StepperField(
+                        label = "Peso",
+                        unit = "kg",
                         value = weight,
                         onValueChange = { weight = it },
-                        label = { Text("Peso kg") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        onStep = { delta -> weight = Format.stepDecimal(weight, delta * WEIGHT_STEP_KG) },
+                        stepLabel = "${Format.decimal(WEIGHT_STEP_KG, 1)} kg",
+                        keyboardType = KeyboardType.Decimal,
                         modifier = Modifier.weight(1f),
-                        singleLine = true,
                     )
-                    OutlinedTextField(
+                    StepperField(
+                        label = "Reps",
                         value = reps,
                         onValueChange = { reps = it },
-                        label = { Text("Reps") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        onStep = { delta -> reps = Format.stepInteger(reps, delta) },
+                        stepLabel = "1 rep",
+                        keyboardType = KeyboardType.Number,
                         modifier = Modifier.weight(1f),
-                        singleLine = true,
                     )
+                }
+
+                TextButton(onClick = { showDetails = !showDetails }) {
+                    Text(text = if (showDetails) "Menos opciones" else "RIR, notas y calentamiento")
+                }
+
+                if (showDetails) {
                     OutlinedTextField(
                         value = rir,
                         onValueChange = { rir = it },
                         label = { Text("RIR") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                     )
-                }
-
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = { Text("Notas (opcional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = isWarmup, onCheckedChange = { isWarmup = it })
-                    Text(text = "Serie de calentamiento", style = MaterialTheme.typography.bodyMedium)
+                    OutlinedTextField(
+                        value = notes,
+                        onValueChange = { notes = it },
+                        label = { Text("Notas (opcional)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = isWarmup, onCheckedChange = { isWarmup = it })
+                        Text(
+                            text = "Serie de calentamiento",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
                 }
 
                 state.formError?.let { message ->
@@ -462,6 +479,64 @@ private fun RestCard(
         }
     }
 }
+
+/**
+ * Campo con botones de ajuste: el valor se toca para escribirlo o se ajusta de a un paso.
+ *
+ * Es la fila pensada para el gimnasio: con una mano y sin abrir el teclado se registra la serie.
+ */
+@Composable
+private fun StepperField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    onStep: (Int) -> Unit,
+    stepLabel: String,
+    keyboardType: KeyboardType,
+    modifier: Modifier = Modifier,
+    unit: String? = null,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            StepButton(symbol = "−", description = "Restar $stepLabel", onClick = { onStep(-1) })
+            OutlinedTextField(
+                value = value,
+                onValueChange = onValueChange,
+                suffix = unit?.let { { Text(text = it) } },
+                keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                textStyle = MaterialTheme.typography.titleMedium.copy(
+                    textAlign = TextAlign.Center,
+                ),
+                singleLine = true,
+                modifier = Modifier.weight(1f),
+            )
+            StepButton(symbol = "+", description = "Sumar $stepLabel", onClick = { onStep(1) })
+        }
+    }
+}
+
+/** Boton redondo de ajuste de la fila rapida. */
+@Composable
+private fun StepButton(symbol: String, description: String, onClick: () -> Unit) {
+    FilledTonalIconButton(onClick = onClick, modifier = Modifier.size(44.dp)) {
+        Text(
+            text = symbol,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.semantics { contentDescription = description },
+        )
+    }
+}
+
+/** Paso de peso de la fila rapida: el disco mas chico habitual. */
+private const val WEIGHT_STEP_KG = 2.5
 
 /** Fila de una serie registrada: datos, edicion y borrado. */
 @Composable
