@@ -3,6 +3,7 @@ package com.fitlog.app.domain
 import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
+import kotlin.math.roundToInt
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
