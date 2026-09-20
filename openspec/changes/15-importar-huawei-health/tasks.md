@@ -48,6 +48,13 @@
 - [x] 3f.2 La vista previa informa los archivos descartados, para diagnosticar un export inesperado
 - [x] 3f.3 Acción "Ver el historial" al terminar la importación
 
+## 3g. Métricas estructuradas
+
+- [x] 3g.1 Migración 002 con distancia, calorías, frecuencia cardíaca, pasos, desnivel y origen en `session` (Android y web)
+- [x] 3g.2 La importación guarda las métricas; una sesión propia las deja en NULL
+- [x] 3g.3 El detalle muestra la sección Actividad y el historial usa los datos estructurados
+- [x] 3g.4 Paridad de esquema y respaldo siguen en verde (el respaldo copia las filas completas)
+
 ## 4. Verificación y cierre
 
 - [x] 4.1 Dejar `android.yml` y `web.yml` en verde (tests y build)
