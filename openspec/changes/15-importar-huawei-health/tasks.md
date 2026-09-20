@@ -55,6 +55,12 @@
 - [x] 3g.3 El detalle muestra la sección Actividad y el historial usa los datos estructurados
 - [x] 3g.4 Paridad de esquema y respaldo siguen en verde (el respaldo copia las filas completas)
 
+## 3h. Gráficos de actividad
+
+- [x] 3h.1 Dominio `Activity` con serie por rango, métrica elegida y totales, con tests
+- [x] 3h.2 Progreso suma la sección "Actividad importada": chips de métrica, tiles de totales, gráfico y detalle
+- [ ] 3h.3 Replicar la sección en la web
+
 ## 4. Verificación y cierre
 
 - [x] 4.1 Dejar `android.yml` y `web.yml` en verde (tests y build)
