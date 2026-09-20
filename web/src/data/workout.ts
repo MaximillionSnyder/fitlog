@@ -386,6 +386,63 @@ export async function deleteSet(db: FitLogDb, setId: string, now: () => number =
     .where(eq(setEntry.id, setId));
 }
 
+/** Entrenamiento a importar desde otra app: fechas y nota ya resueltas. */
+export interface ImportedSession {
+  readonly startedAtMs: number;
+  readonly finishedAtMs: number | null;
+  readonly notes: string | null;
+}
+
+export interface ImportSessionsResult {
+  readonly imported: number;
+  readonly skipped: number;
+}
+
+/**
+ * Importa entrenamientos de otra app como sesiones, salteando los que ya existen.
+ *
+ * La clave es la fecha de inicio: dos entrenamientos no empiezan en el mismo milisegundo, asi que
+ * repetir la importacion no duplica nada y no hace falta guardar el id de la app de origen.
+ */
+export async function importSessions(
+  db: FitLogDb,
+  sessions: readonly ImportedSession[],
+  now: () => number = Date.now
+): Promise<ImportSessionsResult> {
+  if (sessions.length === 0) return { imported: 0, skipped: 0 };
+
+  const existingRows = await db
+    .select({ startedAt: session.startedAt })
+    .from(session)
+    .where(isNull(session.deletedAt));
+  const existing = new Set(existingRows.map((row) => row.startedAt));
+
+  const timestamp = now();
+  let imported = 0;
+  let skipped = 0;
+
+  for (const draft of [...sessions].sort((a, b) => a.startedAtMs - b.startedAtMs)) {
+    if (existing.has(draft.startedAtMs)) {
+      skipped += 1;
+      continue;
+    }
+    existing.add(draft.startedAtMs);
+    await db.insert(session).values({
+      id: generateUlid(timestamp),
+      routineId: null,
+      startedAt: draft.startedAtMs,
+      finishedAt: draft.finishedAtMs,
+      notes: draft.notes,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      deletedAt: null,
+    });
+    imported += 1;
+  }
+
+  return { imported, skipped };
+}
+
 export async function listSessions(db: FitLogDb): Promise<WorkoutSession[]> {
   const sessionRows = await db
     .select()

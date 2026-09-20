@@ -10,6 +10,7 @@ import {
   finishSession,
   getActiveSession,
   getSessionDetail,
+  importSessions,
   listSessions,
   startSession,
   updateSet,
@@ -44,6 +45,44 @@ async function expectWorkoutError(promise: Promise<unknown>, code: string): Prom
     expect((error as WorkoutError).code).toBe(code);
   });
 }
+
+describe('importación de entrenamientos', () => {
+  const draft = {
+    startedAtMs: 1_690_000_000_000,
+    finishedAtMs: 1_690_000_600_000,
+    notes: 'Huawei Health · Running · 5 km',
+  };
+
+  it('importa sesiones y saltea las que ya existen', async () => {
+    const db = createDatabase();
+
+    const firstRun = await importSessions(db, [draft]);
+    expect(firstRun.imported).toBe(1);
+    expect(firstRun.skipped).toBe(0);
+
+    // Repetir la importación no duplica: la fecha de inicio ya está.
+    const secondRun = await importSessions(db, [draft]);
+    expect(secondRun.imported).toBe(0);
+    expect(secondRun.skipped).toBe(1);
+
+    const sessions = await listSessions(db);
+    expect(sessions).toHaveLength(1);
+    expect(first(sessions).notes).toBe('Huawei Health · Running · 5 km');
+    expect(first(sessions).finishedAt).toBe(1_690_000_600_000);
+  });
+
+  it('importa solo lo nuevo de una exportación posterior', async () => {
+    const db = createDatabase();
+    await importSessions(db, [draft]);
+
+    const nuevo = { startedAtMs: 1_700_000_000_000, finishedAtMs: null, notes: 'nuevo' };
+    const result = await importSessions(db, [draft, nuevo]);
+
+    expect(result.imported).toBe(1);
+    expect(result.skipped).toBe(1);
+    expect(await listSessions(db)).toHaveLength(2);
+  });
+});
 
 describe('sesiones', () => {
   it('inicia y finaliza una sesion', async () => {

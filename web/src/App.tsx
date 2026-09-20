@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { useDatabase } from '@/db/bootstrap';
+import { useImport } from '@/state/useImport';
 import { useBackup } from '@/state/useBackup';
 import { useBodyMetrics } from '@/state/useBodyMetrics';
 import { useCatalog } from '@/state/useCatalog';
@@ -11,6 +12,7 @@ import { useTips } from '@/state/useTips';
 import { useWorkout } from '@/state/useWorkout';
 import { AppShell } from '@/ui/AppShell';
 import { HomeView } from '@/ui/HomeView';
+import { ImportView } from '@/ui/ImportView';
 import { MoreView } from '@/ui/MoreView';
 import { SessionDetailView } from '@/ui/SessionDetailView';
 import { SettingsView } from '@/ui/SettingsView';
@@ -42,6 +44,7 @@ export default function App() {
   const tips = useTips(db);
   const body = useBodyMetrics(db);
   const backup = useBackup(db);
+  const importer = useImport(db);
   const { choice, isDark, setChoice, toggle } = useTheme();
 
   const [view, setView] = useState<View>('inicio');
@@ -127,6 +130,7 @@ export default function App() {
       {view === 'tips' && <TipsView tips={tips} catalog={catalog} />}
       {view === 'medidas' && <BodyMetricsView body={body} />}
       {view === 'respaldo' && <BackupView backup={backup} />}
+      {view === 'importar' && <ImportView importer={importer} />}
       {view === 'ajustes' && <SettingsView choice={choice} onChoice={setChoice} />}
     </AppShell>
   );

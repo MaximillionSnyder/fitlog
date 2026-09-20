@@ -2,12 +2,12 @@
 
 - [x] 1.1 Crear `domain/HuaweiHealth.kt` con el modelo del entrenamiento importado y el lector tolerante de JSON; verificar que CI compila
 - [x] 1.2 Cubrir con tests: registros válidos, repetidos por `recordId`, sin fecha, con duración en milisegundos y archivos que no son entrenamientos
-- [ ] 1.3 Crear el equivalente web `web/src/domain/huaweiHealth.ts` con los mismos tests
+- [x] 1.3 Crear el equivalente web `web/src/domain/huaweiHealth.ts` con los mismos tests
 
 ## 2. Importación
 
 - [x] 2.1 Sumar `importSessions` a `WorkoutRepository` (Android) con salteo por fecha de inicio ya existente; verificar con test
-- [ ] 2.2 Sumar el equivalente en `web/src/data/workout.ts`; verificar con test
+- [x] 2.2 Sumar el equivalente en `web/src/data/workout.ts`; verificar con test
 - [x] 2.3 Armar la nota de cada sesión importada con tipo, distancia, calorías y frecuencia cardíaca
 
 ## 3. Pantalla de importación
@@ -15,7 +15,7 @@
 - [x] 3.1 Crear `ui/ImportViewModel.kt` con los estados (sin archivos, leyendo, vista previa, importando, resultado) y la lectura de la carpeta elegida
 - [x] 3.2 Crear `ui/ImportScreen.kt` con el selector de carpeta, la vista previa y el resumen, usando el sistema de diseño
 - [x] 3.3 Sumar la ruta en `MainActivity.kt` y la entrada en `Más`
-- [ ] 3.4 Crear la vista web equivalente (`ImportView.tsx`) con selector de carpeta y la misma vista previa
+- [x] 3.4 Crear la vista web equivalente (`ImportView.tsx`) con selector de carpeta y la misma vista previa
 
 ## 4. Verificación y cierre
 

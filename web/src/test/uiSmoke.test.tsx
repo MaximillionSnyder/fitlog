@@ -7,6 +7,8 @@ import { MoreView } from '@/ui/MoreView';
 import { SessionDetailView } from '@/ui/SessionDetailView';
 import { SettingsView } from '@/ui/SettingsView';
 import CatalogView from '@/ui/CatalogView';
+import { ImportView } from '@/ui/ImportView';
+import type { ImportState } from '@/state/useImport';
 import WorkoutView from '@/ui/WorkoutView';
 import type { RoutinesState } from '@/state/useRoutines';
 import type { BodyMetricsState } from '@/state/useBodyMetrics';
@@ -162,6 +164,39 @@ const detailWorkout = {
   },
 } as unknown as WorkoutState;
 
+const importer = {
+  step: 'preview',
+  reading: false,
+  importing: false,
+  error: null,
+  filesRead: 2,
+  workouts: [
+    {
+      recordId: 'a',
+      startedAtMs: Date.UTC(2023, 10, 14, 22, 13, 20),
+      finishedAtMs: Date.UTC(2023, 10, 14, 22, 43, 20),
+      sportType: 4,
+      sportName: 'Running',
+      durationMs: 1_800_000,
+      distanceM: 5_240,
+      calories: 320,
+      steps: 6_800,
+      averageHeartRate: 145,
+      maxHeartRate: 172,
+    },
+  ],
+  alreadyImported: 1,
+  result: null,
+  pending: 0,
+  canImport: false,
+  sports: [{ name: 'Running', count: 1 }],
+  firstAtMs: Date.UTC(2023, 10, 14),
+  lastAtMs: Date.UTC(2023, 10, 14),
+  readFiles: async () => {},
+  runImport: async () => {},
+  reset: () => {},
+} as unknown as ImportState;
+
 describe('interfaz web', () => {
   it('el shell muestra los cinco destinos y la marca', () => {
     const html = renderToStaticMarkup(
@@ -243,6 +278,16 @@ describe('interfaz web', () => {
 
     expect(html).toContain('Sin resultados');
     expect(html).toContain('Limpiar filtros');
+  });
+
+  it('la importación muestra la vista previa antes de escribir', () => {
+    const html = renderToStaticMarkup(<ImportView importer={importer} />);
+
+    expect(html).toContain('Qué se encontró');
+    expect(html).toContain('Entrenamientos');
+    expect(html).toContain('Running');
+    expect(html).toContain('Archivos leídos');
+    expect(html).toContain('No hay nada nuevo para importar');
   });
 
   it('Ajustes ofrece los tres modos de tema y el estado de la base', () => {

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import {
+  IconArrowDown,
   IconCalendar,
   IconChart,
   IconDumbbell,
@@ -33,7 +34,8 @@ export type View =
   | 'medidas'
   | 'respaldo'
   | 'ajustes'
-  | 'sesion';
+  | 'sesion'
+  | 'importar';
 
 export interface TopLevelDestination {
   readonly id: View;
@@ -90,6 +92,12 @@ export const secondaryDestinations: readonly SecondaryDestination[] = [
     icon: <IconShield className={iconClass} />,
   },
   {
+    id: 'importar',
+    title: 'Importar entrenamientos',
+    description: 'Traé tus entrenamientos desde Huawei Health',
+    icon: <IconArrowDown className={iconClass} />,
+  },
+  {
     id: 'ajustes',
     title: 'Ajustes',
     description: 'Tema, colores y estado de la base de datos',
@@ -99,6 +107,7 @@ export const secondaryDestinations: readonly SecondaryDestination[] = [
 
 export function titleForView(view: View): string | null {
   if (view === 'inicio') return null;
+  if (view === 'importar') return 'Importar entrenamientos';
   if (view === 'sesion') return 'Detalle del entrenamiento';
   const top = topLevelDestinations.find((destination) => destination.id === view);
   if (top) return top.label;
