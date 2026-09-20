@@ -17,6 +17,11 @@
 - [x] 3.3 Sumar la ruta en `MainActivity.kt` y la entrada en `Más`
 - [x] 3.4 Crear la vista web equivalente (`ImportView.tsx`) con selector de carpeta y la misma vista previa
 
+## 3b. Datos que la exportación no resume
+
+- [x] 3b.1 Derivar la frecuencia cardíaca promedio y máxima del blob de sensores (`tp=h-r`), con tests en Android y web
+- [x] 3b.2 Aceptar el ZIP de la exportación sin descomprimir en Android (`ZipInputStream`, sin dependencias)
+
 ## 4. Verificación y cierre
 
 - [x] 4.1 Dejar `android.yml` y `web.yml` en verde (tests y build)
