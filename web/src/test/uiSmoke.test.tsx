@@ -121,6 +121,48 @@ const activeWorkout = {
   ],
 } as unknown as WorkoutState;
 
+const importedWorkout = {
+  ...workout,
+  history: [
+    {
+      id: 's1',
+      startedAt: Date.now() - 86_400_000,
+      finishedAt: Date.now() - 82_800_000,
+      notes: 'Huawei Health · Running · 5.24 km',
+      routineId: null,
+      routineName: null,
+      summary: { totalSets: 0, workingSets: 0, totalVolumeKg: 0, volumeByExercise: {} },
+      activity: {
+        distanceM: 5_240,
+        calories: 320,
+        averageHeartRate: 147,
+        maxHeartRate: 170,
+        steps: 6_800,
+        elevationGainM: 12,
+        source: 'Huawei Health',
+      },
+    },
+    {
+      id: 's2',
+      startedAt: Date.now() - 2 * 86_400_000,
+      finishedAt: Date.now() - 2 * 86_400_000 + 2_700_000,
+      notes: 'GPX · Bicicleta · 20 km',
+      routineId: null,
+      routineName: null,
+      summary: { totalSets: 0, workingSets: 0, totalVolumeKg: 0, volumeByExercise: {} },
+      activity: {
+        distanceM: 20_000,
+        calories: null,
+        averageHeartRate: null,
+        maxHeartRate: null,
+        steps: null,
+        elevationGainM: null,
+        source: 'GPX',
+      },
+    },
+  ],
+} as unknown as WorkoutState;
+
 const detailWorkout = {
   ...workout,
   detail: {
@@ -237,6 +279,22 @@ describe('interfaz web', () => {
     expect(html).toContain('Armá una rutina');
     expect(html).toContain('0 de 3');
     expect(html).toContain('bg-surface');
+  });
+
+  it('el panel con historia importada muestra la tendencia de actividad', () => {
+    const html = renderToStaticMarkup(
+      <HomeView
+        workout={importedWorkout}
+        body={body}
+        catalog={catalog}
+        routines={routines}
+        onNavigate={() => {}}
+      />
+    );
+
+    expect(html).toContain('Distancia por sesión');
+    // Sin series no hay volumen que graficar.
+    expect(html).not.toContain('Volumen por sesión');
   });
 
   it('Más agrupa los destinos secundarios con su descripción', () => {

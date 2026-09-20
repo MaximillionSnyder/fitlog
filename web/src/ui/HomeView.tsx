@@ -2,6 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 import {
+  buildActivitySeries,
+  type ActivityInput,
+  type ActivityPoint,
+} from '@/domain/activity';
+import {
   buildHomeSteps,
   buildHomeSummary,
   buildVolumeTrend,
@@ -9,6 +14,7 @@ import {
   type HomeSteps,
 } from '@/domain/home';
 import {
+  formatDecimal,
   formatDuration,
   formatDurationLong,
   formatKg,
@@ -90,6 +96,17 @@ export function HomeView({
     return buildVolumeTrend(sessions);
   }, [workout.history]);
 
+  // Actividad importada: lo que se muestra cuando la historia no tiene series con peso.
+  const activityTrend = useMemo(() => {
+    const sessions: ActivityInput[] = workout.history.map((session) => ({
+      startedAtMs: session.startedAt,
+      finishedAtMs: session.finishedAt,
+      distanceM: session.activity?.distanceM ?? null,
+      averageHeartRate: session.activity?.averageHeartRate ?? null,
+    }));
+    return buildActivitySeries(sessions, null).slice(-8);
+  }, [workout.history]);
+
   const recent = useMemo(
     () => workout.history.filter((session) => session.finishedAt !== null).slice(0, 3),
     [workout.history]
@@ -103,6 +120,7 @@ export function HomeView({
     summary.totalSessions,
     body.metrics.length
   );
+  const hasVolume = trend.some((point) => point.volumeKg > 0);
   const greeting = greetingFor(now);
   const exerciseCount = catalog.snapshot.exercises.length;
 
@@ -239,7 +257,7 @@ export function HomeView({
         />
       </div>
 
-      {trend.length > 1 ? (
+      {hasVolume && trend.length > 1 ? (
         <Card className="!p-4">
           <SectionHeader title="Volumen por sesión" trailing={`${trend.length} últimas`} />
           <div className="mt-3">
@@ -277,6 +295,10 @@ export function HomeView({
             </ResponsiveContainer>
           </div>
         </Card>
+      ) : null}
+
+      {!hasVolume && activityTrend.length > 1 ? (
+        <ActivityTrendCard points={activityTrend} />
       ) : null}
 
       {steps.isComplete ? null : (
@@ -365,6 +387,68 @@ export function HomeView({
         />
       </div>
     </div>
+  );
+}
+
+/**
+ * Tendencia de la actividad importada: distancia por entrenamiento y, si no hay distancia,
+ * duración. Es lo que se muestra cuando la historia no tiene series con peso.
+ */
+function ActivityTrendCard({ points }: { points: readonly ActivityPoint[] }) {
+  const withDistance = points.filter((point) => point.distanceM > 0).length > 1;
+  const shown = withDistance
+    ? points.filter((point) => point.distanceM > 0)
+    : points.filter((point) => point.durationMs > 0);
+  const values = shown.map((point) =>
+    withDistance ? point.distanceM / 1000 : point.durationMs / 60_000
+  );
+
+  return (
+    <Card className="!p-4">
+      <SectionHeader
+        title={withDistance ? 'Distancia por sesión' : 'Duración por sesión'}
+        trailing={`${values.length} últimas`}
+      />
+      <div className="mt-3">
+        <ResponsiveContainer width="100%" height={160}>
+          <LineChart
+            data={shown.map((point, index) => ({
+              label: formatTrendDay(point.startedAtMs),
+              value: values[index] ?? 0,
+            }))}
+            margin={{ top: 8, right: 8, bottom: 0, left: -18 }}
+          >
+            <CartesianGrid stroke="var(--fl-line)" strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="label" tick={{ fill: 'var(--fl-muted)', fontSize: 10 }} />
+            <YAxis tick={{ fill: 'var(--fl-muted)', fontSize: 10 }} width={48} />
+            <Tooltip
+              contentStyle={{
+                background: 'var(--fl-surface)',
+                border: '1px solid var(--fl-line-strong)',
+                borderRadius: 12,
+                fontSize: 12,
+                color: 'var(--fl-ink)',
+              }}
+              labelStyle={{ color: 'var(--fl-muted)' }}
+              formatter={(value) => [
+                withDistance
+                  ? `${formatDecimal(Number(value ?? 0), 2)} km`
+                  : formatDuration(Number(value ?? 0) * 60_000),
+                withDistance ? 'Distancia' : 'Duración',
+              ]}
+            />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke="var(--fl-data)"
+              strokeWidth={2}
+              dot={{ r: 3, fill: 'var(--fl-data)' }}
+              activeDot={{ r: 5 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </Card>
   );
 }
 

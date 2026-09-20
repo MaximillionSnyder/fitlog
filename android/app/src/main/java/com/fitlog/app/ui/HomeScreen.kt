@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.fitlog.app.domain.Activity
 import com.fitlog.app.domain.Home
 import com.fitlog.app.ui.components.FitLogCard
 import com.fitlog.app.ui.components.FitLogIcons
@@ -155,9 +156,15 @@ fun HomeScreen(
                 }
             }
 
-            if (state.trend.size > 1) {
+            // El panel muestra el volumen si hay entrenamientos con series; si la historia es
+            // actividad importada (sin series), muestra su distancia o su duracion.
+            if (state.hasVolume && state.trend.size > 1) {
                 item {
                     TrendCard(trend = state.trend)
+                }
+            } else if (state.activityTrend.size > 1) {
+                item {
+                    ActivityTrendCard(points = state.activityTrend)
                 }
             }
 
@@ -425,6 +432,42 @@ private fun TrendCard(trend: List<Home.TrendPoint>) {
             values = trend.map { it.volumeKg },
             labels = trend.map { formatTrendDay(it.startedAtMs) },
             valueFormatter = { "${Format.volumeKg(it)} kg" },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(160.dp),
+        )
+    }
+}
+
+/**
+ * Tendencia de la actividad importada: distancia por entrenamiento y, si no hay distancia,
+ * duracion. Es lo que se muestra cuando la historia no tiene series con peso.
+ */
+@Composable
+private fun ActivityTrendCard(points: List<Activity.Point>) {
+    val withDistance = points.count { it.distanceM > 0 } > 1
+    val values = if (withDistance) {
+        points.filter { it.distanceM > 0 }.map { it.distanceM / 1000.0 }
+    } else {
+        points.filter { it.durationMs > 0 }.map { it.durationMs / 60_000.0 }
+    }
+    val labels = if (withDistance) {
+        points.filter { it.distanceM > 0 }.map { formatTrendDay(it.startedAtMs) }
+    } else {
+        points.filter { it.durationMs > 0 }.map { formatTrendDay(it.startedAtMs) }
+    }
+
+    FitLogCard {
+        SectionHeader(
+            title = if (withDistance) "Distancia por sesión" else "Duración por sesión",
+            trailing = "${Format.integer(values.size)} últimas",
+        )
+        FitLogLineChart(
+            values = values,
+            labels = labels,
+            valueFormatter = { value ->
+                if (withDistance) "${Format.decimal(value, 2)} km" else Format.duration((value * 60_000).toLong())
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(160.dp),

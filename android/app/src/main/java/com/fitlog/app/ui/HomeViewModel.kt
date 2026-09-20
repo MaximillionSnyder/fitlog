@@ -6,6 +6,7 @@ import com.fitlog.app.data.BodyMetricsRepository
 import com.fitlog.app.data.RoutinesRepository
 import com.fitlog.app.data.WorkoutRepository
 import com.fitlog.app.data.WorkoutSession
+import com.fitlog.app.domain.Activity
 import com.fitlog.app.domain.Body
 import com.fitlog.app.domain.Home
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,7 +38,11 @@ data class HomeUiState(
     val recentSessions: List<RecentSession> = emptyList(),
     val steps: Home.Steps = Home.steps(routineCount = 0, sessionCount = 0, bodyMetricCount = 0),
     val trend: List<Home.TrendPoint> = emptyList(),
-)
+    /** Actividad importada de las ultimas sesiones, para cuando no hay volumen que mostrar. */
+    val activityTrend: List<Activity.Point> = emptyList(),
+) {
+    val hasVolume: Boolean get() = trend.any { it.volumeKg > 0 }
+}
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -95,6 +100,17 @@ class HomeViewModel @Inject constructor(
                         summary = Home.build(sessionInputs, bodyInputs, now),
                         activeSession = snapshot.active,
                         trend = Home.trend(sessionInputs),
+                        activityTrend = Activity.series(
+                            snapshot.sessions.map { session ->
+                                Activity.Input(
+                                    startedAtMs = session.startedAt,
+                                    finishedAtMs = session.finishedAt,
+                                    distanceM = session.activity?.distanceM,
+                                    averageHeartRate = session.activity?.averageHeartRate,
+                                )
+                            },
+                            null,
+                        ).takeLast(Home.TREND_LIMIT),
                         recentSessions = snapshot.sessions
                             .filter { it.finishedAt != null }
                             .take(RECENT_LIMIT)
