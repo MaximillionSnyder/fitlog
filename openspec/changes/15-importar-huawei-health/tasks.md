@@ -36,6 +36,12 @@
 - [x] 3d.4 La pantalla acepta carpeta, ZIP o GPX, y se pueden mezclar en una misma importación
 - [x] 3d.5 Tests del lector, de la nota y de los casos sin tiempos o sin frecuencia cardíaca
 
+## 3e. Tolerancia a archivos reales
+
+- [x] 3e.1 Leer archivos con marca de orden de bytes (BOM), que rompía el lector de JSON
+- [x] 3e.2 Importar un GPX sin tiempos por punto usando la fecha del metadata, sin duración
+- [x] 3e.3 Un GPX con una sola marca de tiempo tampoco alcanza: se usa el metadata o se descarta
+
 ## 4. Verificación y cierre
 
 - [x] 4.1 Dejar `android.yml` y `web.yml` en verde (tests y build)
