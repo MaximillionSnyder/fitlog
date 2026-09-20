@@ -143,9 +143,12 @@ object HuaweiHealth {
         val startedAt = readTimestamp(node, "startTime", "start_time", "beginTime", "start")
             ?: return null
         if (!looksLikeWorkout(node)) return null
+
         val durationMs = readDuration(node)
-        val finishedAt = readTimestamp(node, "endTime", "end_time", "finishTime", "end")
-            ?: durationMs?.let { startedAt + it }
+        val explicitEnd = readTimestamp(node, "endTime", "end_time", "finishTime", "end")
+        // Un entrenamiento dura: los archivos por minuto traen fecha y calorias, pero no duracion.
+        if (durationMs == null && explicitEnd == null) return null
+        val finishedAt = explicitEnd ?: durationMs?.let { startedAt + it }
 
         val attribute = readString(node, "attribute", "attributes")
         val summaryHeartRate = readDouble(node, "avgHeartRate", "averageHeartRate", "avg_heart_rate")
@@ -307,6 +310,12 @@ object HuaweiHealth {
     /** Segundos de un dia: separa una duracion en segundos de una en milisegundos. */
     private const val SECONDS_PER_DAY = 86_400.0
 
+    /** Marca de origen en la nota de una sesion importada. */
+    const val NOTE_PREFIX = "Huawei Health"
+
+    /** `true` si la sesion vino de una importacion (el origen queda en la nota). */
+    fun isImportedNote(notes: String?): Boolean = notes?.startsWith(NOTE_PREFIX) == true
+
     /**
      * Nota de la sesion importada: origen y los datos que Huawei si registro.
      *
@@ -314,11 +323,11 @@ object HuaweiHealth {
      * series con peso y reps.
      */
     fun noteFor(workout: Workout): String {
-        val parts = mutableListOf("Huawei Health", workout.sportName)
+        val parts = mutableListOf(NOTE_PREFIX, workout.sportName)
 
         workout.distanceM?.takeIf { it > 0 }?.let { meters ->
             val km = meters / 1000.0
-            parts += if (km >= 1.0) "${formatOneDecimal(km)} km" else "${meters.roundToInt()} m"
+            parts += if (km >= 1.0) "${formatDistance(km)} km" else "${meters.roundToInt()} m"
         }
         workout.calories?.takeIf { it > 0 }?.let { parts += "${it.roundToInt()} kcal" }
         val average = workout.averageHeartRate
@@ -333,8 +342,13 @@ object HuaweiHealth {
         return parts.joinToString(" · ")
     }
 
-    private fun formatOneDecimal(value: Double): String {
+    /** Hasta dos decimales, sin ceros de relleno: `5.24`, `20`. */
+    private fun formatDistance(value: Double): String {
         val rounded = (value * 100).roundToInt() / 100.0
-        return rounded.toString()
+        return if (rounded == rounded.toLong().toDouble()) {
+            rounded.toLong().toString()
+        } else {
+            rounded.toString()
+        }
     }
 }

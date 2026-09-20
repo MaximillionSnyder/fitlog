@@ -44,6 +44,7 @@ import com.fitlog.app.data.WorkoutSession
 import com.fitlog.app.data.WorkoutSet
 import com.fitlog.app.domain.CatalogExercise
 import com.fitlog.app.domain.CatalogText
+import com.fitlog.app.domain.HuaweiHealth
 import com.fitlog.app.domain.WorkoutSummary
 import com.fitlog.app.ui.components.FitLogCard
 import com.fitlog.app.ui.components.FitLogIcons
@@ -579,6 +580,23 @@ private fun SetRow(set: WorkoutSet, onEdit: () -> Unit, onDelete: () -> Unit) {
     }
 }
 
+/** Marca de una sesion que vino de una importacion (Huawei Health). */
+@Composable
+private fun ImportedBadge() {
+    val fitLog = MaterialTheme.fitLogColors
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = fitLog.dataSoft,
+        contentColor = fitLog.data,
+    ) {
+        Text(
+            text = "IMPORTADO",
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(horizontal = Spacing.sm, vertical = 2.dp),
+        )
+    }
+}
+
 /** Marca de serie de calentamiento. */
 @Composable
 private fun WarmupBadge() {
@@ -636,6 +654,9 @@ private fun HistoryCard(session: WorkoutSession, onOpenDetail: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (HuaweiHealth.isImportedNote(session.notes)) {
+                    ImportedBadge()
+                }
             }
             TextButton(onClick = onOpenDetail) { Text("Detalle") }
         }

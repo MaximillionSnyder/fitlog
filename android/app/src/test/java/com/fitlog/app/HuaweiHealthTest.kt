@@ -171,6 +171,25 @@ class HuaweiHealthTest {
     }
 
     @Test
+    fun `un archivo por minuto con calorias no es un entrenamiento`() {
+        // Tiene fecha y calorias, pero no duracion ni fin: no es una sesion.
+        val result = HuaweiHealth.parse(
+            listOf("""{"sportPerMinute": [{"startTime": $start, "steps": 120, "calories": 8}]}""")
+        )
+
+        assertTrue(result.isEmpty)
+    }
+
+    @Test
+    fun `la distancia redonda se muestra sin decimales de relleno`() {
+        val workout = HuaweiHealth.parse(
+            listOf(activity(totalDistance = 20_000))
+        ).workouts.first()
+
+        assertTrue(HuaweiHealth.noteFor(workout).contains("20 km"))
+    }
+
+    @Test
     fun `la nota resume el origen y los datos disponibles`() {
         val workout = HuaweiHealth.parse(listOf(activity())).workouts.first()
         val note = HuaweiHealth.noteFor(workout)

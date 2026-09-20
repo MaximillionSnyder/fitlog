@@ -9,6 +9,14 @@
  * estres, y el formato varia entre versiones de la app. Todo lo que no se reconoce se ignora.
  */
 
+/** Marca de origen en la nota de una sesión importada. */
+export const HUAWEI_NOTE_PREFIX = 'Huawei Health';
+
+/** `true` si la sesión vino de una importación (el origen queda en la nota). */
+export function isHuaweiNote(notes: string | null | undefined): boolean {
+  return typeof notes === 'string' && notes.startsWith(HUAWEI_NOTE_PREFIX);
+}
+
 export interface HuaweiWorkout {
   readonly recordId: string | null;
   readonly startedAtMs: number;
@@ -142,9 +150,10 @@ function toWorkout(node: Record<string, unknown>): HuaweiWorkout | null {
   if (startedAt === null || !looksLikeWorkout(node)) return null;
 
   const durationMs = readDuration(node);
-  const finishedAt =
-    readTimestamp(node, ['endTime', 'end_time', 'finishTime', 'end']) ??
-    (durationMs === null ? null : startedAt + durationMs);
+  const explicitEnd = readTimestamp(node, ['endTime', 'end_time', 'finishTime', 'end']);
+  // Un entrenamiento dura: los archivos por minuto traen fecha y calorías, pero no duración.
+  if (durationMs === null && explicitEnd === null) return null;
+  const finishedAt = explicitEnd ?? (durationMs === null ? null : startedAt + durationMs);
 
   const attribute = readString(node, ['attribute', 'attributes']);
   const summaryHeartRate = readNumber(node, ['avgHeartRate', 'averageHeartRate', 'avg_heart_rate']);
@@ -301,11 +310,11 @@ function readNumber(node: Record<string, unknown>, keys: readonly string[]): num
  * series con peso y reps.
  */
 export function huaweiNote(workout: HuaweiWorkout): string {
-  const parts = ['Huawei Health', workout.sportName];
+  const parts = [HUAWEI_NOTE_PREFIX, workout.sportName];
 
   if (workout.distanceM !== null && workout.distanceM > 0) {
     const km = workout.distanceM / 1000;
-    parts.push(km >= 1 ? `${formatTwoDecimals(km)} km` : `${Math.round(workout.distanceM)} m`);
+    parts.push(km >= 1 ? `${formatDistance(km)} km` : `${Math.round(workout.distanceM)} m`);
   }
   if (workout.calories !== null && workout.calories > 0) {
     parts.push(`${Math.round(workout.calories)} kcal`);
@@ -322,6 +331,7 @@ export function huaweiNote(workout: HuaweiWorkout): string {
   return parts.join(' · ');
 }
 
-function formatTwoDecimals(value: number): string {
+/** Hasta dos decimales, sin ceros de relleno: `5.24`, `20`. */
+function formatDistance(value: number): string {
   return String(Math.round(value * 100) / 100);
 }

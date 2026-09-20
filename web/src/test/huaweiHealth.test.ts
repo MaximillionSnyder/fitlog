@@ -155,6 +155,20 @@ describe('parseHuaweiExport', () => {
     expect(workout.maxHeartRate).toBe(180);
   });
 
+  it('un archivo por minuto con calorías no es un entrenamiento', () => {
+    // Tiene fecha y calorías, pero no duración ni fin: no es una sesión.
+    const result = parseHuaweiExport([
+      `{"sportPerMinute": [{"startTime": ${start}, "steps": 120, "calories": 8}]}`,
+    ]);
+
+    expect(result.workouts).toHaveLength(0);
+  });
+
+  it('la distancia redonda se muestra sin decimales de relleno', () => {
+    const workout = first([activity({ totalDistance: 20_000 })]);
+    expect(huaweiNote(workout)).toContain('20 km');
+  });
+
   it('la nota resume el origen y los datos disponibles', () => {
     const note = huaweiNote(first([activity()]));
 
