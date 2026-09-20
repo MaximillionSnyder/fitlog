@@ -149,7 +149,7 @@ class WorkoutRepositoryTest {
                     startedAtMs = 1_690_000_000_000,
                     finishedAtMs = 1_690_000_600_000,
                     notes = "Huawei Health · Running · 5.24 km",
-                    activity = WorkoutRepository.ImportedActivity(
+                    activity = com.fitlog.app.data.ImportedActivity(
                         distanceM = 5_240.0,
                         calories = 320.0,
                         averageHeartRate = 147.0,

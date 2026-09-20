@@ -70,7 +70,7 @@ object DatabaseModule {
     private fun recordMigration(db: SupportSQLiteDatabase, version: Int, name: String) {
         db.execSQL(
             "INSERT OR REPLACE INTO schema_migration (version, name, applied_at) VALUES (?, ?, ?)",
-            arrayOf(version, name, System.currentTimeMillis()),
+            arrayOf<Any>(version, name, System.currentTimeMillis()),
         )
     }
 

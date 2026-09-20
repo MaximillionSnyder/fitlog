@@ -2,6 +2,7 @@ package com.fitlog.app.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fitlog.app.data.ImportedActivity
 import com.fitlog.app.data.WorkoutRepository
 import com.fitlog.app.domain.Gpx
 import com.fitlog.app.domain.HuaweiHealth
@@ -115,7 +116,7 @@ class ImportViewModel @Inject constructor(
                                 startedAtMs = workout.startedAtMs,
                                 finishedAtMs = workout.finishedAtMs,
                                 notes = HuaweiHealth.noteFor(workout),
-                                activity = WorkoutRepository.ImportedActivity(
+                                activity = ImportedActivity(
                                     distanceM = workout.distanceM,
                                     calories = workout.calories,
                                     averageHeartRate = workout.averageHeartRate,
