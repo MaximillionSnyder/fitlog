@@ -9,30 +9,24 @@
  * estres, y el formato varia entre versiones de la app. Todo lo que no se reconoce se ignora.
  */
 
-/** Marca de origen en la nota de una sesión importada. */
-export const HUAWEI_NOTE_PREFIX = 'Huawei Health';
+import {
+  HUAWEI_SOURCE,
+  importedWorkoutNote,
+  workoutKey,
+  type ImportedWorkout,
+} from '@/domain/importedWorkout';
 
-/** `true` si la sesión vino de una importación (el origen queda en la nota). */
-export function isHuaweiNote(notes: string | null | undefined): boolean {
-  return typeof notes === 'string' && notes.startsWith(HUAWEI_NOTE_PREFIX);
-}
+/** Marca de origen en la nota de una sesión importada de Huawei Health. */
+export const HUAWEI_NOTE_PREFIX = HUAWEI_SOURCE;
 
-export interface HuaweiWorkout {
-  readonly recordId: string | null;
-  readonly startedAtMs: number;
-  readonly finishedAtMs: number | null;
-  readonly sportType: number | null;
-  readonly sportName: string;
-  readonly durationMs: number | null;
-  readonly distanceM: number | null;
-  readonly calories: number | null;
-  readonly steps: number | null;
-  readonly averageHeartRate: number | null;
-  readonly maxHeartRate: number | null;
-}
+/** `true` si la sesión vino de una importación. */
+export { isImportedNote as isHuaweiNote } from '@/domain/importedWorkout';
+
+/** Nota de la sesión importada, con el origen y los datos disponibles. */
+export const huaweiNote = importedWorkoutNote;
 
 export interface HuaweiParseResult {
-  readonly workouts: readonly HuaweiWorkout[];
+  readonly workouts: readonly ImportedWorkout[];
   readonly filesRead: number;
   readonly filesSkipped: number;
 }
@@ -63,12 +57,12 @@ const SECONDS_PER_DAY = 86_400;
 
 /** Lee varios archivos y devuelve los entrenamientos reconocidos, sin repetidos. */
 export function parseHuaweiExport(contents: readonly string[]): HuaweiParseResult {
-  const byKey = new Map<string, HuaweiWorkout>();
+  const byKey = new Map<string, ImportedWorkout>();
   let filesRead = 0;
   let filesSkipped = 0;
 
   for (const content of contents) {
-    let workouts: HuaweiWorkout[];
+    let workouts: ImportedWorkout[];
     try {
       workouts = parseHuaweiFile(content);
     } catch {
@@ -90,11 +84,6 @@ export function parseHuaweiExport(contents: readonly string[]): HuaweiParseResul
   };
 }
 
-/** Clave natural para deduplicar dentro de la exportacion. */
-export function workoutKey(workout: HuaweiWorkout): string {
-  return workout.recordId ?? `${workout.startedAtMs}-${workout.sportName}`;
-}
-
 /**
  * Lee un archivo de la exportación.
  *
@@ -103,12 +92,12 @@ export function workoutKey(workout: HuaweiWorkout): string {
  * exportación los parte con marcadores de resincronización) y los que traen una comilla suelta
  * dentro del blob de sensores, que rompe el JSON.
  */
-export function parseHuaweiFile(content: string): HuaweiWorkout[] {
+export function parseHuaweiFile(content: string): ImportedWorkout[] {
   const trimmed = content.trim();
   if (trimmed === '') return [];
 
   // Camino rápido: el archivo entero es JSON válido (una lista o un objeto).
-  const direct: HuaweiWorkout[] = [];
+  const direct: ImportedWorkout[] = [];
   try {
     collect(JSON.parse(trimmed), direct);
   } catch {
@@ -119,7 +108,7 @@ export function parseHuaweiFile(content: string): HuaweiWorkout[] {
   if (direct.length > 0 && candidates.length <= 1) return direct;
 
   // Varios objetos seguidos (o JSON roto por una comilla suelta): se leen uno por uno.
-  const scanned: HuaweiWorkout[] = [];
+  const scanned: ImportedWorkout[] = [];
   for (const candidate of candidates) {
     let parsed: unknown;
     try {
@@ -135,7 +124,7 @@ export function parseHuaweiFile(content: string): HuaweiWorkout[] {
   }
 
   const result = scanned.length > 0 ? scanned : direct;
-  const unique = new Map<string, HuaweiWorkout>();
+  const unique = new Map<string, ImportedWorkout>();
   for (const workout of result) unique.set(workoutKey(workout), workout);
   return [...unique.values()];
 }
@@ -229,7 +218,7 @@ export function repairAttributeQuotes(text: string): string {
 
 const ATTRIBUTE_FIELD = /"attribute"\s*:\s*"/gi;
 
-function collect(node: unknown, out: HuaweiWorkout[]): void {
+function collect(node: unknown, out: ImportedWorkout[]): void {
   if (Array.isArray(node)) {
     for (const item of node) collect(item, out);
     return;
@@ -251,7 +240,7 @@ function collect(node: unknown, out: HuaweiWorkout[]): void {
  * marcas de tiempo. Se pide ademas alguna senal de deporte (tipo, nombre, distancia, calorias o
  * frecuencia cardiaca), que es lo que distingue un entrenamiento del resto.
  */
-function toWorkout(node: Record<string, unknown>): HuaweiWorkout | null {
+function toWorkout(node: Record<string, unknown>): ImportedWorkout | null {
   const startedAt = readTimestamp(node, ['startTime', 'start_time', 'beginTime', 'start']);
   if (startedAt === null || !looksLikeWorkout(node)) return null;
 
@@ -272,6 +261,7 @@ function toWorkout(node: Record<string, unknown>): HuaweiWorkout | null {
   const calories = readNumber(node, ['totalCalories', 'calories', 'total_calories']);
 
   return {
+    source: HUAWEI_SOURCE,
     recordId: readString(node, ['recordId', 'record_id', 'id']),
     startedAtMs: startedAt,
     finishedAtMs: finishedAt,
@@ -283,6 +273,7 @@ function toWorkout(node: Record<string, unknown>): HuaweiWorkout | null {
     steps: readNumber(node, ['totalSteps', 'steps']),
     averageHeartRate: summaryHeartRate ?? track?.average ?? null,
     maxHeartRate: readNumber(node, ['maxHeartRate', 'max_heart_rate']) ?? track?.max ?? null,
+    elevationGainM: null,
   };
 }
 
@@ -409,35 +400,3 @@ function readNumber(node: Record<string, unknown>, keys: readonly string[]): num
   return null;
 }
 
-/**
- * Nota de la sesion importada: origen y los datos que Huawei si registro.
- *
- * Es lo unico que queda del entrenamiento ademas de las fechas, porque la exportacion no trae
- * series con peso y reps.
- */
-export function huaweiNote(workout: HuaweiWorkout): string {
-  const parts = [HUAWEI_NOTE_PREFIX, workout.sportName];
-
-  if (workout.distanceM !== null && workout.distanceM > 0) {
-    const km = workout.distanceM / 1000;
-    parts.push(km >= 1 ? `${formatDistance(km)} km` : `${Math.round(workout.distanceM)} m`);
-  }
-  if (workout.calories !== null && workout.calories > 0) {
-    parts.push(`${Math.round(workout.calories)} kcal`);
-  }
-  const average = workout.averageHeartRate;
-  const max = workout.maxHeartRate;
-  if (average !== null && max !== null) {
-    parts.push(`FC ${Math.round(average)}/${Math.round(max)}`);
-  } else if (average !== null) {
-    parts.push(`FC media ${Math.round(average)}`);
-  }
-  if (workout.steps !== null && workout.steps > 0) parts.push(`${workout.steps} pasos`);
-
-  return parts.join(' · ');
-}
-
-/** Hasta dos decimales, sin ceros de relleno: `5.24`, `20`. */
-function formatDistance(value: number): string {
-  return String(Math.round(value * 100) / 100);
-}

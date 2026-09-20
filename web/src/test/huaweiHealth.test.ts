@@ -4,8 +4,8 @@ import {
   huaweiNote,
   parseHuaweiExport,
   parseHuaweiFile,
-  type HuaweiWorkout,
 } from '@/domain/huaweiHealth';
+import type { ImportedWorkout } from '@/domain/importedWorkout';
 
 const start = 1_700_000_000_000;
 
@@ -37,7 +37,7 @@ function compact(recordId: string, startTime: number): string {
   });
 }
 
-function first(contents: readonly string[]): HuaweiWorkout {
+function first(contents: readonly string[]): ImportedWorkout {
   const workout = parseHuaweiExport(contents).workouts[0];
   if (!workout) throw new Error('no se reconoció ningún entrenamiento');
   return workout;

@@ -22,10 +22,13 @@ export function ImportView({ importer }: { importer: ImportState }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function onFolderSelected(event: ChangeEvent<HTMLInputElement>) {
-    const files = [...(event.target.files ?? [])].filter((file) =>
-      file.name.toLowerCase().endsWith('.json')
+    const files = [...(event.target.files ?? [])].filter((file) => {
+      const name = file.name.toLowerCase();
+      return name.endsWith('.json') || name.endsWith('.gpx');
+    });
+    const contents = await Promise.all(
+      files.map(async (file) => ({ name: file.name, content: await file.text() }))
     );
-    const contents = await Promise.all(files.map((file) => file.text()));
     event.target.value = '';
     await importer.readFiles(contents);
   }
@@ -33,11 +36,11 @@ export function ImportView({ importer }: { importer: ImportState }) {
   return (
     <div className="flex flex-col gap-4">
       <Card tone="data">
-        <p className="text-ink text-sm font-semibold">Traé tus entrenamientos de Huawei Health</p>
+        <p className="text-ink text-sm font-semibold">Traé tus entrenamientos de Huawei Health o GPX</p>
         <p className="text-muted mt-1 text-sm">
-          En Huawei Health pedí la exportación de tus datos (privacidad → solicitar tus datos),
-          descomprimí el archivo y elegí acá la carpeta de entrenamientos. Nada se escribe hasta que
-          confirmes.
+          Elegí la carpeta de la exportación de Huawei Health (o el ZIP ya descomprimido) o los
+          archivos GPX de tu reloj. Se leen los dos formatos, se pueden mezclar y nada se escribe
+          hasta que confirmes.
         </p>
       </Card>
 
@@ -56,7 +59,7 @@ export function ImportView({ importer }: { importer: ImportState }) {
         onClick={() => inputRef.current?.click()}
         className="self-start"
       >
-        {importer.step === 'empty' ? 'Elegir carpeta de la exportación' : 'Elegir otra carpeta'}
+        {importer.step === 'empty' ? 'Elegir carpeta (Huawei Health o GPX)' : 'Elegir otra carpeta'}
       </Button>
 
       {importer.error ? <ErrorState message={importer.error} /> : null}

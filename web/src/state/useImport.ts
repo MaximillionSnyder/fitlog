@@ -2,7 +2,13 @@ import { useCallback, useMemo, useState } from 'react';
 
 import type { FitLogDb } from '@/db/client';
 import { importSessions, listSessions, type ImportSessionsResult } from '@/data/workout';
-import { huaweiNote, parseHuaweiExport, type HuaweiWorkout } from '@/domain/huaweiHealth';
+import { parseGpx, looksLikeGpx } from '@/domain/gpx';
+import { parseHuaweiExport } from '@/domain/huaweiHealth';
+import {
+  importedWorkoutNote,
+  workoutKey,
+  type ImportedWorkout,
+} from '@/domain/importedWorkout';
 
 export type ImportStep = 'empty' | 'preview' | 'done';
 
@@ -12,7 +18,7 @@ export interface ImportState {
   readonly importing: boolean;
   readonly error: string | null;
   readonly filesRead: number;
-  readonly workouts: readonly HuaweiWorkout[];
+  readonly workouts: readonly ImportedWorkout[];
   readonly alreadyImported: number;
   readonly result: ImportSessionsResult | null;
   readonly pending: number;
@@ -20,7 +26,7 @@ export interface ImportState {
   readonly sports: readonly { name: string; count: number }[];
   readonly firstAtMs: number | null;
   readonly lastAtMs: number | null;
-  readFiles(contents: readonly string[]): Promise<void>;
+  readFiles(files: readonly { name: string; content: string }[]): Promise<void>;
   runImport(): Promise<void>;
   reset(): void;
 }
@@ -37,13 +43,13 @@ export function useImport(db: FitLogDb | undefined): ImportState {
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filesRead, setFilesRead] = useState(0);
-  const [workouts, setWorkouts] = useState<readonly HuaweiWorkout[]>([]);
+  const [workouts, setWorkouts] = useState<readonly ImportedWorkout[]>([]);
   const [alreadyImported, setAlreadyImported] = useState(0);
   const [result, setResult] = useState<ImportSessionsResult | null>(null);
 
   const readFiles = useCallback(
-    async (contents: readonly string[]) => {
-      if (contents.length === 0) {
+    async (files: readonly { name: string; content: string }[]) => {
+      if (files.length === 0) {
         setError('No se eligió ningún archivo');
         setStep('empty');
         return;
@@ -53,15 +59,23 @@ export function useImport(db: FitLogDb | undefined): ImportState {
       setError(null);
       setResult(null);
       try {
-        const parsed = parseHuaweiExport(contents);
+        // Se decide por archivo: un GPX es XML y la exportación es JSON, así que una misma carpeta
+        // puede traer los dos formatos.
+        const huawei = files.filter((file) => !looksLikeGpx(file.content));
+        const gpx = files.filter((file) => looksLikeGpx(file.content));
+        const parsed = parseHuaweiExport(huawei.map((file) => file.content));
+        const fromGpx = gpx.flatMap((file) => parseGpx(file.content, file.name));
+        const workouts = dedupe(
+          [...parsed.workouts, ...fromGpx].sort((a, b) => b.startedAtMs - a.startedAtMs)
+        );
         const existing = new Set<string>();
         if (db) {
           for (const session of await listSessions(db)) existing.add(String(session.startedAt));
         }
-        setFilesRead(parsed.filesRead);
-        setWorkouts(parsed.workouts);
+        setFilesRead(parsed.filesRead + gpx.length);
+        setWorkouts(workouts);
         setAlreadyImported(
-          parsed.workouts.filter((workout) => existing.has(String(workout.startedAtMs))).length
+          workouts.filter((workout) => existing.has(String(workout.startedAtMs))).length
         );
         setStep('preview');
       } catch (cause) {
@@ -87,7 +101,7 @@ export function useImport(db: FitLogDb | undefined): ImportState {
         workouts.map((workout) => ({
           startedAtMs: workout.startedAtMs,
           finishedAtMs: workout.finishedAtMs,
-          notes: huaweiNote(workout),
+          notes: importedWorkoutNote(workout),
         }))
       );
       setResult(imported);
@@ -147,4 +161,14 @@ export function useImport(db: FitLogDb | undefined): ImportState {
     runImport,
     reset,
   };
+}
+
+/** Quita los entrenamientos repetidos por su clave natural. */
+function dedupe(workouts: readonly ImportedWorkout[]): ImportedWorkout[] {
+  const byKey = new Map<string, ImportedWorkout>();
+  for (const workout of workouts) {
+    const key = workoutKey(workout);
+    if (!byKey.has(key)) byKey.set(key, workout);
+  }
+  return [...byKey.values()];
 }
