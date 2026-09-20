@@ -132,10 +132,17 @@ object HuaweiHealth {
         }
     }
 
-    /** Convierte un objeto en entrenamiento, o `null` si no lo parece. */
+    /**
+     * Convierte un objeto en entrenamiento, o `null` si no lo parece.
+     *
+     * No alcanza con tener fecha: la exportacion tambien trae sueno, pasos y estres con sus propias
+     * marcas de tiempo. Se pide ademas alguna senal de deporte (tipo, nombre, distancia, calorias o
+     * frecuencia cardiaca), que es lo que distingue un entrenamiento del resto.
+     */
     private fun toWorkout(node: JSONObject): Workout? {
         val startedAt = readTimestamp(node, "startTime", "start_time", "beginTime", "start")
             ?: return null
+        if (!looksLikeWorkout(node)) return null
         val durationMs = readDuration(node)
         val finishedAt = readTimestamp(node, "endTime", "end_time", "finishTime", "end")
             ?: durationMs?.let { startedAt + it }
@@ -159,6 +166,17 @@ object HuaweiHealth {
             averageHeartRate = readDouble(node, "avgHeartRate", "averageHeartRate", "avg_heart_rate"),
             maxHeartRate = readDouble(node, "maxHeartRate", "max_heart_rate"),
         )
+    }
+
+    /** Senales de que el objeto es un entrenamiento y no otra serie de datos de la exportacion. */
+    private fun looksLikeWorkout(node: JSONObject): Boolean {
+        if (readDouble(node, "sportType", "sport_type", "activityType", "exerciseType") != null) {
+            return true
+        }
+        if (readString(node, "sportName", "activityName") != null) return true
+        if (readDouble(node, "totalDistance", "distance", "total_distance") != null) return true
+        if (readDouble(node, "totalCalories", "calories", "total_calories") != null) return true
+        return readDouble(node, "avgHeartRate", "averageHeartRate", "maxHeartRate") != null
     }
 
     /**

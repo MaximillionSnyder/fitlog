@@ -69,9 +69,13 @@ class HuaweiHealthTest {
         assertEquals(1, wrapped.workouts.size)
     }
 
+    private fun compactActivity(recordId: String, startTime: Long) =
+        """{"recordId": "$recordId", "startTime": $startTime, "endTime": ${startTime + 1_800_000}, """ +
+            """"sportType": 4, "totalTime": 1800000, "totalDistance": 5240}"""
+
     @Test
     fun `lee un archivo con un objeto por linea`() {
-        val content = activity(recordId = "a") + "\n" + activity(recordId = "b", startTime = start + 86_400_000)
+        val content = compactActivity("a", start) + "\n" + compactActivity("b", start + 86_400_000)
 
         val result = HuaweiHealth.parse(listOf(content))
 
@@ -102,7 +106,8 @@ class HuaweiHealthTest {
         val result = HuaweiHealth.parse(
             listOf(
                 activity(),
-                """{"sleepRecords": [{"startTime": $start, "deepSleep": 10}]}""",
+                // Con inicio y fin, como el sueno real: lo que lo descarta es no tener senal de deporte.
+                """{"sleepRecords": [{"startTime": $start, "endTime": ${start + 28_800_000}, "deepSleep": 10}]}""",
                 "no es json",
             )
         )
