@@ -22,6 +22,12 @@
 - [x] 3b.1 Derivar la frecuencia cardíaca promedio y máxima del blob de sensores (`tp=h-r`), con tests en Android y web
 - [x] 3b.2 Aceptar el ZIP de la exportación sin descomprimir en Android (`ZipInputStream`, sin dependencias)
 
+## 3c. Pruebas de punta a punta
+
+- [x] 3c.1 Exportación de prueba (registros triplicados, sueño y pasos por minuto) que recorre leer → importar → historial, en Android y web
+- [x] 3c.2 Un archivo por minuto con calorías pero sin duración ya no se confunde con una sesión
+- [x] 3c.3 Marca `IMPORTADO` en el historial de las sesiones que vinieron de una importación
+
 ## 4. Verificación y cierre
 
 - [x] 4.1 Dejar `android.yml` y `web.yml` en verde (tests y build)
