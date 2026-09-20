@@ -6,7 +6,6 @@ import org.json.JSONTokener
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
-import kotlin.math.roundToInt
 
 /**
  * Lectura de la exportacion de Huawei Health.
@@ -20,27 +19,9 @@ import kotlin.math.roundToInt
  */
 object HuaweiHealth {
 
-    /** Entrenamiento reconocido en la exportacion. */
-    data class Workout(
-        val recordId: String?,
-        val startedAtMs: Long,
-        val finishedAtMs: Long?,
-        val sportType: Int?,
-        val sportName: String,
-        val durationMs: Long?,
-        val distanceM: Double?,
-        val calories: Double?,
-        val steps: Int?,
-        val averageHeartRate: Double?,
-        val maxHeartRate: Double?,
-    ) {
-        /** Clave natural para deduplicar dentro de la exportacion. */
-        val key: String get() = recordId ?: "$startedAtMs-$sportName"
-    }
-
     /** Resultado de leer un conjunto de archivos. */
     data class ParseResult(
-        val workouts: List<Workout>,
+        val workouts: List<ImportedWorkout>,
         val filesRead: Int,
         val filesSkipped: Int,
     ) {
@@ -69,7 +50,7 @@ object HuaweiHealth {
 
     /** Lee varios archivos y devuelve los entrenamientos reconocidos, sin repetidos. */
     fun parse(contents: List<String>): ParseResult {
-        val byKey = linkedMapOf<String, Workout>()
+        val byKey = linkedMapOf<String, ImportedWorkout>()
         var read = 0
         var skipped = 0
 
@@ -101,13 +82,13 @@ object HuaweiHealth {
      * (la exportacion los parte con marcadores de resincronizacion) y los que traen una comilla
      * suelta dentro del blob de sensores, que rompe el JSON.
      */
-    fun parseFile(content: String): List<Workout> {
+    fun parseFile(content: String): List<ImportedWorkout> {
         val trimmed = content.trim()
         if (trimmed.isEmpty()) return emptyList()
 
         // Camino rapido: el archivo entero es JSON valido (una lista o un objeto).
         val root = runCatching { JSONTokener(trimmed).nextValue() }.getOrNull()
-        val direct = mutableListOf<Workout>()
+        val direct = mutableListOf<ImportedWorkout>()
         when (root) {
             is JSONArray -> collect(root, direct)
             is JSONObject -> collect(root, direct)
@@ -117,7 +98,7 @@ object HuaweiHealth {
         if (direct.isNotEmpty() && candidates.size <= 1) return direct
 
         // Varios objetos seguidos (o JSON roto por una comilla suelta): se leen uno por uno.
-        val scanned = mutableListOf<Workout>()
+        val scanned = mutableListOf<ImportedWorkout>()
         for (candidate in candidates) {
             val parsed = runCatching { JSONObject(candidate) }.getOrNull()
                 ?: runCatching { JSONObject(repairAttributeQuotes(candidate)) }.getOrNull()
@@ -215,7 +196,7 @@ object HuaweiHealth {
 
     private val ATTRIBUTE_FIELD = Regex("\"attribute\"\\s*:\\s*\"", RegexOption.IGNORE_CASE)
 
-    private fun collect(node: Any?, out: MutableList<Workout>) {
+    private fun collect(node: Any?, out: MutableList<ImportedWorkout>) {
         when (node) {
             is JSONArray -> for (index in 0 until node.length()) collect(node.opt(index), out)
             is JSONObject -> {
@@ -235,7 +216,7 @@ object HuaweiHealth {
      * marcas de tiempo. Se pide ademas alguna senal de deporte (tipo, nombre, distancia, calorias o
      * frecuencia cardiaca), que es lo que distingue un entrenamiento del resto.
      */
-    private fun toWorkout(node: JSONObject): Workout? {
+    private fun toWorkout(node: JSONObject): ImportedWorkout? {
         val startedAt = readTimestamp(node, "startTime", "start_time", "beginTime", "start")
             ?: return null
         if (!looksLikeWorkout(node)) return null
@@ -255,7 +236,7 @@ object HuaweiHealth {
             ?: sportType?.let { SPORT_NAMES[it] }
             ?: "Entrenamiento"
 
-        return Workout(
+        return ImportedWorkout(
             recordId = readString(node, "recordId", "record_id", "id"),
             startedAtMs = startedAt,
             finishedAtMs = finishedAt,
@@ -407,44 +388,11 @@ object HuaweiHealth {
     private const val SECONDS_PER_DAY = 86_400.0
 
     /** Marca de origen en la nota de una sesion importada. */
-    const val NOTE_PREFIX = "Huawei Health"
+    const val NOTE_PREFIX = ImportedWorkoutNotes.HUAWEI
 
     /** `true` si la sesion vino de una importacion (el origen queda en la nota). */
-    fun isImportedNote(notes: String?): Boolean = notes?.startsWith(NOTE_PREFIX) == true
+    fun isImportedNote(notes: String?): Boolean = ImportedWorkoutNotes.isImported(notes)
 
-    /**
-     * Nota de la sesion importada: origen y los datos que Huawei si registro.
-     *
-     * Es lo unico que queda del entrenamiento ademas de las fechas, porque la exportacion no trae
-     * series con peso y reps.
-     */
-    fun noteFor(workout: Workout): String {
-        val parts = mutableListOf(NOTE_PREFIX, workout.sportName)
-
-        workout.distanceM?.takeIf { it > 0 }?.let { meters ->
-            val km = meters / 1000.0
-            parts += if (km >= 1.0) "${formatDistance(km)} km" else "${meters.roundToInt()} m"
-        }
-        workout.calories?.takeIf { it > 0 }?.let { parts += "${it.roundToInt()} kcal" }
-        val average = workout.averageHeartRate
-        val max = workout.maxHeartRate
-        if (average != null && max != null) {
-            parts += "FC ${average.roundToInt()}/${max.roundToInt()}"
-        } else if (average != null) {
-            parts += "FC media ${average.roundToInt()}"
-        }
-        workout.steps?.takeIf { it > 0 }?.let { parts += "$it pasos" }
-
-        return parts.joinToString(" · ")
-    }
-
-    /** Hasta dos decimales, sin ceros de relleno: `5.24`, `20`. */
-    private fun formatDistance(value: Double): String {
-        val rounded = (value * 100).roundToInt() / 100.0
-        return if (rounded == rounded.toLong().toDouble()) {
-            rounded.toLong().toString()
-        } else {
-            rounded.toString()
-        }
-    }
+    /** Nota de la sesion importada: origen y los datos que Huawei si registro. */
+    fun noteFor(workout: ImportedWorkout): String = ImportedWorkoutNotes.noteFor(workout)
 }

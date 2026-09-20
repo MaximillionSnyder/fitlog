@@ -3,7 +3,9 @@ package com.fitlog.app.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fitlog.app.data.WorkoutRepository
+import com.fitlog.app.domain.Gpx
 import com.fitlog.app.domain.HuaweiHealth
+import com.fitlog.app.domain.ImportedWorkout
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +25,7 @@ data class ImportUiState(
     val importing: Boolean = false,
     val error: String? = null,
     val filesRead: Int = 0,
-    val workouts: List<HuaweiHealth.Workout> = emptyList(),
+    val workouts: List<ImportedWorkout> = emptyList(),
     val alreadyImported: Int = 0,
     val result: WorkoutRepository.ImportResult? = null,
 ) {
@@ -59,7 +61,7 @@ class ImportViewModel @Inject constructor(
     val state: StateFlow<ImportUiState> = _state.asStateFlow()
 
     /** Lee los archivos elegidos y arma la vista previa. */
-    fun readFiles(contents: List<String>) {
+    fun readFiles(contents: List<Pair<String, String>>) {
         if (contents.isEmpty()) {
             _state.update {
                 it.copy(step = ImportUiState.Step.EMPTY, error = "No se eligió ningún archivo")
@@ -70,7 +72,7 @@ class ImportViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(reading = true, error = null, result = null) }
             try {
-                val parsed = withContext(Dispatchers.IO) { HuaweiHealth.parse(contents) }
+                val parsed = withContext(Dispatchers.IO) { read(contents) }
                 val existing = withContext(Dispatchers.IO) {
                     repository.sessions().map { it.startedAt }.toHashSet()
                 }
@@ -128,5 +130,31 @@ class ImportViewModel @Inject constructor(
 
     fun reset() {
         _state.value = ImportUiState()
+    }
+
+    /**
+     * Lee los archivos elegidos, sean de la exportacion de Huawei Health o GPX.
+     *
+     * Se decide por archivo: un GPX es XML y la exportacion es JSON, asi que una misma carpeta puede
+     * traer los dos formatos.
+     */
+    private fun read(contents: List<Pair<String, String>>): HuaweiHealth.ParseResult {
+        val huawei = mutableListOf<String>()
+        val gpx = mutableListOf<Pair<String, String>>()
+        for ((name, content) in contents) {
+            if (Gpx.looksLikeGpx(content)) gpx += content to name else huawei += content
+        }
+
+        val parsed = HuaweiHealth.parse(huawei)
+        val fromGpx = gpx.flatMap { (content, name) -> Gpx.parse(content, name) }
+        val workouts = (parsed.workouts + fromGpx)
+            .distinctBy { it.key }
+            .sortedByDescending { it.startedAtMs }
+
+        return HuaweiHealth.ParseResult(
+            workouts = workouts,
+            filesRead = parsed.filesRead + gpx.size,
+            filesSkipped = parsed.filesSkipped,
+        )
     }
 }

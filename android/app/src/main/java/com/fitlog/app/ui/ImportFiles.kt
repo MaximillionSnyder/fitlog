@@ -17,18 +17,20 @@ import java.util.zip.ZipInputStream
 object ImportFiles {
 
     /** Lee los `.json` de un ZIP sin descomprimir (la exportacion llega como ZIP). */
-    fun readZipFile(context: Context, uri: Uri): List<String> {
-        val contents = mutableListOf<String>()
+    fun readZipFile(context: Context, uri: Uri): List<Pair<String, String>> {
+        val contents = mutableListOf<Pair<String, String>>()
         runCatching {
             context.contentResolver.openInputStream(uri)?.use { stream ->
                 ZipInputStream(BufferedInputStream(stream)).use { zip ->
                     while (contents.size < MAX_FILES) {
                         val entry = zip.nextEntry ?: break
-                        if (entry.isDirectory || !entry.name.endsWith(".json", ignoreCase = true)) {
+                        val isJson = entry.name.endsWith(".json", ignoreCase = true)
+                        val isGpx = entry.name.endsWith(".gpx", ignoreCase = true)
+                        if (entry.isDirectory || (!isJson && !isGpx)) {
                             zip.closeEntry()
                             continue
                         }
-                        contents += zip.readBytes().toString(Charsets.UTF_8)
+                        contents += entry.name to zip.readBytes().toString(Charsets.UTF_8)
                         zip.closeEntry()
                     }
                 }
@@ -38,8 +40,8 @@ object ImportFiles {
     }
 
     /** Lee todos los `.json` del arbol elegido, en cualquier subcarpeta. */
-    fun readJsonFiles(context: Context, treeUri: Uri): List<String> {
-        val contents = mutableListOf<String>()
+    fun readJsonFiles(context: Context, treeUri: Uri): List<Pair<String, String>> {
+        val contents = mutableListOf<Pair<String, String>>()
         walk(context, treeUri, DocumentsContract.getTreeDocumentId(treeUri), contents)
         return contents
     }
@@ -54,7 +56,7 @@ object ImportFiles {
         context: Context,
         treeUri: Uri,
         documentId: String,
-        out: MutableList<String>,
+        out: MutableList<Pair<String, String>>,
     ) {
         if (out.size >= MAX_FILES) return
 
@@ -83,7 +85,9 @@ object ImportFiles {
                     walk(context, treeUri, childId, out)
                     continue
                 }
-                if (!name.endsWith(".json", ignoreCase = true)) continue
+                val isJson = name.endsWith(".json", ignoreCase = true)
+                val isGpx = name.endsWith(".gpx", ignoreCase = true)
+                if (!isJson && !isGpx) continue
 
                 val documentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childId)
                 val text = runCatching {
@@ -91,7 +95,7 @@ object ImportFiles {
                         stream.bufferedReader().readText()
                     }
                 }.getOrNull()
-                if (text != null) out += text
+                if (text != null) out += name to text
             }
         }
     }

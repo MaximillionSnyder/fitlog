@@ -44,7 +44,7 @@ import com.fitlog.app.data.WorkoutSession
 import com.fitlog.app.data.WorkoutSet
 import com.fitlog.app.domain.CatalogExercise
 import com.fitlog.app.domain.CatalogText
-import com.fitlog.app.domain.HuaweiHealth
+import com.fitlog.app.domain.ImportedWorkoutNotes
 import com.fitlog.app.domain.WorkoutSummary
 import com.fitlog.app.ui.components.FitLogCard
 import com.fitlog.app.ui.components.FitLogIcons
@@ -654,7 +654,7 @@ private fun HistoryCard(session: WorkoutSession, onOpenDetail: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                if (HuaweiHealth.isImportedNote(session.notes)) {
+                if (ImportedWorkoutNotes.isImported(session.notes)) {
                     ImportedBadge()
                 }
             }

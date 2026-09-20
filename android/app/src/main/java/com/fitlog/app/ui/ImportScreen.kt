@@ -80,7 +80,7 @@ fun ImportScreen(
         item {
             PrimaryAction(
                 label = if (state.step == ImportUiState.Step.EMPTY) {
-                    "Elegir carpeta de la exportación"
+                    "Elegir carpeta (Huawei Health o GPX)"
                 } else {
                     "Elegir otra carpeta"
                 },
@@ -91,7 +91,7 @@ fun ImportScreen(
 
         item {
             SecondaryAction(
-                label = "Elegir el ZIP sin descomprimir",
+                label = "Elegir el ZIP de Huawei Health",
                 icon = FitLogIcons.ArrowDown,
                 onClick = { pickZip.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) },
             )
@@ -242,13 +242,13 @@ private fun ImportIntro() {
     val fitLog = MaterialTheme.fitLogColors
     FitLogCard(containerColor = fitLog.dataSoft) {
         Text(
-            text = "Traé tus entrenamientos de Huawei Health",
+            text = "Traé tus entrenamientos de Huawei Health o GPX",
             style = MaterialTheme.typography.titleMedium,
         )
         Text(
-            text = "En Huawei Health pedí la exportación de tus datos (privacidad → solicitar tus " +
-                "datos) y elegí acá el ZIP que te llegue, o la carpeta de entrenamientos si ya lo " +
-                "descomprimiste. Nada se escribe hasta que confirmes.",
+            text = "Elegí el ZIP o la carpeta de la exportación de Huawei Health, o archivos GPX " +
+                "de tu reloj. Se leen los dos formatos, se pueden mezclar y nada se escribe hasta " +
+                "que confirmes.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
