@@ -281,7 +281,7 @@ object Gpx {
         return when {
             value.contains("run") -> "Running"
             value.contains("cycl") || value.contains("bike") || value.contains("bici") -> "Bicicleta"
-            value.contains("walk") || value.contains("camin") || value.contains("hike") -> "Caminata"
+            value.contains("walk") || value.contains("camin") || value.contains("hik") -> "Caminata"
             value.contains("swim") || value.contains("natac") -> "Natación"
             value.contains("row") || value.contains("remo") -> "Remo"
             else -> raw.trim()

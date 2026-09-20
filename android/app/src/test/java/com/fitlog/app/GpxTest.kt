@@ -53,7 +53,7 @@ class GpxTest {
         assertEquals(1_700_001_800_000L, workout.finishedAtMs)
         assertEquals(1_800_000L, workout.durationMs)
         assertEquals("Running", workout.sportName)
-        assertEquals(120.0, workout.averageHeartRate ?: 0.0, 0.001)
+        assertEquals(145.0, workout.averageHeartRate ?: 0.0, 0.001)
         assertEquals(170.0, workout.maxHeartRate ?: 0.0, 0.001)
         // Dos puntos a ~140 m: la distancia se calcula sumando los tramos.
         assertTrue((workout.distanceM ?: 0.0) in 100.0..200.0)

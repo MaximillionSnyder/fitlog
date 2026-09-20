@@ -1,5 +1,7 @@
 package com.fitlog.app.domain
 
+import kotlin.math.roundToInt
+
 /**
  * Entrenamiento importado desde otra app, ya normalizado.
  *
@@ -49,17 +51,17 @@ object ImportedWorkoutNotes {
 
         workout.distanceM?.takeIf { it > 0 }?.let { meters ->
             val km = meters / 1000.0
-            parts += if (km >= 1.0) "${formatDistance(km)} km" else "${meters.toInt()} m"
+            parts += if (km >= 1.0) "${formatDistance(km)} km" else "${meters.roundToInt()} m"
         }
-        workout.calories?.takeIf { it > 0 }?.let { parts += "${it.toInt()} kcal" }
+        workout.calories?.takeIf { it > 0 }?.let { parts += "${it.roundToInt()} kcal" }
         val average = workout.averageHeartRate
         val max = workout.maxHeartRate
         if (average != null && max != null) {
-            parts += "FC ${average.toInt()}/${max.toInt()}"
+            parts += "FC ${average.roundToInt()}/${max.roundToInt()}"
         } else if (average != null) {
-            parts += "FC media ${average.toInt()}"
+            parts += "FC media ${average.roundToInt()}"
         }
-        workout.elevationGainM?.takeIf { it >= 5.0 }?.let { parts += "desnivel ${it.toInt()} m" }
+        workout.elevationGainM?.takeIf { it >= 5.0 }?.let { parts += "desnivel ${it.roundToInt()} m" }
         workout.steps?.takeIf { it > 0 }?.let { parts += "$it pasos" }
 
         return parts.joinToString(" · ")
@@ -67,7 +69,7 @@ object ImportedWorkoutNotes {
 
     /** Hasta dos decimales, sin ceros de relleno: `5.24`, `20`. */
     private fun formatDistance(value: Double): String {
-        val rounded = kotlin.math.round(value * 100) / 100.0
+        val rounded = (value * 100).roundToInt() / 100.0
         return if (rounded == rounded.toLong().toDouble()) {
             rounded.toLong().toString()
         } else {
