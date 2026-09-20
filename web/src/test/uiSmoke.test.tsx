@@ -295,6 +295,10 @@ describe('interfaz web', () => {
     expect(html).toContain('Distancia por sesión');
     // Sin series no hay volumen que graficar.
     expect(html).not.toContain('Volumen por sesión');
+    // Los recientes muestran el deporte y los datos, no "0 series".
+    expect(html).toContain('Running');
+    expect(html).toContain('5.24 km');
+    expect(html).toContain('IMPORTADO');
   });
 
   it('Más agrupa los destinos secundarios con su descripción', () => {

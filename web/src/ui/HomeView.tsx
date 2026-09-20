@@ -17,6 +17,7 @@ import {
   formatDecimal,
   formatDuration,
   formatDurationLong,
+  formatInteger,
   formatKg,
   formatVolumeKg,
   formatRelativeDay,
@@ -39,6 +40,7 @@ import {
   IconSpark,
   IconTrophy,
 } from '@/ui/icons';
+import { importedDataSummary, isImportedNote } from '@/domain/importedWorkout';
 import { FitLogLogo } from '@/ui/Logo';
 import { Button, Card, LoadingState, NavigationRow, SectionHeader, StatTile } from '@/ui/primitives';
 
@@ -342,25 +344,53 @@ export function HomeView({
         <>
           <SectionHeader title="Recientes" trailing={`${summary.totalSessions} en total`} />
           <div className="flex flex-col gap-3">
-            {recent.map((session) => (
-              <Card key={session.id} className="!p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-ink truncate text-sm font-semibold">
-                      {session.routineName ?? 'Entrenamiento libre'}
-                    </p>
-                    <p className="text-muted text-xs">
-                      {formatRelativeDay(session.startedAt, now)} ·{' '}
-                      {formatDurationLong(session.startedAt, session.finishedAt)} ·{' '}
-                      {session.summary.workingSets} series
-                    </p>
+            {recent.map((session) => {
+              const imported = isImportedNote(session.notes);
+              const sport = imported
+                ? (importedDataSummary(session.notes)?.split(' · ')[0] ?? 'Entrenamiento importado')
+                : (session.routineName ?? 'Entrenamiento libre');
+              return (
+                <Card key={session.id} className="!p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-ink flex items-center gap-2 truncate text-sm font-semibold">
+                        {sport}
+                        {imported ? (
+                          <span className="bg-data-soft text-data rounded-lg px-2 py-0.5 text-[0.625rem] font-semibold">
+                            IMPORTADO
+                          </span>
+                        ) : null}
+                      </p>
+                      <p className="text-muted text-xs">
+                        {formatRelativeDay(session.startedAt, now)} ·{' '}
+                        {formatDurationLong(session.startedAt, session.finishedAt)} ·{' '}
+                        {/* Una sesión importada no tiene series: se muestran sus datos. */}
+                        {imported
+                          ? [
+                              session.activity?.distanceM == null
+                                ? null
+                                : session.activity.distanceM >= 1000
+                                  ? `${formatDecimal(session.activity.distanceM / 1000, 2)} km`
+                                  : `${formatInteger(session.activity.distanceM)} m`,
+                              session.activity?.averageHeartRate == null
+                                ? null
+                                : `FC ${formatInteger(session.activity.averageHeartRate)}`,
+                              importedDataSummary(session.notes),
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')
+                          : `${session.summary.workingSets} series`}
+                      </p>
+                    </div>
+                    {imported ? null : (
+                      <span className="text-ink fl-num text-sm font-semibold">
+                        {formatVolumeKg(session.summary.totalVolumeKg)} kg
+                      </span>
+                    )}
                   </div>
-                  <span className="text-ink fl-num text-sm font-semibold">
-                    {formatVolumeKg(session.summary.totalVolumeKg)} kg
-                  </span>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         </>
       ) : null}

@@ -3,12 +3,15 @@ package com.fitlog.app.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fitlog.app.data.BodyMetricsRepository
+import com.fitlog.app.data.ImportedActivity
 import com.fitlog.app.data.RoutinesRepository
 import com.fitlog.app.data.WorkoutRepository
 import com.fitlog.app.data.WorkoutSession
+import com.fitlog.app.ui.components.Format
 import com.fitlog.app.domain.Activity
 import com.fitlog.app.domain.Body
 import com.fitlog.app.domain.Home
+import com.fitlog.app.domain.ImportedWorkoutNotes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -25,8 +28,9 @@ data class RecentSession(
     val name: String,
     val startedAtMs: Long,
     val durationLabel: String,
-    val volumeKg: Double,
-    val workingSets: Int,
+    /** Resumen de la derecha: series y volumen en una sesion propia, actividad en una importada. */
+    val summary: String,
+    val imported: Boolean,
 )
 
 data class HomeUiState(
@@ -115,15 +119,27 @@ class HomeViewModel @Inject constructor(
                             .filter { it.finishedAt != null }
                             .take(RECENT_LIMIT)
                             .map { session ->
+                                val imported = ImportedWorkoutNotes.isImported(session.notes)
                                 RecentSession(
                                     id = session.id,
-                                    name = session.routineName ?: "Entrenamiento libre",
+                                    name = if (imported) {
+                                        ImportedWorkoutNotes.dataSummary(session.notes)
+                                            ?.substringBefore(" · ")
+                                            ?: "Entrenamiento importado"
+                                    } else {
+                                        session.routineName ?: "Entrenamiento libre"
+                                    },
                                     startedAtMs = session.startedAt,
                                     durationLabel = session.finishedAt
                                         ?.let { finish -> formatDuration(session.startedAt, finish) }
                                         ?: "—",
-                                    volumeKg = session.summary.totalVolumeKg,
-                                    workingSets = session.summary.workingSets,
+                                    summary = if (imported) {
+                                        importedSummary(session.activity, session.notes)
+                                    } else {
+                                        "${Format.integer(session.summary.workingSets)} series · " +
+                                            "${Format.volumeKg(session.summary.totalVolumeKg)} kg"
+                                    },
+                                    imported = imported,
                                 )
                             },
                     )
@@ -142,6 +158,23 @@ class HomeViewModel @Inject constructor(
         val metrics: List<Body.Point>,
         val routineCount: Int,
     )
+
+    /** Resumen de una sesion importada: distancia y pulso si existen, o los datos de la nota. */
+    private fun importedSummary(activity: ImportedActivity?, notes: String?): String {
+        val parts = mutableListOf<String>()
+        activity?.distanceM?.takeIf { it > 0 }?.let { meters ->
+            parts += if (meters >= 1000) {
+                "${Format.decimal(meters / 1000.0, 2)} km"
+            } else {
+                "${Format.integer(meters)} m"
+            }
+        }
+        activity?.averageHeartRate?.let { parts += "FC ${Format.integer(it)}" }
+        if (parts.isEmpty()) {
+            ImportedWorkoutNotes.dataSummary(notes)?.let { parts += it }
+        }
+        return parts.joinToString(" · ").ifEmpty { "Sin series" }
+    }
 
     companion object {
         const val RECENT_LIMIT = 3

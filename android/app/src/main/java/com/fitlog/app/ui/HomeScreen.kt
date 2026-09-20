@@ -400,18 +400,21 @@ private fun RecentSessionRow(recent: RecentSession, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(text = recent.name, style = MaterialTheme.typography.titleMedium)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(text = recent.name, style = MaterialTheme.typography.titleMedium)
+                    if (recent.imported) {
+                        ImportedBadge()
+                    }
+                }
                 Text(
-                    text = "${recent.durationLabel} · ${recent.workingSets} series",
+                    text = "${recent.durationLabel} · ${recent.summary}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Text(
-                text = "${Format.volumeKg(recent.volumeKg)} kg",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
         }
     }
 }
