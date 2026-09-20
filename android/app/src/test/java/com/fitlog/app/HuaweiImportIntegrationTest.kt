@@ -137,7 +137,7 @@ class HuaweiImportIntegrationTest {
         val sessions = repository.sessions()
         assertEquals(3, sessions.size)
         // El historial viene del mas nuevo al mas viejo.
-        assertEquals("Huawei Health · Entrenamiento de fuerza", sessions[0].notes)
+        assertEquals("Huawei Health · Entrenamiento de fuerza · 4200 pasos", sessions[0].notes)
         assertTrue(sessions[1].notes?.contains("Bicicleta") == true)
         assertTrue(sessions[2].notes?.contains("Running") == true)
 
