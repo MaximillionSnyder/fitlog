@@ -35,8 +35,9 @@ class ActivityTest {
         )
 
         assertEquals(2, series.size)
-        assertEquals(3_000.0, series.first().distanceM, 0.001)
-        assertEquals(5_000.0, series.last().distanceM, 0.001)
+        // Cronologico: primero la mas vieja del rango.
+        assertEquals(5_000.0, series.first().distanceM, 0.001)
+        assertEquals(3_000.0, series.last().distanceM, 0.001)
     }
 
     @Test
