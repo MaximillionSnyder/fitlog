@@ -2,6 +2,15 @@ import { useCallback, useEffect, useState } from 'react';
 
 import type { FitLogDb } from '@/db/client';
 import { loadProgressSeries } from '@/data/progress';
+import { listSessions } from '@/data/workout';
+import {
+  activityTotals,
+  activityValues,
+  buildActivitySeries,
+  type ActivityMetric,
+  type ActivityPoint,
+  type ActivityTotals,
+} from '@/domain/activity';
 import { rangeFor, type ProgressMetric, type ProgressPoint, type RangePreset } from '@/domain/progress';
 
 export interface ProgressState {
@@ -11,8 +20,14 @@ export interface ProgressState {
   readonly exerciseId: string | null;
   readonly metric: ProgressMetric;
   readonly preset: RangePreset;
+  /** Actividad importada (Huawei Health o GPX) del rango elegido. */
+  readonly activityPoints: ActivityPoint[];
+  readonly activityMetric: ActivityMetric;
+  readonly activityValues: number[];
+  readonly activityTotals: ActivityTotals;
   selectExercise(exerciseId: string | null): void;
   selectMetric(metric: ProgressMetric): void;
+  selectActivityMetric(metric: ActivityMetric): void;
   selectPreset(preset: RangePreset): void;
   reload(): void;
 }
@@ -32,6 +47,36 @@ export function useProgress(db: FitLogDb | undefined): ProgressState {
   const [metric, setMetric] = useState<ProgressMetric>('maxWeightKg');
   const [preset, setPreset] = useState<RangePreset>('90d');
   const [version, setVersion] = useState(0);
+  const [activityPoints, setActivityPoints] = useState<ActivityPoint[]>([]);
+  const [activityMetric, setActivityMetric] = useState<ActivityMetric>('distance');
+
+  // La actividad importada se recarga con el mismo rango que la serie por ejercicio.
+  useEffect(() => {
+    if (!db) return;
+    let cancelled = false;
+    listSessions(db).then(
+      (sessions) => {
+        if (cancelled) return;
+        setActivityPoints(
+          buildActivitySeries(
+            sessions.map((session) => ({
+              startedAtMs: session.startedAt,
+              finishedAtMs: session.finishedAt,
+              distanceM: session.activity?.distanceM ?? null,
+              averageHeartRate: session.activity?.averageHeartRate ?? null,
+            })),
+            rangeFor(preset, Date.now())
+          )
+        );
+      },
+      () => {
+        if (!cancelled) setActivityPoints([]);
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [db, preset, version]);
 
   useEffect(() => {
     if (!db || exerciseId === null) {
@@ -69,8 +114,13 @@ export function useProgress(db: FitLogDb | undefined): ProgressState {
     exerciseId,
     metric,
     preset,
+    activityPoints,
+    activityMetric,
+    activityValues: activityValues(activityPoints, activityMetric),
+    activityTotals: activityTotals(activityPoints),
     selectExercise: setExerciseId,
     selectMetric: setMetric,
+    selectActivityMetric: setActivityMetric,
     selectPreset: setPreset,
     reload,
   };
