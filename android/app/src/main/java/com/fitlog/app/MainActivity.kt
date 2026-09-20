@@ -36,6 +36,7 @@ import com.fitlog.app.ui.CatalogScreen
 import com.fitlog.app.ui.ComparisonsScreen
 import com.fitlog.app.ui.ExerciseDetailScreen
 import com.fitlog.app.ui.HomeScreen
+import com.fitlog.app.ui.ImportScreen
 import com.fitlog.app.ui.MoreScreen
 import com.fitlog.app.ui.ProgressScreen
 import com.fitlog.app.ui.RoutinesScreen
@@ -261,6 +262,12 @@ private fun FitLogApp(
             composable(Routes.BACKUP) {
                 NavEntryScopes(this) {
                     BackupScreen()
+                }
+            }
+
+            composable(Routes.IMPORT) {
+                NavEntryScopes(this) {
+                    ImportScreen()
                 }
             }
 

@@ -119,6 +119,42 @@ class WorkoutRepositoryTest {
     }
 
     @Test
+    fun `importa sesiones salteando las que ya existen`() = runTest {
+        val draft = WorkoutRepository.ImportedSession(
+            startedAtMs = 1_690_000_000_000,
+            finishedAtMs = 1_690_000_600_000,
+            notes = "Huawei Health · Running · 5 km",
+        )
+
+        val first = repository.importSessions(listOf(draft))
+        assertEquals(1, first.imported)
+        assertEquals(0, first.skipped)
+
+        // Repetir la importacion no duplica: la fecha de inicio ya esta.
+        val second = repository.importSessions(listOf(draft))
+        assertEquals(0, second.imported)
+        assertEquals(1, second.skipped)
+
+        val sessions = repository.sessions()
+        assertEquals(1, sessions.size)
+        assertEquals("Huawei Health · Running · 5 km", sessions.first().notes)
+        assertEquals(1_690_000_600_000, sessions.first().finishedAt)
+    }
+
+    @Test
+    fun `importa solo lo nuevo de una exportacion posterior`() = runTest {
+        val viejo = WorkoutRepository.ImportedSession(1_690_000_000_000, 1_690_000_600_000, "viejo")
+        repository.importSessions(listOf(viejo))
+
+        val nuevo = WorkoutRepository.ImportedSession(1_700_000_000_000, 1_700_000_600_000, "nuevo")
+        val result = repository.importSessions(listOf(viejo, nuevo))
+
+        assertEquals(1, result.imported)
+        assertEquals(1, result.skipped)
+        assertEquals(2, repository.sessions().size)
+    }
+
+    @Test
     fun `inicia y finaliza una sesion`() = runTest {
         val session = repository.startSession()
         assertEquals(session.startedAt, 1_700_000_000_000)

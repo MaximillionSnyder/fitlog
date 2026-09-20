@@ -81,6 +81,55 @@ class WorkoutRepository(
         )
     }
 
+    /** Entrenamiento a importar desde otra app: fechas y nota ya resueltas. */
+    data class ImportedSession(
+        val startedAtMs: Long,
+        val finishedAtMs: Long?,
+        val notes: String?,
+    )
+
+    data class ImportResult(
+        val imported: Int,
+        val skipped: Int,
+    )
+
+    /**
+     * Importa entrenamientos de otra app como sesiones, salteando los que ya existen.
+     *
+     * La clave es la fecha de inicio: dos entrenamientos no empiezan en el mismo milisegundo, asi
+     * que repetir la importacion no duplica nada y no hace falta guardar el id de la app de origen.
+     */
+    suspend fun importSessions(sessions: List<ImportedSession>): ImportResult {
+        if (sessions.isEmpty()) return ImportResult(imported = 0, skipped = 0)
+
+        val existing = dao.listSessions().map { it.startedAt }.toHashSet()
+        val timestamp = now()
+        var imported = 0
+        var skipped = 0
+
+        for (session in sessions.sortedBy { it.startedAtMs }) {
+            if (!existing.add(session.startedAtMs)) {
+                skipped += 1
+                continue
+            }
+            dao.insertSession(
+                SessionEntity(
+                    id = idGenerator(),
+                    routineId = null,
+                    startedAt = session.startedAtMs,
+                    finishedAt = session.finishedAtMs,
+                    notes = session.notes,
+                    createdAt = timestamp,
+                    updatedAt = timestamp,
+                    deletedAt = null,
+                )
+            )
+            imported += 1
+        }
+
+        return ImportResult(imported = imported, skipped = skipped)
+    }
+
     suspend fun startSession(routineId: String? = null): WorkoutSession {
         if (dao.findActiveSession() != null) {
             throw WorkoutException(

@@ -28,6 +28,7 @@ object Routes {
     const val TIPS = "tips"
     const val BACKUP = "backup"
     const val SETTINGS = "settings"
+    const val IMPORT = "import"
 
     fun workout(routineId: String?) =
         "$WORKOUT?$ROUTINE_ARG=${routineId.orEmpty()}&$AUTO_START_ARG=true"
@@ -91,6 +92,12 @@ val secondaryDestinations: List<SecondaryDestination> = listOf(
         title = "Respaldo",
         description = "Exportá o fusioná tus datos entre dispositivos",
         icon = FitLogIcons.Shield,
+    ),
+    SecondaryDestination(
+        route = Routes.IMPORT,
+        title = "Importar entrenamientos",
+        description = "Traé tus entrenamientos desde Huawei Health",
+        icon = FitLogIcons.ArrowDown,
     ),
     SecondaryDestination(
         route = Routes.SETTINGS,
