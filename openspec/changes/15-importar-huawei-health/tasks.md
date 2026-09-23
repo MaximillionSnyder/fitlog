@@ -80,6 +80,13 @@
 
 - [x] 3l.1 Ajustes muestra cuántos entrenamientos hay, cuántos son importados, cuántos tienen métricas y el rango de fechas (Android y web)
 
+## 3m. Recorrido del GPX
+
+- [x] 3m.1 El lector de GPX guarda la ruta recortada a 300 puntos (migración 003, Android y web)
+- [x] 3m.2 El detalle de la sesión dibuja el trazado con inicio y fin, y los perfiles de altura y pulso
+- [x] 3m.3 El semiverseno pasa a `Formulas`, compartido por el lector y la ruta
+- [ ] 3m.4 Mapa con imágenes de teselas (necesita conexión y una librería de mapas: fuera del alcance actual)
+
 ## 4. Verificación y cierre
 
 - [x] 4.1 Dejar `android.yml` y `web.yml` en verde (tests y build)
