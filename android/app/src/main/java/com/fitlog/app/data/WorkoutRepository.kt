@@ -1,5 +1,6 @@
 package com.fitlog.app.data
 
+import androidx.room.withTransaction
 import com.fitlog.app.domain.ImportedWorkoutNotes
 import com.fitlog.app.domain.SessionSetInput
 import com.fitlog.app.domain.SessionSummary
