@@ -1,3 +1,6 @@
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
+import { RouteSketch } from '@/ui/RouteSketch';
 import type { WorkoutState } from '@/state/useWorkout';
 import {
   formatDecimal,
@@ -99,6 +102,34 @@ export function SessionDetailView({ workout }: { workout: WorkoutState }) {
             />
           )}
         </div>
+      ) : null}
+
+      {session.activity && session.activity.route.length > 1 ? (
+        <>
+          <RouteSketch route={session.activity.route} />
+          {session.activity.route.filter((point) => point.elevation !== null).length > 1 ? (
+            <>
+              <SectionHeader title="Altura" />
+              <ProfileChart
+                values={session.activity.route
+                  .filter((point) => point.elevation !== null)
+                  .map((point) => point.elevation!)}
+                unit="m"
+              />
+            </>
+          ) : null}
+          {session.activity.route.filter((point) => point.heartRate !== null).length > 1 ? (
+            <>
+              <SectionHeader title="Pulso en el recorrido" />
+              <ProfileChart
+                values={session.activity.route
+                  .filter((point) => point.heartRate !== null)
+                  .map((point) => point.heartRate!)}
+                unit="ppm"
+              />
+            </>
+          ) : null}
+        </>
       ) : null}
 
       {session.activity ? (
@@ -209,4 +240,34 @@ function formatDateTime(timestamp: number): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(timestamp);
+}
+
+/** Perfil de una serie a lo largo del recorrido (altura o pulso). */
+function ProfileChart({ values, unit }: { values: readonly number[]; unit: string }) {
+  return (
+    <Card className="!p-4">
+      <ResponsiveContainer width="100%" height={140}>
+        <LineChart
+          data={values.map((value, index) => ({ index, value }))}
+          margin={{ top: 8, right: 8, bottom: 0, left: -12 }}
+        >
+          <CartesianGrid stroke="var(--fl-line)" strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="index" hide />
+          <YAxis tick={{ fill: 'var(--fl-muted)', fontSize: 10 }} width={56} domain={['dataMin', 'dataMax']} />
+          <Tooltip
+            contentStyle={{
+              background: 'var(--fl-surface)',
+              border: '1px solid var(--fl-line-strong)',
+              borderRadius: 12,
+              fontSize: 12,
+              color: 'var(--fl-ink)',
+            }}
+            labelStyle={{ color: 'var(--fl-muted)' }}
+            formatter={(value) => [`${Math.round(Number(value ?? 0))} ${unit}`, '']}
+          />
+          <Line type="monotone" dataKey="value" stroke="var(--fl-data)" strokeWidth={2} dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </Card>
+  );
 }

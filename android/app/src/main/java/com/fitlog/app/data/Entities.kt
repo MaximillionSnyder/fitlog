@@ -123,6 +123,8 @@ data class SessionEntity(
     @ColumnInfo(name = "steps") val steps: Int? = null,
     @ColumnInfo(name = "elevation_gain_m") val elevationGainM: Double? = null,
     @ColumnInfo(name = "source") val source: String? = null,
+    /** Ruta del recorrido en texto compacto (solo GPX). */
+    @ColumnInfo(name = "route") val route: String? = null,
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long,
     @ColumnInfo(name = "deleted_at") val deletedAt: Long?,

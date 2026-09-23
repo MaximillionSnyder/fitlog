@@ -1,10 +1,5 @@
 package com.fitlog.app.domain
 
-import kotlin.math.PI
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
 
 /**
  * Lectura de archivos GPX.
@@ -53,6 +48,18 @@ object Gpx {
                 averageHeartRate = heartRates.takeIf { it.isNotEmpty() }?.average(),
                 maxHeartRate = heartRates.maxOrNull(),
                 elevationGainM = track.elevationGainM(),
+                route = Route.simplify(
+                    track.points.mapNotNull { point ->
+                        val latitude = point.latitude ?: return@mapNotNull null
+                        val longitude = point.longitude ?: return@mapNotNull null
+                        Route.Point(
+                            latitude = latitude,
+                            longitude = longitude,
+                            elevation = point.elevation,
+                            heartRate = point.heartRate,
+                        )
+                    }
+                ),
                 source = track.source,
             )
         )
@@ -94,7 +101,7 @@ object Gpx {
                     point.latitude != null && point.longitude != null &&
                     last.latitude != null && last.longitude != null
                 ) {
-                    total += haversineM(
+                    total += Formulas.haversineM(
                         last.latitude,
                         last.longitude,
                         point.latitude,
@@ -310,16 +317,4 @@ object Gpx {
     private fun nameWithoutExtension(fileName: String): String =
         fileName.substringBeforeLast('.').replace('_', ' ').replace('-', ' ').trim()
             .replaceFirstChar { it.uppercase() }
-
-    /** Distancia entre dos coordenadas por la formula del semiverseno. */
-    private fun haversineM(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val earthRadiusM = 6_371_000.0
-        val deltaLat = (lat2 - lat1) * PI / 180.0
-        val deltaLon = (lon2 - lon1) * PI / 180.0
-        val a = sin(deltaLat / 2) * sin(deltaLat / 2) +
-            cos(lat1 * PI / 180.0) * cos(lat2 * PI / 180.0) *
-            sin(deltaLon / 2) * sin(deltaLon / 2)
-        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        return earthRadiusM * c
-    }
 }

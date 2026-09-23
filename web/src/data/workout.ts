@@ -4,6 +4,7 @@ import type { FitLogDb } from '@/db/client';
 import { exercise, routine, session, setEntry } from '@/db/schema';
 import { generateUlid } from '@/domain/ulid';
 import { parseImportedNote } from '@/domain/importedWorkout';
+import { decodeRoute, encodeRoute, type RoutePoint } from '@/domain/route';
 import { summarizeSession, type SessionSummary } from '@/domain/workout';
 
 export type WorkoutErrorCode =
@@ -406,6 +407,8 @@ export interface ImportedActivity {
   readonly steps: number | null;
   readonly elevationGainM: number | null;
   readonly source: string | null;
+  /** Recorrido del entrenamiento, cuando la fuente lo trae (GPX). */
+  readonly route: readonly RoutePoint[];
 }
 
 /** Entrenamiento a importar desde otra app: fechas, nota y metricas ya resueltas. */
@@ -480,6 +483,7 @@ async function writeImportedSessions(
       steps: draft.activity?.steps ?? null,
       elevationGainM: draft.activity?.elevationGainM ?? null,
       source: draft.activity?.source ?? null,
+      route: draft.activity?.route ? encodeRoute(draft.activity.route) : null,
       createdAt: timestamp,
       updatedAt: timestamp,
       deletedAt: null,
@@ -505,6 +509,7 @@ function toActivity(row: {
   steps?: number | null;
   elevationGainM?: number | null;
   source?: string | null;
+  route?: string | null;
 }): ImportedActivity | null {
   const activity: ImportedActivity = {
     distanceM: row.distanceM ?? null,
@@ -514,6 +519,7 @@ function toActivity(row: {
     steps: row.steps ?? null,
     elevationGainM: row.elevationGainM ?? null,
     source: row.source ?? null,
+    route: decodeRoute(row.route),
   };
   const empty =
     activity.distanceM === null &&
@@ -521,7 +527,8 @@ function toActivity(row: {
     activity.averageHeartRate === null &&
     activity.maxHeartRate === null &&
     activity.steps === null &&
-    activity.elevationGainM === null;
+    activity.elevationGainM === null &&
+    activity.route.length === 0;
   if (!empty) return activity;
 
   const parsed = parseImportedNote(row.notes);
@@ -534,6 +541,7 @@ function toActivity(row: {
     steps: parsed.steps,
     elevationGainM: parsed.elevationGainM,
     source: parsed.source,
+    route: [],
   };
 }
 

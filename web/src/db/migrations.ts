@@ -1,5 +1,6 @@
 import esquemaInicial from '@shared/schema/migrations/001_esquema_inicial.sql?raw';
 import actividadImportada from '@shared/schema/migrations/002_actividad_importada.sql?raw';
+import rutaDelRecorrido from '@shared/schema/migrations/003_ruta_del_recorrido.sql?raw';
 
 export interface Migration {
   readonly version: number;
@@ -17,5 +18,10 @@ export const migrations: readonly Migration[] = [
     version: 2,
     name: '002_actividad_importada',
     sql: actividadImportada,
+  },
+  {
+    version: 3,
+    name: '003_ruta_del_recorrido',
+    sql: rutaDelRecorrido,
   },
 ];

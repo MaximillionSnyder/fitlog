@@ -3,6 +3,7 @@ package com.fitlog.app.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,6 +23,7 @@ import com.fitlog.app.data.WorkoutSet
 import com.fitlog.app.domain.PaceSetInput
 import com.fitlog.app.domain.WorkoutSummary
 import com.fitlog.app.ui.components.FitLogCard
+import com.fitlog.app.ui.components.FitLogLineChart
 import com.fitlog.app.ui.components.Format
 import com.fitlog.app.ui.components.SectionHeader
 import com.fitlog.app.ui.components.StatTile
@@ -97,6 +99,44 @@ fun SessionDetailScreen(
                     unit = "kg",
                     accent = MaterialTheme.fitLogColors.data,
                 )
+            }
+
+            val route = session.activity?.route.orEmpty()
+            if (route.size > 1) {
+                item { RouteSketch(route = route) }
+                // Perfil de altura y pulso a lo largo del recorrido.
+                val elevations = route.mapNotNull { it.elevation }
+                if (elevations.size > 1) {
+                    item {
+                        FitLogCard {
+                            SectionHeader(title = "Altura")
+                            FitLogLineChart(
+                                values = elevations,
+                                labels = route.map { "" },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(140.dp),
+                                valueFormatter = { "${Format.integer(it)} m" },
+                            )
+                        }
+                    }
+                }
+                val heartRates = route.mapNotNull { it.heartRate }
+                if (heartRates.size > 1) {
+                    item {
+                        FitLogCard {
+                            SectionHeader(title = "Pulso en el recorrido")
+                            FitLogLineChart(
+                                values = heartRates,
+                                labels = route.map { "" },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(140.dp),
+                                valueFormatter = { "${Format.integer(it)} ppm" },
+                            )
+                        }
+                    }
+                }
             }
 
             session.activity?.let { activity ->

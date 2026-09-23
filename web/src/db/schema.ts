@@ -68,6 +68,8 @@ export const session = sqliteTable('session', {
   steps: integer('steps'),
   elevationGainM: real('elevation_gain_m'),
   source: text('source'),
+  /** Ruta del recorrido en texto compacto (solo GPX). */
+  route: text('route'),
   createdAt: integer('created_at').notNull(),
   updatedAt: integer('updated_at').notNull(),
   deletedAt: integer('deleted_at'),

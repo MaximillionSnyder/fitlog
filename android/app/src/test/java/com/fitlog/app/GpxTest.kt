@@ -75,6 +75,30 @@ class GpxTest {
     }
 
     @Test
+    fun `el gpx deja su recorrido`() {
+        val workout = Gpx.parse(gpx()).first()
+
+        assertEquals(2, workout.route.size)
+        assertEquals(-34.6037, workout.route[0].latitude, 0.00001)
+        assertEquals(-58.3816, workout.route[0].longitude, 0.00001)
+        assertEquals(25.0, workout.route[0].elevation ?: 0.0, 0.001)
+        assertEquals(120.0, workout.route[0].heartRate ?: 0.0, 0.001)
+        assertEquals(-34.6047, workout.route[1].latitude, 0.00001)
+    }
+
+    @Test
+    fun `un gpx sin coordenadas no arma recorrido`() {
+        val sinPuntos = """
+            <gpx version="1.1"><trk><trkseg>
+              <trkpt><time>2023-11-14T22:13:20Z</time></trkpt>
+              <trkpt><time>2023-11-14T22:43:20Z</time></trkpt>
+            </trkseg></trk></gpx>
+        """.trimIndent()
+
+        assertTrue(Gpx.parse(sinPuntos).first().route.isEmpty())
+    }
+
+    @Test
     fun `el resumen sin origen sirve para el historial`() {
         val note = ImportedWorkoutNotes.noteFor(Gpx.parse(gpx()).first())
         val summary = ImportedWorkoutNotes.dataSummary(note)

@@ -21,6 +21,8 @@ data class ImportedWorkout(
     val averageHeartRate: Double?,
     val maxHeartRate: Double?,
     val elevationGainM: Double? = null,
+    /** Puntos del recorrido, cuando la fuente los trae (GPX). */
+    val route: List<Route.Point> = emptyList(),
     val source: String = ImportedWorkoutNotes.HUAWEI,
 ) {
     /** Clave natural para deduplicar dentro de una importacion. */

@@ -117,6 +117,7 @@ export function useImport(
             steps: workout.steps,
             elevationGainM: workout.elevationGainM,
             source: workout.source,
+            route: workout.route ?? [],
           },
         }))
       );

@@ -2,6 +2,7 @@ package com.fitlog.app.data
 
 import androidx.room.withTransaction
 import com.fitlog.app.domain.ImportedWorkoutNotes
+import com.fitlog.app.domain.Route
 import com.fitlog.app.domain.SessionSetInput
 import com.fitlog.app.domain.SessionSummary
 import com.fitlog.app.domain.Ulid
@@ -57,10 +58,12 @@ data class ImportedActivity(
     val steps: Int?,
     val elevationGainM: Double?,
     val source: String?,
+    /** Recorrido del entrenamiento, cuando la fuente lo trae (GPX). */
+    val route: List<Route.Point> = emptyList(),
 ) {
     val isEmpty: Boolean
         get() = distanceM == null && calories == null && averageHeartRate == null &&
-            maxHeartRate == null && steps == null && elevationGainM == null
+            maxHeartRate == null && steps == null && elevationGainM == null && route.isEmpty()
 }
 
 data class SessionDetail(
@@ -149,6 +152,9 @@ class WorkoutRepository(
                         steps = session.activity?.steps,
                         elevationGainM = session.activity?.elevationGainM,
                         source = session.activity?.source,
+                        route = session.activity?.route
+                            ?.takeIf { it.isNotEmpty() }
+                            ?.let { Route.encode(it) },
                         createdAt = timestamp,
                         updatedAt = timestamp,
                         deletedAt = null,
@@ -337,6 +343,7 @@ class WorkoutRepository(
         steps = steps,
         elevationGainM = elevationGainM,
         source = source,
+        route = Route.decode(route),
     ).takeIf { !it.isEmpty }
 
     /** Metricas recuperadas de la nota, para las sesiones importadas antes de las columnas. */

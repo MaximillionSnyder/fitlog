@@ -163,6 +163,37 @@ const importedWorkout = {
   ],
 } as unknown as WorkoutState;
 
+const routeWorkout = {
+  ...workout,
+  detail: {
+    session: {
+      id: 's1',
+      startedAt: Date.now() - 86_400_000,
+      finishedAt: Date.now() - 84_600_000,
+      notes: 'GPX · Running · 144 m',
+      routineId: null,
+      routineName: null,
+      summary: { totalSets: 0, workingSets: 0, totalVolumeKg: 0, volumeByExercise: {} },
+      activity: {
+        distanceM: 144,
+        calories: null,
+        averageHeartRate: 145,
+        maxHeartRate: 170,
+        steps: null,
+        elevationGainM: 7,
+        source: 'GPX',
+        route: [
+          { latitude: -34.6037, longitude: -58.3816, elevation: 25, heartRate: 120 },
+          { latitude: -34.6047, longitude: -58.3826, elevation: 32, heartRate: 170 },
+        ],
+      },
+    },
+    sets: [],
+  },
+  loading: false,
+  error: null,
+} as unknown as WorkoutState;
+
 const detailWorkout = {
   ...workout,
   detail: {
@@ -279,6 +310,17 @@ describe('interfaz web', () => {
     expect(html).toContain('Armá una rutina');
     expect(html).toContain('0 de 3');
     expect(html).toContain('bg-surface');
+  });
+
+  it('el detalle de un GPX dibuja el recorrido y sus perfiles', () => {
+    const html = renderToStaticMarkup(
+      <SessionDetailView workout={routeWorkout} />
+    );
+
+    expect(html).toContain('Recorrido');
+    expect(html).toContain('Trazado del recorrido');
+    expect(html).toContain('Altura');
+    expect(html).toContain('Pulso en el recorrido');
   });
 
   it('el panel con historia importada muestra la tendencia de actividad', () => {

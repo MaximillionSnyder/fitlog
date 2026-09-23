@@ -4,6 +4,8 @@
  * Es el modelo común de todas las fuentes (la exportación de Huawei Health y los archivos GPX),
  * para que la pantalla de importación y la importación en sí no sepan de formatos.
  */
+import type { RoutePoint } from '@/domain/route';
+
 export interface ImportedWorkout {
   readonly recordId: string | null;
   readonly startedAtMs: number;
@@ -17,6 +19,8 @@ export interface ImportedWorkout {
   readonly averageHeartRate: number | null;
   readonly maxHeartRate: number | null;
   readonly elevationGainM: number | null;
+  /** Puntos del recorrido, cuando la fuente los trae (GPX). */
+  readonly route?: readonly RoutePoint[];
   readonly source: string;
 }
 

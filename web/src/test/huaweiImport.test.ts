@@ -79,6 +79,7 @@ async function importExport(db: Db): Promise<{ imported: number; skipped: number
         steps: workout.steps,
         elevationGainM: workout.elevationGainM,
         source: workout.source,
+        route: workout.route ?? [],
       },
     }))
   );

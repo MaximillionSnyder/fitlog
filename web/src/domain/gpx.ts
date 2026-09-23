@@ -3,6 +3,7 @@ import {
   HUAWEI_SOURCE,
   type ImportedWorkout,
 } from '@/domain/importedWorkout';
+import { simplifyRoute } from '@/domain/route';
 
 /**
  * Lectura de archivos GPX.
@@ -85,6 +86,19 @@ export function parseGpx(content: string, fileName?: string): ImportedWorkout[] 
           : heartRates.reduce((sum, rate) => sum + rate, 0) / heartRates.length,
       maxHeartRate: heartRates.length === 0 ? null : Math.max(...heartRates),
       elevationGainM: elevationGainOf(track.points),
+      route: simplifyRoute(
+        track.points
+          .filter(
+            (point): point is Point & { latitude: number; longitude: number } =>
+              point.latitude !== null && point.longitude !== null
+          )
+          .map((point) => ({
+            latitude: point.latitude,
+            longitude: point.longitude,
+            elevation: point.elevation,
+            heartRate: point.heartRate,
+          }))
+      ),
       source,
     },
   ];

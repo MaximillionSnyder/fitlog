@@ -125,6 +125,7 @@ class ImportViewModel @Inject constructor(
                                     steps = workout.steps,
                                     elevationGainM = workout.elevationGainM,
                                     source = workout.source,
+                                    route = workout.route,
                                 ),
                             )
                         }

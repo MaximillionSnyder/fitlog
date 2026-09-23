@@ -47,16 +47,25 @@ object DatabaseModule {
         }
     }
 
+    /** Migracion 003: la ruta del recorrido de un entrenamiento con GPS. */
+    private val MIGRATION_2_3 = object : Migration(2, DatabaseMigrations.VERSION_2_3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            DatabaseMigrations.STATEMENTS_2_3.forEach { statement -> db.execSQL(statement) }
+            recordMigration(db, DatabaseMigrations.VERSION_2_3, DatabaseMigrations.NAME_2_3)
+        }
+    }
+
     @Provides
     @Singleton
     fun provideFitLogDatabase(@ApplicationContext context: Context): FitLogDatabase =
         Room.databaseBuilder(context, FitLogDatabase::class.java, DATABASE_NAME)
             .fallbackToDestructiveMigrationOnDowngrade()
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     recordMigration(db, 1, "001_esquema_inicial")
                     recordMigration(db, DatabaseMigrations.VERSION_1_2, DatabaseMigrations.NAME_1_2)
+                    recordMigration(db, DatabaseMigrations.VERSION_2_3, DatabaseMigrations.NAME_2_3)
                 }
             })
             .build()

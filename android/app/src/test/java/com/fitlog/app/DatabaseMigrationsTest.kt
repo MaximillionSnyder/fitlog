@@ -14,14 +14,23 @@ import org.junit.Test
 class DatabaseMigrationsTest {
 
     @Test
-    fun `las sentencias de la migracion coinciden con el esquema canonico`() {
+    fun `las sentencias de las migraciones coinciden con el esquema canonico`() {
         val sql = TestVectors.loadText("schema.sql")
         val canonico = ALTER_REGEX.findAll(sql)
             .map { match -> match.value.trim().trimEnd(';') }
             .filter { it.contains("session", ignoreCase = true) }
             .toList()
 
-        assertEquals(DatabaseMigrations.STATEMENTS_1_2, canonico)
+        val deAndroid = DatabaseMigrations.STATEMENTS_1_2 + DatabaseMigrations.STATEMENTS_2_3
+        assertEquals(deAndroid, canonico)
+    }
+
+    @Test
+    fun `la migracion de la ruta agrega la columna`() {
+        assertEquals(
+            listOf("ALTER TABLE session ADD COLUMN route TEXT"),
+            DatabaseMigrations.STATEMENTS_2_3,
+        )
     }
 
     @Test
