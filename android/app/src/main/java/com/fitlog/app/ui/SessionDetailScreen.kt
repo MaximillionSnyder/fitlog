@@ -23,7 +23,6 @@ import com.fitlog.app.data.WorkoutSet
 import com.fitlog.app.domain.PaceSetInput
 import com.fitlog.app.domain.WorkoutSummary
 import com.fitlog.app.ui.components.FitLogCard
-import com.fitlog.app.ui.components.FitLogLineChart
 import com.fitlog.app.ui.components.Format
 import com.fitlog.app.ui.components.SectionHeader
 import com.fitlog.app.ui.components.StatTile
