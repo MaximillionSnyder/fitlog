@@ -87,7 +87,7 @@ class ProgressViewModel @Inject constructor(
     }
 
     /** Serie de actividad importada del rango elegido. */
-    private fun refreshActivity() {
+    fun refreshActivity() {
         val preset = _state.value.preset
         viewModelScope.launch {
             try {

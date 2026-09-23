@@ -49,6 +49,7 @@ class HuaweiImportIntegrationTest {
         repository = WorkoutRepository(
             dao = database.workoutDao(),
             routinesDao = database.routinesDao(),
+            database = database,
             now = { 1_700_000_000_000 },
         )
     }

@@ -27,6 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fitlog.app.domain.CatalogExercise
 import com.fitlog.app.domain.CatalogText
@@ -69,6 +71,12 @@ fun ProgressScreen(
     viewModel: ProgressViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // Al volver a la pantalla se recargan la serie y la actividad importada.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.refreshSeries()
+        viewModel.refreshActivity()
+    }
     var showPicker by remember { mutableStateOf(false) }
 
     val selectedExercise = state.exercises.firstOrNull { it.id == state.selectedExerciseId }

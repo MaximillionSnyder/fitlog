@@ -44,7 +44,11 @@ export default function App() {
   const tips = useTips(db);
   const body = useBodyMetrics(db);
   const backup = useBackup(db);
-  const importer = useImport(db);
+  // Despues de importar, el historial y la actividad se recargan solos.
+  const importer = useImport(db, () => {
+    void workout.reload();
+    progress.reload();
+  });
   const { choice, isDark, setChoice, toggle } = useTheme();
 
   const [view, setView] = useState<View>('inicio');

@@ -63,7 +63,8 @@ class ImportViewModel @Inject constructor(
     val state: StateFlow<ImportUiState> = _state.asStateFlow()
 
     /** Lee los archivos elegidos y arma la vista previa. */
-    fun readFiles(contents: List<Pair<String, String>>) {
+    fun readFiles(result: ImportFiles.ReadResult) {
+        val contents = result.files
         if (contents.isEmpty()) {
             _state.update {
                 it.copy(step = ImportUiState.Step.EMPTY, error = "No se eligió ningún archivo")
@@ -83,7 +84,7 @@ class ImportViewModel @Inject constructor(
                         reading = false,
                         step = ImportUiState.Step.PREVIEW,
                         filesRead = parsed.filesRead,
-                        filesSkipped = parsed.filesSkipped,
+                        filesSkipped = parsed.filesSkipped + result.skipped,
                         workouts = parsed.workouts,
                         alreadyImported = parsed.workouts.count { workout ->
                             existing.contains(workout.startedAtMs)
@@ -158,7 +159,12 @@ class ImportViewModel @Inject constructor(
         }
 
         val parsed = HuaweiHealth.parse(huawei)
-        val fromGpx = gpx.flatMap { (content, name) -> Gpx.parse(content, name) }
+        val fromGpx = mutableListOf<ImportedWorkout>()
+        var gpxSkipped = 0
+        for ((content, name) in gpx) {
+            val workouts = Gpx.parse(content, name)
+            if (workouts.isEmpty()) gpxSkipped += 1 else fromGpx += workouts
+        }
         val workouts = (parsed.workouts + fromGpx)
             .distinctBy { it.key }
             .sortedByDescending { it.startedAtMs }
@@ -166,7 +172,7 @@ class ImportViewModel @Inject constructor(
         return HuaweiHealth.ParseResult(
             workouts = workouts,
             filesRead = parsed.filesRead + gpx.size,
-            filesSkipped = parsed.filesSkipped,
+            filesSkipped = parsed.filesSkipped + gpxSkipped,
         )
     }
 }

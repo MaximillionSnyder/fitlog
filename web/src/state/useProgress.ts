@@ -29,6 +29,7 @@ export interface ProgressState {
   selectMetric(metric: ProgressMetric): void;
   selectActivityMetric(metric: ActivityMetric): void;
   selectPreset(preset: RangePreset): void;
+  /** Recarga la serie y la actividad: lo usa la importacion, que escribe fuera de este hook. */
   reload(): void;
 }
 

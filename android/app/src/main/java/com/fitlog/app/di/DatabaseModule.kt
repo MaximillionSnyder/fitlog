@@ -6,6 +6,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.fitlog.app.data.CatalogDao
+import com.fitlog.app.data.DatabaseMigrations
 import com.fitlog.app.data.CatalogRepository
 import com.fitlog.app.data.FitLogDatabase
 import com.fitlog.app.data.BackupDao
@@ -39,16 +40,10 @@ object DatabaseModule {
      * Las sesiones importadas (Huawei Health o GPX) traen distancia, calorias, frecuencia cardiaca,
      * pasos y desnivel; hasta ahora vivian solo en la nota.
      */
-    private val MIGRATION_1_2 = object : Migration(1, 2) {
+    private val MIGRATION_1_2 = object : Migration(1, DatabaseMigrations.VERSION_1_2) {
         override fun migrate(db: SupportSQLiteDatabase) {
-            db.execSQL("ALTER TABLE session ADD COLUMN distance_m REAL")
-            db.execSQL("ALTER TABLE session ADD COLUMN calories REAL")
-            db.execSQL("ALTER TABLE session ADD COLUMN avg_heart_rate REAL")
-            db.execSQL("ALTER TABLE session ADD COLUMN max_heart_rate REAL")
-            db.execSQL("ALTER TABLE session ADD COLUMN steps INTEGER")
-            db.execSQL("ALTER TABLE session ADD COLUMN elevation_gain_m REAL")
-            db.execSQL("ALTER TABLE session ADD COLUMN source TEXT")
-            recordMigration(db, 2, "002_actividad_importada")
+            DatabaseMigrations.STATEMENTS_1_2.forEach { statement -> db.execSQL(statement) }
+            recordMigration(db, DatabaseMigrations.VERSION_1_2, DatabaseMigrations.NAME_1_2)
         }
     }
 
@@ -61,7 +56,7 @@ object DatabaseModule {
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     recordMigration(db, 1, "001_esquema_inicial")
-                    recordMigration(db, 2, "002_actividad_importada")
+                    recordMigration(db, DatabaseMigrations.VERSION_1_2, DatabaseMigrations.NAME_1_2)
                 }
             })
             .build()
@@ -85,9 +80,14 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideWorkoutRepository(
+        database: FitLogDatabase,
         workoutDao: WorkoutDao,
         routinesDao: RoutinesDao,
-    ): WorkoutRepository = WorkoutRepository(dao = workoutDao, routinesDao = routinesDao)
+    ): WorkoutRepository = WorkoutRepository(
+        dao = workoutDao,
+        routinesDao = routinesDao,
+        database = database,
+    )
 
     @Provides
     @Singleton

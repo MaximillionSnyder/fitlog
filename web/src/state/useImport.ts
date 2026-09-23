@@ -38,7 +38,11 @@ export interface ImportState {
  * No se escribe nada hasta que el usuario confirma: primero se lee, se muestra la vista previa y
  * recien despues se importa.
  */
-export function useImport(db: FitLogDb | undefined): ImportState {
+export function useImport(
+  db: FitLogDb | undefined,
+  /** Se llama despues de importar: el historial y la actividad se escriben fuera de sus hooks. */
+  onImported: () => void = () => undefined
+): ImportState {
   const [step, setStep] = useState<ImportStep>('empty');
   const [reading, setReading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -118,12 +122,13 @@ export function useImport(db: FitLogDb | undefined): ImportState {
       );
       setResult(imported);
       setStep('done');
+      onImported();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'No se pudo importar');
     } finally {
       setImporting(false);
     }
-  }, [canImport, db, workouts]);
+  }, [canImport, db, onImported, workouts]);
 
   const reset = useCallback(() => {
     setStep('empty');

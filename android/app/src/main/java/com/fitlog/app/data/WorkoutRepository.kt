@@ -87,6 +87,7 @@ data class UpdateSetInput(
 class WorkoutRepository(
     private val dao: WorkoutDao,
     private val routinesDao: RoutinesDao,
+    private val database: FitLogDatabase? = null,
     private val idGenerator: () -> String = { Ulid.generate() },
     private val now: () -> Long = System::currentTimeMillis,
 ) {
@@ -121,39 +122,44 @@ class WorkoutRepository(
     suspend fun importSessions(sessions: List<ImportedSession>): ImportResult {
         if (sessions.isEmpty()) return ImportResult(imported = 0, skipped = 0)
 
-        val existing = dao.listSessions().map { it.startedAt }.toHashSet()
-        val timestamp = now()
-        var imported = 0
-        var skipped = 0
+        // Una importacion entra entera o no entra: si falla a mitad, no quedan sesiones sueltas.
+        val run: suspend () -> ImportResult = {
+            val existing = dao.listSessions().map { it.startedAt }.toHashSet()
+            val timestamp = now()
+            var imported = 0
+            var skipped = 0
 
-        for (session in sessions.sortedBy { it.startedAtMs }) {
-            if (!existing.add(session.startedAtMs)) {
-                skipped += 1
-                continue
-            }
-            dao.insertSession(
-                SessionEntity(
-                    id = idGenerator(),
-                    routineId = null,
-                    startedAt = session.startedAtMs,
-                    finishedAt = session.finishedAtMs,
-                    notes = session.notes,
-                    distanceM = session.activity?.distanceM,
-                    calories = session.activity?.calories,
-                    avgHeartRate = session.activity?.averageHeartRate,
-                    maxHeartRate = session.activity?.maxHeartRate,
-                    steps = session.activity?.steps,
-                    elevationGainM = session.activity?.elevationGainM,
-                    source = session.activity?.source,
-                    createdAt = timestamp,
-                    updatedAt = timestamp,
-                    deletedAt = null,
+            for (session in sessions.sortedBy { it.startedAtMs }) {
+                if (!existing.add(session.startedAtMs)) {
+                    skipped += 1
+                    continue
+                }
+                dao.insertSession(
+                    SessionEntity(
+                        id = idGenerator(),
+                        routineId = null,
+                        startedAt = session.startedAtMs,
+                        finishedAt = session.finishedAtMs,
+                        notes = session.notes,
+                        distanceM = session.activity?.distanceM,
+                        calories = session.activity?.calories,
+                        avgHeartRate = session.activity?.averageHeartRate,
+                        maxHeartRate = session.activity?.maxHeartRate,
+                        steps = session.activity?.steps,
+                        elevationGainM = session.activity?.elevationGainM,
+                        source = session.activity?.source,
+                        createdAt = timestamp,
+                        updatedAt = timestamp,
+                        deletedAt = null,
+                    )
                 )
-            )
-            imported += 1
+                imported += 1
+            }
+
+            ImportResult(imported = imported, skipped = skipped)
         }
 
-        return ImportResult(imported = imported, skipped = skipped)
+        return database?.withTransaction { run() } ?: run()
     }
 
     suspend fun startSession(routineId: String? = null): WorkoutSession {

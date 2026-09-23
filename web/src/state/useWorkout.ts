@@ -31,6 +31,8 @@ export interface WorkoutState {
   remove(setId: string): Promise<void>;
   openDetail(sessionId: string): Promise<void>;
   closeDetail(): void;
+  /** Recarga el historial: lo usa la importacion, que escribe fuera de este hook. */
+  reload(): Promise<void>;
 }
 
 interface LoadedState {
@@ -191,5 +193,6 @@ export function useWorkout(db: FitLogDb | undefined): WorkoutState {
     remove,
     openDetail,
     closeDetail,
+    reload: refresh,
   };
 }

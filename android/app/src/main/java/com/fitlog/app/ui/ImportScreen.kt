@@ -53,8 +53,7 @@ fun ImportScreen(
         contract = ActivityResultContracts.OpenDocumentTree(),
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
-        val contents = ImportFiles.readJsonFiles(context, uri)
-        viewModel.readFiles(contents)
+        viewModel.readFiles(ImportFiles.readJsonFiles(context, uri))
     }
 
     // La exportacion llega como ZIP: se puede elegir el archivo sin descomprimir.
@@ -62,8 +61,7 @@ fun ImportScreen(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
-        val contents = ImportFiles.readZipFile(context, uri)
-        viewModel.readFiles(contents)
+        viewModel.readFiles(ImportFiles.readZipFile(context, uri))
     }
 
     LazyColumn(

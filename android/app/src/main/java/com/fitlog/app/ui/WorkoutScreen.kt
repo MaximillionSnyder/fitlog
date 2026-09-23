@@ -39,6 +39,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fitlog.app.data.WorkoutSession
 import com.fitlog.app.data.WorkoutSet
@@ -72,6 +74,9 @@ fun WorkoutScreen(
     viewModel: WorkoutViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // Al volver a la pantalla se recargan los datos: la importacion escribe fuera de este ViewModel.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.load(silent = true) }
 
     // Un id vacio (autoarranque desde Inicio sin rutina) es una sesion libre, no un id invalido.
     val routineId = initialRoutineId?.takeIf { it.isNotBlank() }

@@ -33,9 +33,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fitlog.app.domain.Activity
 import com.fitlog.app.domain.Home
+import com.fitlog.app.domain.ImportedWorkoutNotes
 import com.fitlog.app.ui.components.FitLogCard
 import com.fitlog.app.ui.components.FitLogIcons
 import com.fitlog.app.ui.components.ImportedBadge
@@ -65,6 +68,9 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // Al volver a la pantalla se recargan los datos: la importacion escribe fuera de este ViewModel.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.load(silent = true) }
 
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
@@ -411,7 +417,7 @@ private fun RecentSessionRow(recent: RecentSession, onClick: () -> Unit) {
                     }
                 }
                 Text(
-                    text = "${recent.durationLabel} · ${recent.summary}",
+                    text = "${recent.durationLabel} · ${recentSummary(recent)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -477,6 +483,26 @@ private fun ActivityTrendCard(points: List<Activity.Point>) {
                 .height(160.dp),
         )
     }
+}
+
+/** Resumen de una sesion reciente: series y volumen, o los datos de la importacion. */
+private fun recentSummary(recent: RecentSession): String {
+    if (!recent.imported) {
+        return "${Format.integer(recent.workingSets)} series · ${Format.volumeKg(recent.volumeKg)} kg"
+    }
+    val parts = mutableListOf<String>()
+    recent.distanceM?.takeIf { it > 0 }?.let { meters ->
+        parts += if (meters >= 1000) {
+            "${Format.decimal(meters / 1000.0, 2)} km"
+        } else {
+            "${Format.integer(meters)} m"
+        }
+    }
+    recent.averageHeartRate?.let { parts += "FC ${Format.integer(it)}" }
+    if (parts.isEmpty()) {
+        ImportedWorkoutNotes.dataSummary(recent.notes)?.let { parts += it }
+    }
+    return parts.joinToString(" · ").ifEmpty { "Sin series" }
 }
 
 /** Dia corto de la tendencia: `12/3`. */

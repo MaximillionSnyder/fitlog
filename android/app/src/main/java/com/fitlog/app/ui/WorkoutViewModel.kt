@@ -59,9 +59,10 @@ class WorkoutViewModel @Inject constructor(
         }
     }
 
-    fun load() {
+    /** [silent] evita el estado de carga: se usa al volver a la pantalla, no al abrirla. */
+    fun load(silent: Boolean = false) {
         viewModelScope.launch {
-            _state.update { it.copy(loading = true, error = null) }
+            _state.update { it.copy(loading = if (silent) it.loading else true, error = null) }
             try {
                 val catalog = catalogRepository.loadCatalog()
                 val active = repository.activeSession()

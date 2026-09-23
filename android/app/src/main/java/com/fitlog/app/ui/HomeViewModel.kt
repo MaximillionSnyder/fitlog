@@ -3,11 +3,9 @@ package com.fitlog.app.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fitlog.app.data.BodyMetricsRepository
-import com.fitlog.app.data.ImportedActivity
 import com.fitlog.app.data.RoutinesRepository
 import com.fitlog.app.data.WorkoutRepository
 import com.fitlog.app.data.WorkoutSession
-import com.fitlog.app.ui.components.Format
 import com.fitlog.app.domain.Activity
 import com.fitlog.app.domain.Body
 import com.fitlog.app.domain.Home
@@ -28,9 +26,13 @@ data class RecentSession(
     val name: String,
     val startedAtMs: Long,
     val durationLabel: String,
-    /** Resumen de la derecha: series y volumen en una sesion propia, actividad en una importada. */
-    val summary: String,
+    val workingSets: Int,
+    val volumeKg: Double,
     val imported: Boolean,
+    /** Metricas de la sesion importada, si las tiene. */
+    val distanceM: Double?,
+    val averageHeartRate: Double?,
+    val notes: String?,
 )
 
 data class HomeUiState(
@@ -62,9 +64,10 @@ class HomeViewModel @Inject constructor(
         load()
     }
 
-    fun load() {
+    /** [silent] evita el estado de carga: se usa al volver a la pantalla, no al abrirla. */
+    fun load(silent: Boolean = false) {
         viewModelScope.launch {
-            _state.update { it.copy(loading = true, error = null) }
+            _state.update { it.copy(loading = if (silent) it.loading else true, error = null) }
             try {
                 val snapshot = coroutineScope {
                     val active = async { workout.activeSession() }
@@ -133,13 +136,12 @@ class HomeViewModel @Inject constructor(
                                     durationLabel = session.finishedAt
                                         ?.let { finish -> formatDuration(session.startedAt, finish) }
                                         ?: "—",
-                                    summary = if (imported) {
-                                        importedSummary(session.activity, session.notes)
-                                    } else {
-                                        "${Format.integer(session.summary.workingSets)} series · " +
-                                            "${Format.volumeKg(session.summary.totalVolumeKg)} kg"
-                                    },
+                                    workingSets = session.summary.workingSets,
+                                    volumeKg = session.summary.totalVolumeKg,
                                     imported = imported,
+                                    distanceM = session.activity?.distanceM,
+                                    averageHeartRate = session.activity?.averageHeartRate,
+                                    notes = session.notes,
                                 )
                             },
                     )
@@ -158,23 +160,6 @@ class HomeViewModel @Inject constructor(
         val metrics: List<Body.Point>,
         val routineCount: Int,
     )
-
-    /** Resumen de una sesion importada: distancia y pulso si existen, o los datos de la nota. */
-    private fun importedSummary(activity: ImportedActivity?, notes: String?): String {
-        val parts = mutableListOf<String>()
-        activity?.distanceM?.takeIf { it > 0 }?.let { meters ->
-            parts += if (meters >= 1000) {
-                "${Format.decimal(meters / 1000.0, 2)} km"
-            } else {
-                "${Format.integer(meters)} m"
-            }
-        }
-        activity?.averageHeartRate?.let { parts += "FC ${Format.integer(it)}" }
-        if (parts.isEmpty()) {
-            ImportedWorkoutNotes.dataSummary(notes)?.let { parts += it }
-        }
-        return parts.joinToString(" · ").ifEmpty { "Sin series" }
-    }
 
     companion object {
         const val RECENT_LIMIT = 3

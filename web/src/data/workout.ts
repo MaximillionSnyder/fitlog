@@ -434,6 +434,23 @@ export async function importSessions(
 ): Promise<ImportSessionsResult> {
   if (sessions.length === 0) return { imported: 0, skipped: 0 };
 
+  // Una importación entra entera o no entra: si falla a mitad, no quedan sesiones sueltas.
+  await db.run(sql`BEGIN`);
+  try {
+    const result = await writeImportedSessions(db, sessions, now);
+    await db.run(sql`COMMIT`);
+    return result;
+  } catch (error) {
+    await db.run(sql`ROLLBACK`);
+    throw error;
+  }
+}
+
+async function writeImportedSessions(
+  db: FitLogDb,
+  sessions: readonly ImportedSession[],
+  now: () => number
+): Promise<ImportSessionsResult> {
   const existingRows = await db
     .select({ startedAt: session.startedAt })
     .from(session)

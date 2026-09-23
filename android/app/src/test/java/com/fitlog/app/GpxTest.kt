@@ -114,6 +114,23 @@ class GpxTest {
     }
 
     @Test
+    fun `un nombre de archivo con distancia no se confunde con una metrica`() {
+        // Un GPX llamado "salida 5 km.gpx" produce el deporte "Salida 5 km": no debe leerse como
+        // una distancia de 5 km al recuperar las metricas de la nota.
+        val sinTipo = gpx().replace("<type>running</type>", "").replace(
+            "<name>Entrenamiento de la mañana</name>",
+            "",
+        )
+        val workout = Gpx.parse(sinTipo, "salida 5 km.gpx").first()
+        val note = ImportedWorkoutNotes.noteFor(workout)
+
+        assertTrue(note.startsWith("Huawei Health · Salida 5 km"))
+        // La distancia de la nota es la real (144 m), no el "5" del nombre.
+        val parsed = ImportedWorkoutNotes.parseActivity(note)
+        assertTrue((parsed?.distanceM ?: 0.0) < 1_000.0)
+    }
+
+    @Test
     fun `una nota que no es de importacion no tiene metricas`() {
         assertEquals(null, ImportedWorkoutNotes.parseActivity("Entrenamiento libre"))
         assertEquals(null, ImportedWorkoutNotes.parseActivity(null))
